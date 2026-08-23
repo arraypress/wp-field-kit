@@ -173,3 +173,48 @@ if ( ! function_exists( 'wp_oembed_get' ) ) {
 		return '<iframe src="' . htmlspecialchars( (string) $url, ENT_QUOTES ) . '"></iframe>';
 	}
 }
+
+if ( ! function_exists( 'wp_slash' ) ) {
+	function wp_slash( $value ) {
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'wp_unslash' ) ) {
+	function wp_unslash( $value ) {
+		return is_array( $value ) ? array_map( 'wp_unslash', $value ) : stripslashes( (string) $value );
+	}
+}
+
+if ( ! function_exists( 'get_metadata' ) ) {
+	function get_metadata( $meta_type, $object_id, $meta_key = '', $single = false ) {
+		return $GLOBALS['fk_meta'][ $meta_type ][ $object_id ][ $meta_key ] ?? ( $single ? '' : [] );
+	}
+}
+
+if ( ! function_exists( 'update_metadata' ) ) {
+	function update_metadata( $meta_type, $object_id, $meta_key, $meta_value, $prev = '' ) {
+		$GLOBALS['fk_meta'][ $meta_type ][ $object_id ][ $meta_key ] = $meta_value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_metadata' ) ) {
+	function delete_metadata( $meta_type, $object_id, $meta_key, $meta_value = '', $delete_all = false ) {
+		unset( $GLOBALS['fk_meta'][ $meta_type ][ $object_id ][ $meta_key ] );
+		return true;
+	}
+}
+
+if ( ! function_exists( 'get_option' ) ) {
+	function get_option( $option, $default_value = false ) {
+		return $GLOBALS['fk_options'][ $option ] ?? $default_value;
+	}
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+	function update_option( $option, $value, $autoload = null ) {
+		$GLOBALS['fk_options'][ $option ] = $value;
+		return true;
+	}
+}
