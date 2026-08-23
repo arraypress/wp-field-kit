@@ -218,3 +218,9 @@ if ( ! function_exists( 'update_option' ) ) {
 		return true;
 	}
 }
+
+if ( ! function_exists( '_doing_it_wrong' ) ) {
+	function _doing_it_wrong( $function_name, $message, $version ) {
+		$GLOBALS['fk_doing_it_wrong'][] = $message;
+	}
+}

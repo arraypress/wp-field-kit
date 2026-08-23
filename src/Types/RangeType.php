@@ -53,6 +53,41 @@ final class RangeType extends NumberType {
 	}
 
 	/**
+	 * The value the slider actually sits at.
+	 *
+	 * A range input with no value does not sit at its minimum: the browser
+	 * puts the thumb at the midpoint of the range. Printing an empty readout
+	 * beside a thumb that is visibly somewhere is the bug this avoids — the
+	 * number only appeared once the slider had been moved.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function current_value( Field $field ): string {
+		$value = $field->value();
+
+		if ( is_scalar( $value ) && '' !== (string) $value ) {
+			return (string) $value;
+		}
+
+		$min = (float) $field->get( 'min', 0 );
+		$max = (float) $field->get( 'max', 100 );
+
+		// What the browser does with no value, per the HTML specification.
+		$default = $min + ( ( $max - $min ) / 2 );
+		$step    = $field->get( 'step', 1 );
+
+		// Snapped to the step, so the readout matches a value the control can
+		// actually report rather than a midpoint between two stops.
+		if ( is_numeric( $step ) && (float) $step > 0 ) {
+			$default = $min + ( round( ( $default - $min ) / (float) $step ) * (float) $step );
+		}
+
+		return 0.0 === fmod( $default, 1.0 ) ? (string) (int) $default : (string) $default;
+	}
+
+	/**
 	 * Render the slider and its readout.
 	 *
 	 * @param Field      $field      The field.
@@ -62,7 +97,11 @@ final class RangeType extends NumberType {
 	 */
 	public function render( Field $field, Attributes $attributes ): string {
 		$unit  = (string) $field->get( 'unit', '' );
-		$value = $this->render_value( $field );
+		$value = $this->current_value( $field );
+
+		// The input has to carry the same value the readout prints, or the
+		// two disagree until the slider is first moved.
+		$attributes->set( 'value', $value );
 
 		$input = parent::render( $field, $attributes );
 

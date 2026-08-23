@@ -65,14 +65,31 @@ final class CodeType extends TextareaType {
 	}
 
 	/**
-	 * Scripts and styles the editor needs.
+	 * What this type needs enqueued.
 	 *
-	 * @return array{scripts: string[], styles: string[]}
+	 * The editor is not a plain script handle: wp_enqueue_code_editor()
+	 * enqueues CodeMirror plus the mode and linter for a given type, and
+	 * returns the settings its initialiser needs. Naming the type here lets
+	 * the asset registrar make that call once per language actually used.
+	 *
+	 * @return array{scripts: string[], styles: string[], code_editors: string[]}
 	 */
 	public function dependencies(): array {
 		return [
-			'scripts' => [ 'wp-codemirror' ],
-			'styles'  => [ 'wp-codemirror' ],
+			'scripts'      => [],
+			'styles'       => [],
+			'code_editors' => [ 'text/html' ],
 		];
+	}
+
+	/**
+	 * The editor languages this field uses.
+	 *
+	 * @param \ArrayPress\FieldKit\Field $field The field.
+	 *
+	 * @return string[]
+	 */
+	public function editor_types( $field ): array {
+		return [ (string) $field->get( 'language', 'text/html' ) ];
 	}
 }

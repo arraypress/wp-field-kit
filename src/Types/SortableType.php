@@ -39,23 +39,26 @@ final class SortableType extends AbstractType {
 		$markup  = '';
 
 		foreach ( $order as $position => $key ) {
-			$item_id = $field->input_id() . '_' . $position;
+			$label = (string) ( $options[ $key ] ?? $key );
 
 			$box = new Attributes();
 			$box->set( 'type', 'checkbox' );
-			$box->set( 'id', $item_id );
 			$box->set( 'name', $name . '[]' );
 			$box->set( 'value', (string) $key );
 			$box->set_if( [] === $active || in_array( (string) $key, $active, true ), 'checked', true );
 
+			// Wrapping label, as with the other choice types: no per-item id
+			// means nothing to collide with the same item in another
+			// repeater row.
 			$markup .= sprintf(
-				'<li class="field-kit__sortable-item" data-key="%s"><input%s /><label for="%s">%s</label>%s%s</li>',
+				'<li class="field-kit__sortable-item" data-key="%s">' .
+				'<label><input%s /> <span>%s</span></label>' .
+				'<span class="field-kit__sortable-actions">%s%s</span></li>',
 				esc_attr( (string) $key ),
 				$box->render(),
-				esc_attr( $item_id ),
-				esc_html( (string) ( $options[ $key ] ?? $key ) ),
-				$this->move_button( (string) ( $options[ $key ] ?? $key ), 'up', $position < 1 ),
-				$this->move_button( (string) ( $options[ $key ] ?? $key ), 'down', $position >= $total - 1 )
+				esc_html( $label ),
+				$this->move_button( $label, 'up', $position < 1 ),
+				$this->move_button( $label, 'down', $position >= $total - 1 )
 			);
 		}
 
@@ -145,8 +148,11 @@ final class SortableType extends AbstractType {
 	 * @return array{scripts: string[], styles: string[]}
 	 */
 	public function dependencies(): array {
+		// No jquery-ui-sortable: reordering is native pointer and drag
+		// events plus the move buttons, so pulling in a jQuery UI module
+		// would be a dependency nothing calls.
 		return [
-			'scripts' => [ 'jquery-ui-sortable' ],
+			'scripts' => [],
 			'styles'  => [ 'dashicons' ],
 		];
 	}

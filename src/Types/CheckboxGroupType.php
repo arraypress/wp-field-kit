@@ -29,32 +29,29 @@ final class CheckboxGroupType extends AbstractType {
 		$name    = (string) $attributes->get( 'name' );
 		$current = array_map( 'strval', (array) $field->value() );
 		$markup  = '';
-		$index   = 0;
 
 		foreach ( $field->options() as $value => $label ) {
-			$option_id = $field->input_id() . '_' . $index;
-			$option    = new Attributes();
+			$option = new Attributes();
 
 			$option->set( 'type', 'checkbox' );
-			$option->set( 'id', $option_id );
 			$option->set( 'name', $name . '[]' );
 			$option->set( 'value', (string) $value );
 			$option->add_class( 'field-kit__checkbox' );
 			$option->set_if( in_array( (string) $value, $current, true ), 'checked', true );
 			$option->set_if( (bool) $field->get( 'disabled' ), 'disabled', true );
 
+			// Wrapping label, as core writes checkbox groups on
+			// options-discussion.php — and so no per-option id to collide
+			// with the same option in another repeater row.
 			$markup .= sprintf(
-				'<div class="field-kit__checkbox-group-option"><input%s /><label for="%s">%s</label></div>',
+				'<label class="field-kit__option"><input%s /> <span>%s</span></label>',
 				$option->render(),
-				esc_attr( $option_id ),
 				esc_html( (string) $label )
 			);
-
-			++$index;
 		}
 
-		// An empty array is never posted, so nothing would distinguish
-		// "cleared every box" from "the group was not on the form".
+		// An empty array is never posted, so without this nothing
+		// distinguishes "every box cleared" from "the group was not shown".
 		return sprintf(
 			'<input type="hidden" name="%s" value="" /><div class="field-kit__checkbox-group">%s</div>',
 			esc_attr( $name . '[]' ),

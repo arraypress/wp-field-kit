@@ -254,16 +254,25 @@ final class FieldSet {
 	public function dependencies(): array {
 		$scripts = [];
 		$styles  = [];
+		$editors = [];
 
 		foreach ( $this->fields() as $field ) {
-			$needs   = $field->type()->dependencies();
+			$type    = $field->type();
+			$needs   = $type->dependencies();
 			$scripts = array_merge( $scripts, $needs['scripts'] ?? [] );
 			$styles  = array_merge( $styles, $needs['styles'] ?? [] );
+
+			// A code field's language comes from its own config, not from the
+			// type, so it is asked per field rather than once per type.
+			if ( method_exists( $type, 'editor_types' ) ) {
+				$editors = array_merge( $editors, $type->editor_types( $field ) );
+			}
 		}
 
 		return [
-			'scripts' => array_values( array_unique( $scripts ) ),
-			'styles'  => array_values( array_unique( $styles ) ),
+			'scripts'      => array_values( array_unique( $scripts ) ),
+			'styles'       => array_values( array_unique( $styles ) ),
+			'code_editors' => array_values( array_unique( $editors ) ),
 		];
 	}
 }

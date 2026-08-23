@@ -1375,6 +1375,119 @@
 		}
 	};
 
+
+	/* ====================================================================
+	 * Code editor
+	 * ================================================================= */
+
+	var CodeEditor = {
+
+		/**
+		 * Upgrade every code field to CodeMirror.
+		 *
+		 * The control stays a textarea underneath, so a user who has turned
+		 * syntax highlighting off in their profile — in which case
+		 * wp_enqueue_code_editor() returns false and there are no settings
+		 * to apply — still gets a working, keyboard-accessible field rather
+		 * than nothing.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			if ( ! window.wp || ! window.wp.codeEditor || ! config.codeEditors ) {
+				return;
+			}
+
+			root.querySelectorAll( 'textarea.field-kit__code' ).forEach( function ( textarea ) {
+				if ( textarea.dataset.fkBound ) {
+					return;
+				}
+
+				var settings = config.codeEditors[ textarea.dataset.language ];
+
+				if ( ! settings ) {
+					return;
+				}
+
+				textarea.dataset.fkBound = '1';
+
+				var editor = window.wp.codeEditor.initialize( textarea, settings );
+
+				// CodeMirror renders into its own element and stops firing
+				// the textarea's events, so the value is written back on
+				// change — otherwise the field submits whatever it loaded
+				// with, however much was typed.
+				if ( editor && editor.codemirror ) {
+					editor.codemirror.on( 'change', function ( instance ) {
+						textarea.value = instance.getValue();
+					} );
+
+					// The generated element is not a form control and gets no
+					// label, so the field's own label is pointed at it.
+					var wrapper = editor.codemirror.getWrapperElement();
+
+					if ( wrapper ) {
+						wrapper.setAttribute( 'aria-label', textarea.getAttribute( 'aria-label' ) || '' );
+					}
+				}
+			} );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.CodeEditor = CodeEditor;
+
+	/* ====================================================================
+	 * Colour picker
+	 * ================================================================= */
+
+	var ColorPicker = {
+
+		/**
+		 * Upgrade every colour field to core's picker.
+		 *
+		 * Enqueueing wp-color-picker is not enough: it is a jQuery plugin and
+		 * does nothing until it is called. The control was a plain text input
+		 * on screen for exactly that reason.
+		 *
+		 * The underlying input keeps working if jQuery or the plugin is
+		 * missing — a hex value can still be typed — which is why the field
+		 * is a text input rather than input[type=color].
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			var $ = window.jQuery;
+
+			if ( ! $ || ! $.fn || ! $.fn.wpColorPicker ) {
+				return;
+			}
+
+			root.querySelectorAll( 'input.field-kit__color' ).forEach( function ( input ) {
+				if ( input.dataset.fkBound ) {
+					return;
+				}
+
+				input.dataset.fkBound = '1';
+
+				$( input ).wpColorPicker( {
+					palettes: input.dataset.palette ? input.dataset.palette.split( ',' ) : true,
+					change: function () {
+						// The plugin writes the value without firing an event
+						// the rest of the kit can see, so conditional logic
+						// watching this field would never re-evaluate.
+						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+					},
+					clear: function () {
+						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+					}
+				} );
+			} );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.ColorPicker = ColorPicker;
+
+
 	window.ArrayPressFieldKitModules.Repeater = Repeater;
 	window.ArrayPressFieldKitModules.Media = Media;
 	window.ArrayPressFieldKitModules.Tags = Tags;
@@ -1395,7 +1508,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

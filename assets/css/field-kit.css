@@ -57,58 +57,69 @@
 
 /* -----------------------------------------------------------------------
  * Toggle — the one control core does not provide
+ *
+ * Every selector here carries the element and attribute as well as the class.
+ * Core styles input[type="checkbox"] at specificity 0,1,1 and sets its width,
+ * height and padding — the last with !important — so a bare .field-kit__toggle
+ * at 0,1,0 loses every one of those and renders as a square checkbox with a
+ * circle escaping it. That is not a hypothetical: it is what shipped.
  * -------------------------------------------------------------------- */
 
-.field-kit__toggle {
+input[type="checkbox"].field-kit__toggle {
 	position: relative;
+	box-sizing: border-box;
 	width: 2.5rem;
+	min-width: 2.5rem;
 	height: 1.4rem;
 	margin: 0 .5rem 0 0;
-	padding: 0;
+	padding: 0 !important;
+	border: 1px solid transparent;
 	border-radius: 1rem;
 	background: #c3c4c7;
 	transition: background-color .15s ease-in-out;
 	cursor: pointer;
-	appearance: none;
 	flex: none;
 }
 
-.field-kit__toggle::before {
+input[type="checkbox"].field-kit__toggle::before,
+input[type="checkbox"].field-kit__toggle:checked::before {
+	/* Core puts a tick SVG in ::before; the knob replaces it entirely. */
 	content: "";
 	position: absolute;
-	top: .15rem;
+	top: 50%;
 	left: .15rem;
-	width: 1.1rem;
-	height: 1.1rem;
+	width: 1.05rem;
+	height: 1.05rem;
+	margin: 0;
 	border-radius: 50%;
 	background: #fff;
-	transition: transform .15s ease-in-out;
-	margin: 0;
+	transform: translateY(-50%);
+	transition: left .15s ease-in-out;
+	float: none;
 }
 
-.field-kit__toggle:checked {
+input[type="checkbox"].field-kit__toggle:checked {
 	background: #2271b1;
+	border-color: transparent;
 }
 
-.field-kit__toggle:checked::before {
-	transform: translateX(1.1rem);
+input[type="checkbox"].field-kit__toggle:checked::before {
+	left: calc(100% - 1.2rem);
 }
 
-/* Never remove the focus ring — the toggle is a real checkbox and this is
-   the only thing telling a keyboard user where they are. */
-.field-kit__toggle:focus-visible {
+input[type="checkbox"].field-kit__toggle:focus-visible {
 	outline: 2px solid #2271b1;
 	outline-offset: 2px;
 }
 
-/* The state must not be conveyed by colour alone. In forced-colours mode the
-   background is flattened, so the knob position carries it instead. */
+/* State must not rest on colour alone. Forced-colours flattens the
+   background, so the knob's position is what carries it. */
 @media (forced-colors: active) {
-	.field-kit__toggle {
-		border: 1px solid CanvasText;
+	input[type="checkbox"].field-kit__toggle {
+		border-color: CanvasText;
 	}
 
-	.field-kit__toggle::before {
+	input[type="checkbox"].field-kit__toggle::before {
 		background: CanvasText;
 	}
 }
@@ -116,7 +127,7 @@
 .field-kit__checkbox-label {
 	display: flex;
 	align-items: center;
-	gap: .1rem;
+	gap: .4rem;
 }
 
 /* -----------------------------------------------------------------------
@@ -125,7 +136,19 @@
 
 .field-kit__radio-group-option,
 .field-kit__checkbox-group-option {
+	display: flex;
+	align-items: center;
+	gap: .4rem;
 	margin-bottom: .25rem;
+}
+
+/* Core gives labels in a form context display:block, which drops the text
+   onto its own line beneath the control it labels. */
+.field-kit__radio-group-option label,
+.field-kit__checkbox-group-option label {
+	display: inline;
+	margin: 0;
+	font-weight: 400;
 }
 
 /* Core's .button-group styles the row; these bind the radios to it. */
@@ -214,7 +237,16 @@
 .field-kit__range-pair-part {
 	display: flex;
 	flex-direction: column;
+	align-items: flex-start;
 	gap: .2rem;
+}
+
+/* Without this a column flex stretches its children to the container's
+   width, which is what made every small-text box full width. */
+.field-kit__dimensions-part input,
+.field-kit__range-pair-part input,
+.field-kit__amount input[type="number"] {
+	width: auto;
 }
 
 .field-kit__sub-label {
@@ -251,6 +283,7 @@
 	margin: 0;
 	padding: 0;
 	list-style: none;
+	max-width: 30rem;
 }
 
 .field-kit__gallery-items {
@@ -261,26 +294,51 @@
 
 .field-kit__gallery-item {
 	position: relative;
+	width: 100px;
 	margin: 0;
 	border: 1px solid #dcdcde;
+	border-radius: 2px;
 	background: #fff;
+	overflow: hidden;
 }
 
 .field-kit__gallery-item img {
 	display: block;
-	width: 100px;
+	width: 100%;
 	height: 100px;
 	object-fit: cover;
 }
 
+/* Reorder controls sit in a compact strip under the thumbnail; remove goes
+   on the tile itself, so three buttons are not competing for one narrow
+   row. */
 .field-kit__gallery-actions {
 	display: flex;
 	justify-content: center;
+	gap: .1rem;
+	padding: .1rem 0;
 	border-top: 1px solid #dcdcde;
+	background: #f6f7f7;
 }
 
-.field-kit__repeater-row,
-.field-kit__sortable-item {
+.wp-core-ui .field-kit__gallery-remove {
+	position: absolute;
+	top: .2rem;
+	right: .2rem;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, .9);
+	color: #b32d2e;
+}
+
+.wp-core-ui .field-kit__gallery-remove:hover,
+.wp-core-ui .field-kit__gallery-remove:focus {
+	background: #b32d2e;
+	color: #fff;
+}
+
+.field-kit__repeater-row {
 	display: flex;
 	align-items: flex-start;
 	gap: .75rem;
@@ -288,6 +346,27 @@
 	padding: .75rem;
 	border: 1px solid #dcdcde;
 	background: #fff;
+}
+
+/* A sortable row holds one checkbox and a label, so it wants the height of
+   a list item rather than the padding of a panel. */
+.field-kit__sortable-item {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	margin: 0 0 -1px;
+	padding: .3rem .5rem;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+.field-kit__sortable-item:first-child {
+	border-radius: 2px 2px 0 0;
+}
+
+.field-kit__sortable-item:last-child {
+	margin-bottom: 0;
+	border-radius: 0 0 2px 2px;
 }
 
 .field-kit__repeater-fields {
@@ -428,4 +507,178 @@
 .field-kit__page-actions {
 	padding: 0 1rem 1rem;
 	text-align: center;
+}
+
+/* -----------------------------------------------------------------------
+ * Corrections against core's own rules
+ *
+ * Everything below exists because a core rule wins on specificity or
+ * because core styles an element the kit uses for a different purpose.
+ * Each one was found by looking at a rendered admin screen; none of them
+ * are visible from the markup alone, which is why the first pass shipped
+ * with all of them wrong.
+ * -------------------------------------------------------------------- */
+
+/* .button sets display:inline-block, which beats the hidden attribute's
+   display:none. A "Remove" button was showing beside every empty media
+   field because of it. */
+.field-kit__field [hidden] {
+	display: none !important;
+}
+
+/* Core defines .wp-core-ui .button-link at specificity 0,2,0 and underlines
+   it, so a bare class here loses and every chevron carries a line under it.
+   Matching the prefix is what makes these win. */
+.wp-core-ui .field-kit__gallery-move,
+.wp-core-ui .field-kit__gallery-remove,
+.wp-core-ui .field-kit__repeater-move-up,
+.wp-core-ui .field-kit__repeater-move-down,
+.wp-core-ui .field-kit__repeater-remove,
+.wp-core-ui .field-kit__sortable-move {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	text-decoration: none;
+	border-radius: 2px;
+}
+
+.wp-core-ui .field-kit__gallery-move:hover,
+.wp-core-ui .field-kit__repeater-move-up:hover,
+.wp-core-ui .field-kit__repeater-move-down:hover,
+.wp-core-ui .field-kit__sortable-move:hover {
+	background: #f0f0f1;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__gallery-move:disabled,
+.wp-core-ui .field-kit__repeater-move-up:disabled,
+.wp-core-ui .field-kit__repeater-move-down:disabled,
+.wp-core-ui .field-kit__sortable-move:disabled {
+	color: #c3c4c7;
+	cursor: default;
+	background: none;
+}
+
+.wp-core-ui .field-kit__gallery-remove,
+.wp-core-ui .field-kit__repeater-remove {
+	color: #b32d2e;
+}
+
+/* The dashicon is the button's whole content, so it should not carry the
+   line-height of surrounding text. */
+.field-kit__sortable-move .dashicons,
+.field-kit__gallery-move .dashicons,
+.field-kit__gallery-remove .dashicons,
+.field-kit__repeater-move-up .dashicons,
+.field-kit__repeater-move-down .dashicons,
+.field-kit__repeater-remove .dashicons {
+	width: 1rem;
+	height: 1rem;
+	font-size: 1rem;
+	line-height: 1;
+}
+
+/* Clipboard, media and amount all put a control beside their input; without
+   this the button drops onto the next line. */
+.field-kit__clipboard,
+.field-kit__media-actions,
+.field-kit__amount,
+.field-kit__license {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .5rem;
+}
+
+.field-kit__clipboard .field-kit__clipboard-value {
+	width: auto;
+	min-width: 18rem;
+}
+
+.field-kit__media-actions {
+	margin: .5rem 0 0;
+}
+
+/* An empty preview should take no room, or every media field reserves a
+   blank block above its buttons. */
+.field-kit__media-preview[data-empty="true"] {
+	display: none;
+}
+
+.field-kit__gallery-items[data-empty="true"] {
+	display: none;
+}
+
+/* A multiple select collapses to a few pixels tall without a row count. */
+select.field-kit__select[multiple] {
+	min-height: 7rem;
+	width: auto;
+	min-width: 15rem;
+}
+
+/* Sortable rows: the checkbox, its label and the move buttons on one line,
+   with the label taking the slack so the buttons sit at the right. */
+/* The label takes the slack so the move buttons sit together at the end of
+   the row rather than drifting apart with it. */
+.field-kit__sortable-item > label {
+	display: flex;
+	align-items: center;
+	gap: .4rem;
+	flex: 1;
+	margin: 0;
+	font-weight: 400;
+}
+
+/* Sub-labels inside composite fields are not field labels and should not
+   inherit the field label's weight. */
+.field-kit__dimensions-part .field-kit__sub-label,
+.field-kit__range-pair-part .field-kit__sub-label,
+.field-kit__link .field-kit__sub-label {
+	display: block;
+	margin: 0;
+	font-weight: 400;
+}
+
+/* A nested field inside a group or repeater is not a top-level field and
+   should not carry the same vertical rhythm. */
+.field-kit__group .field-kit__field,
+.field-kit__repeater-fields .field-kit__field {
+	margin-bottom: .75rem;
+}
+
+.field-kit__group .field-kit__field:last-child,
+.field-kit__repeater-fields .field-kit__field:last-child {
+	margin-bottom: 0;
+}
+
+/* The term screens put fields in a table; without this every control is
+   pushed to the full width of a very wide cell. */
+.form-field .field-kit__field input[type="text"],
+.form-field .field-kit__field input[type="url"],
+.form-field .field-kit__field input[type="email"],
+.form-field .field-kit__field input[type="tel"],
+.form-field .field-kit__field input[type="password"] {
+	width: 95%;
+	max-width: 25rem;
+}
+
+.form-field .field-kit__field input.small-text,
+.form-field .field-kit__field input[type="number"] {
+	width: auto;
+}
+
+/* A row heading that is not a <label>, used where the control labels itself
+   or where a fieldset legend already names the group. */
+.field-kit__row-label {
+	display: block;
+	font-weight: 600;
+}
+
+.field-kit__sortable-actions {
+	display: inline-flex;
+	gap: .15rem;
+	flex: none;
 }

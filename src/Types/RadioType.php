@@ -35,37 +35,49 @@ class RadioType extends AbstractType {
 		$current  = (string) $field->value();
 		$required = $field->is_required();
 		$markup   = '';
-		$index    = 0;
 
 		foreach ( $field->options() as $value => $label ) {
-			$option_id = $field->input_id() . '_' . $index;
-			$option    = new Attributes();
+			$option = new Attributes();
 
 			$option->set( 'type', $this->input_type() );
-			$option->set( 'id', $option_id );
 			$option->set( 'name', $name );
 			$option->set( 'value', (string) $value );
 			$option->add_class( 'field-kit__' . $this->input_type() );
-			// Loose: an option key of 1 matches a stored "1".
 			$option->set_if( (string) $value === $current, 'checked', true );
 			$option->set_if( $required, 'required', true );
 			$option->set_if( (bool) $field->get( 'disabled' ), 'disabled', true );
 
-			$markup .= sprintf(
-				'<div class="%s"><input%s /><label for="%s">%s</label></div>',
-				esc_attr( 'field-kit__' . $this->wrapper_class() . '-option' ),
-				$option->render(),
-				esc_attr( $option_id ),
-				esc_html( (string) $label )
-			);
-
-			++$index;
+			$markup .= $this->render_option( $option, (string) $label, $field );
 		}
 
 		return sprintf(
 			'<div class="field-kit__%s">%s</div>',
 			esc_attr( $this->wrapper_class() ),
 			$markup
+		);
+	}
+
+	/**
+	 * Render one option.
+	 *
+	 * The label wraps its input rather than pointing at it by id, which is
+	 * how core writes radios on options-general.php. It also means the option
+	 * needs no id at all — and an id it does not have cannot collide with the
+	 * same option in another repeater row, which is a real failure mode: a
+	 * duplicate id silently points every label after the first at the wrong
+	 * control.
+	 *
+	 * @param Attributes $option The option's attributes.
+	 * @param string     $label  The option's label.
+	 * @param Field      $field  The field.
+	 *
+	 * @return string
+	 */
+	protected function render_option( Attributes $option, string $label, Field $field ): string {
+		return sprintf(
+			'<label class="field-kit__option"><input%s /> <span>%s</span></label>',
+			$option->render(),
+			esc_html( $label )
 		);
 	}
 

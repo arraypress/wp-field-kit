@@ -33,10 +33,15 @@ abstract class AbstractNestedType extends AbstractType {
 	 * @param array<string, mixed> $config Child config.
 	 * @param mixed                $value  Child value.
 	 * @param string               $prefix Input-name prefix for the child.
+	 * @param string               $scope  Extra id discriminator, such as a
+	 *                                     repeater row index. Ids must be
+	 *                                     unique across the document: a
+	 *                                     duplicate silently breaks every
+	 *                                     label association below the first.
 	 *
 	 * @return Field|null
 	 */
-	protected function child( Field $owner, string $key, array $config, mixed $value, string $prefix ): ?Field {
+	protected function child( Field $owner, string $key, array $config, mixed $value, string $prefix, string $scope = '' ): ?Field {
 		$registry = $this->registry ?? new Registry();
 		$type     = (string) ( $config['type'] ?? 'text' );
 
@@ -51,7 +56,7 @@ abstract class AbstractNestedType extends AbstractType {
 			$config,
 			[
 				'input_name' => $prefix . '[' . $key . ']',
-				'input_id'   => sanitize_key( $owner->input_id() . '_' . $key ),
+				'input_id'   => sanitize_key( $owner->input_id() . ( '' === $scope ? '' : '_' . $scope ) . '_' . $key ),
 			]
 		);
 
@@ -64,15 +69,16 @@ abstract class AbstractNestedType extends AbstractType {
 	 * @param Field                $owner  Parent field.
 	 * @param array<string, mixed> $values Current values keyed by child key.
 	 * @param string               $prefix Input-name prefix.
+	 * @param string               $scope  Extra id discriminator.
 	 *
 	 * @return string
 	 */
-	protected function render_children( Field $owner, array $values, string $prefix ): string {
+	protected function render_children( Field $owner, array $values, string $prefix, string $scope = '' ): string {
 		$renderer = new Renderer();
 		$markup   = '';
 
 		foreach ( $owner->sub_fields() as $key => $config ) {
-			$child = $this->child( $owner, (string) $key, (array) $config, $values[ $key ] ?? null, $prefix );
+			$child = $this->child( $owner, (string) $key, (array) $config, $values[ $key ] ?? null, $prefix, $scope );
 
 			if ( null !== $child ) {
 				$markup .= $renderer->render( $child );

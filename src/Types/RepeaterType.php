@@ -104,7 +104,9 @@ final class RepeaterType extends AbstractNestedType {
 			'<div class="field-kit__repeater-actions">%s%s%s</div></li>',
 			$index,
 			esc_html( $position ),
-			$this->render_children( $field, $row, $field->input_name() . '[' . $index . ']' ),
+			// Scoped by row: without it every row reuses the same child ids
+			// and each label after the first points at the wrong control.
+			$this->render_children( $field, $row, $field->input_name() . '[' . $index . ']', 'row' . $index ),
 			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
 			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
 			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
@@ -175,9 +177,12 @@ final class RepeaterType extends AbstractNestedType {
 	 * @return string
 	 */
 	private function render_template( Field $field ): string {
+		// Rendered at an index no real row can occupy, so the template's own
+		// ids never collide with a rendered row's. The script renumbers them
+		// when it clones the row.
 		return sprintf(
 			'<template class="field-kit__repeater-template">%s</template>',
-			$this->render_row( $field, 0, [], 1 )
+			$this->render_row( $field, -1, [], 0 )
 		);
 	}
 
@@ -279,8 +284,11 @@ final class RepeaterType extends AbstractNestedType {
 	 * @return array{scripts: string[], styles: string[]}
 	 */
 	public function dependencies(): array {
+		// No jquery-ui-sortable: reordering is native pointer and drag
+		// events plus the move buttons, so pulling in a jQuery UI module
+		// would be a dependency nothing calls.
 		return [
-			'scripts' => [ 'jquery-ui-sortable' ],
+			'scripts' => [],
 			'styles'  => [ 'dashicons' ],
 		];
 	}

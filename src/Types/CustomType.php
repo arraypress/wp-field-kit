@@ -38,6 +38,28 @@ final class CustomType extends AbstractType {
 			return '';
 		}
 
+		// A callback written against a different library's contract — an
+		// array-and-strings signature rather than this one — would otherwise
+		// throw a TypeError and take the whole screen down with it. One
+		// consumer's mistyped callback is not a reason to white-screen an
+		// admin page, so the signature is checked before it is called.
+		if ( ! $this->accepts_contract( $callback ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				sprintf(
+					/* translators: %s: field key */
+					esc_html__(
+						'The render_callback for "%s" does not accept the field kit\'s arguments. It is called with ( Field $field, Attributes $attributes ).',
+						'arraypress'
+					),
+					esc_html( $field->key() )
+				),
+				'1.0.0'
+			);
+
+			return '';
+		}
+
 		ob_start();
 
 		$returned = $callback( $field, $attributes );
@@ -46,6 +68,50 @@ final class CustomType extends AbstractType {
 		// A callback may echo or return; supporting both means neither
 		// convention silently renders nothing.
 		return '' !== $echoed ? $echoed : (string) $returned;
+	}
+
+	/**
+	 * Whether a callback can accept this type's arguments.
+	 *
+	 * Only declared types are checked: a callback that types its first
+	 * parameter as something other than Field cannot be ours. An untyped or
+	 * variadic callback is allowed through, since there is nothing to
+	 * contradict.
+	 *
+	 * @param callable $callback The callback.
+	 *
+	 * @return bool
+	 */
+	private function accepts_contract( callable $callback ): bool {
+		try {
+			$reflection = is_array( $callback )
+				? new \ReflectionMethod( $callback[0], $callback[1] )
+				: new \ReflectionFunction( \Closure::fromCallable( $callback ) );
+		} catch ( \ReflectionException $e ) {
+			return true;
+		}
+
+		$parameters = $reflection->getParameters();
+
+		if ( [] === $parameters ) {
+			return true;
+		}
+
+		$type = $parameters[0]->getType();
+
+		// Nothing declared, or a union or intersection: there is no single
+		// name to contradict, so it is allowed through.
+		if ( ! $type instanceof \ReflectionNamedType ) {
+			return true;
+		}
+
+		// A builtin first parameter — array, string, int — is another
+		// library's signature. This type always passes an object.
+		if ( $type->isBuiltin() ) {
+			return false;
+		}
+
+		return is_a( $type->getName(), Field::class, true );
 	}
 
 	/**

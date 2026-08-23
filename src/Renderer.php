@@ -38,7 +38,11 @@ final class Renderer {
 	 *
 	 * @param Field  $field      The normalized field.
 	 * @param string $error      Optional validation message.
-	 * @param bool   $with_label Whether to emit the label.
+	 * @param bool   $with_label Whether this renderer supplies the visible
+	 *                           heading. False means the caller has drawn one
+	 *                           itself — a term screen's table header cell,
+	 *                           say — so a second visible heading here would
+	 *                           read as a duplicate.
 	 *
 	 * @return string
 	 */
@@ -55,7 +59,7 @@ final class Renderer {
 		$describers = $this->describer_markup( $field, $error );
 
 		if ( $type->is_grouped() ) {
-			return $this->wrap_fieldset( $field, $control, $describers, $error );
+			return $this->wrap_fieldset( $field, $control, $describers, $error, $with_label );
 		}
 
 		return $this->wrap_labelled( $field, $control, $describers, $with_label );
@@ -201,11 +205,19 @@ final class Renderer {
 	 *
 	 * @return string
 	 */
-	private function wrap_fieldset( Field $field, string $control, string $describers, string $error = '' ): string {
+	private function wrap_fieldset( Field $field, string $control, string $describers, string $error = '', bool $with_label = true ): string {
+		// The legend is never dropped, only hidden. A fieldset without one is
+		// announced as an unnamed group, so a caller drawing its own visible
+		// heading still needs this to exist for assistive technology — it is
+		// simply not shown twice.
 		$legend = '' === $field->label()
 			? ''
 			: sprintf(
-				'<legend class="field-kit__legend">%s%s</legend>',
+				// The inner span is core's own shape — options-general.php and
+				// options-discussion.php both write it this way — and exists
+				// because a legend cannot be positioned reliably on its own.
+				'<legend class="field-kit__legend%s"><span>%s%s</span></legend>',
+				$with_label ? '' : ' screen-reader-text',
 				esc_html( $field->label() ),
 				$this->required_marker( $field )
 			);

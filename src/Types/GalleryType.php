@@ -230,7 +230,7 @@ final class GalleryType extends AbstractMediaType {
 	 */
 	public function dependencies(): array {
 		return [
-			'scripts' => [ 'media-upload', 'media-views', 'jquery-ui-sortable' ],
+			'scripts' => [ 'media-upload', 'media-views' ],
 			'styles'  => [ 'dashicons' ],
 		];
 	}

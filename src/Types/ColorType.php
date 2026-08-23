@@ -77,8 +77,11 @@ final class ColorType extends AbstractInputType {
 	 * @return array{scripts: string[], styles: string[]}
 	 */
 	public function dependencies(): array {
+		// jquery is explicit: wp-color-picker is a jQuery plugin, and
+		// enqueueing it without jQuery present leaves the field a plain text
+		// input with no error anywhere.
 		return [
-			'scripts' => [ 'wp-color-picker' ],
+			'scripts' => [ 'jquery', 'wp-color-picker' ],
 			'styles'  => [ 'wp-color-picker' ],
 		];
 	}

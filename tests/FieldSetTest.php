@@ -224,13 +224,38 @@ final class FieldSetTest extends TestCase {
 	public function test_dependencies_are_collected_and_deduplicated(): void {
 		[ $set ] = $this->option_set(
 			[
-				'one'   => [ 'type' => 'color' ],
-				'two'   => [ 'type' => 'color' ],
-				'three' => [ 'type' => 'code' ],
+				'one' => [ 'type' => 'color' ],
+				'two' => [ 'type' => 'color' ],
 			]
 		);
 
-		$this->assertSame( [ 'wp-color-picker', 'wp-codemirror' ], $set->dependencies()['scripts'] );
+		// jquery is listed explicitly: wp-color-picker is a jQuery plugin,
+		// and enqueueing it without jQuery leaves a plain text input and no
+		// error anywhere.
+		$this->assertSame( [ 'jquery', 'wp-color-picker' ], $set->dependencies()['scripts'] );
+	}
+
+	/**
+	 * Code fields report the language they need an editor for.
+	 *
+	 * A code editor is not a plain script handle: wp_enqueue_code_editor()
+	 * has to be called per language to pull in the right mode and linter, so
+	 * the set reports languages rather than handles and the asset registrar
+	 * makes the call.
+	 */
+	public function test_code_editor_languages_are_collected(): void {
+		[ $set ] = $this->option_set(
+			[
+				'css'   => [ 'type' => 'code', 'language' => 'text/css' ],
+				'html'  => [ 'type' => 'code', 'language' => 'text/html' ],
+				'again' => [ 'type' => 'code', 'language' => 'text/css' ],
+			]
+		);
+
+		$this->assertSame(
+			[ 'text/css', 'text/html' ],
+			$set->dependencies()['code_editors']
+		);
 	}
 
 }

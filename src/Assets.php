@@ -116,6 +116,52 @@ final class Assets {
 		if ( in_array( 'media-views', $dependencies['scripts'] ?? [], true ) ) {
 			wp_enqueue_media();
 		}
+
+		$this->enqueue_code_editors( $dependencies['code_editors'] ?? [] );
+	}
+
+	/**
+	 * Enqueue a code editor for each language in use.
+	 *
+	 * wp_enqueue_code_editor() enqueues CodeMirror with the right mode and
+	 * linter and returns the settings its initialiser needs, so the settings
+	 * are passed through to the script keyed by language.
+	 *
+	 * It returns false when the current user has turned syntax highlighting
+	 * off in their profile. That is a preference, not a failure: the field
+	 * stays a plain textarea, which is why the control was never anything
+	 * else underneath.
+	 *
+	 * @param string[] $types Mime types to prepare.
+	 *
+	 * @return void
+	 */
+	private function enqueue_code_editors( array $types ): void {
+		$settings = [];
+
+		foreach ( $types as $type ) {
+			$resolved = wp_enqueue_code_editor( [ 'type' => $type ] );
+
+			if ( false !== $resolved ) {
+				$settings[ $type ] = $resolved;
+			}
+		}
+
+		if ( [] === $settings ) {
+			return;
+		}
+
+		wp_add_inline_script(
+			Runtime::handle(),
+			sprintf(
+				'window.ArrayPressFieldKit=window.ArrayPressFieldKit||{};'
+				. 'window.ArrayPressFieldKit[%1$s]=window.ArrayPressFieldKit[%1$s]||{};'
+				. 'window.ArrayPressFieldKit[%1$s].codeEditors=%2$s;',
+				wp_json_encode( Runtime::handle() ),
+				wp_json_encode( $settings )
+			),
+			'before'
+		);
 	}
 
 	/**

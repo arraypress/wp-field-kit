@@ -180,17 +180,45 @@ final class AccessibilityTest extends TestCase {
 
 	/**
 	 * Each option in a group carries its own label.
+	 *
+	 * Either shape counts. A label may wrap its input — which is how core
+	 * writes radios and checkbox groups, and which needs no id at all — or
+	 * point at it by id, which the button group still does because its
+	 * styling hangs off `input:checked + label` and a wrapping label has no
+	 * sibling to select.
 	 */
 	public function test_grouped_options_are_individually_labelled(): void {
 		foreach ( [ 'radio', 'checkbox_group', 'button_group' ] as $id ) {
 			$markup = ( new Renderer() )->render( $this->field( $id ) );
 
+			$wrapping = preg_match_all( '/<label[^>]*>\s*<input/', $markup );
+			$pointing = preg_match_all( '/<label[^>]*\bfor="[^"]+"/', $markup );
+
 			$this->assertSame(
 				2,
-				substr_count( $markup, '<label for=' ),
-				"$id: each option needs its own label."
+				$wrapping + $pointing,
+				"$id: each of the two options needs its own label."
 			);
 		}
+	}
+
+	/**
+	 * An option that is labelled by id must have one nothing else uses.
+	 *
+	 * A duplicate id does not raise anything: every label after the first
+	 * silently points at the wrong control. This is what wrapping labels
+	 * avoid entirely, and what the button group has to get right by hand.
+	 */
+	public function test_option_ids_are_unique(): void {
+		$markup = ( new Renderer() )->render( $this->field( 'button_group' ) );
+
+		preg_match_all( '/\bid="([^"]+)"/', $markup, $matches );
+
+		$this->assertSame(
+			array_unique( $matches[1] ),
+			$matches[1],
+			'Two controls share an id, so a label points at the wrong one.'
+		);
 	}
 
 }
