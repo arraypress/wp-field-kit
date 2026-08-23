@@ -36,12 +36,13 @@ final class Renderer {
 	/**
 	 * Render one field, wrapper and all.
 	 *
-	 * @param Field  $field The normalized field.
-	 * @param string $error Optional validation message.
+	 * @param Field  $field      The normalized field.
+	 * @param string $error      Optional validation message.
+	 * @param bool   $with_label Whether to emit the label.
 	 *
 	 * @return string
 	 */
-	public function render( Field $field, string $error = '' ): string {
+	public function render( Field $field, string $error = '', bool $with_label = true ): string {
 		$type = $field->type();
 
 		if ( ! $type->stores_value() && ! $field->has( 'label' ) ) {
@@ -57,7 +58,7 @@ final class Renderer {
 			return $this->wrap_fieldset( $field, $control, $describers, $error );
 		}
 
-		return $this->wrap_labelled( $field, $control, $describers );
+		return $this->wrap_labelled( $field, $control, $describers, $with_label );
 	}
 
 	/**
@@ -171,12 +172,15 @@ final class Renderer {
 	 *
 	 * @return string
 	 */
-	private function wrap_labelled( Field $field, string $control, string $describers ): string {
+	private function wrap_labelled( Field $field, string $control, string $describers, bool $with_label = true ): string {
 		$label = '';
 
 		// A self-labelling control already carries its text; a second label
 		// above it would announce the field twice.
-		if ( ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
+		// A table-row layout puts the label in its own header cell, so the
+		// caller suppresses it here — the control keeps its id and the
+		// caller's label still points at it.
+		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
 			$label = sprintf(
 				'<label for="%s">%s%s</label>',
 				esc_attr( $field->input_id() ),

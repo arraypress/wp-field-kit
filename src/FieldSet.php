@@ -156,6 +156,22 @@ final class FieldSet {
 	}
 
 	/**
+	 * Render one field that has already been built.
+	 *
+	 * Consumers that lay fields out themselves — a term screen's table rows,
+	 * a metabox's own grid — need the control without the set's own loop.
+	 *
+	 * @param Field  $field      The field.
+	 * @param string $error      Optional validation message.
+	 * @param bool   $with_label Whether to emit the label.
+	 *
+	 * @return string
+	 */
+	public function render_field( Field $field, string $error = '', bool $with_label = true ): string {
+		return $this->renderer->render( $field, $error, $with_label );
+	}
+
+	/**
 	 * Sanitize and store a submission.
 	 *
 	 * The raw input is unslashed once here, at the boundary, rather than in
