@@ -397,3 +397,35 @@
 		transition: none;
 	}
 }
+
+/* -----------------------------------------------------------------------
+ * Page header
+ *
+ * The header shell itself is core's — .privacy-settings-header is styled in
+ * wp-admin/css/edit.css, which the wp-admin bundle depends on, so it is
+ * present on every admin page and shared with Site Health.
+ *
+ * Only the tab strip is ours. Core's .privacy-settings-tabs-wrapper is
+ * grid-template-columns: 1fr 1fr — hardcoded to that screen's two tabs — and
+ * Site Health declares its own at four. Neither generalises to a page whose
+ * tab count is whatever the consumer configured.
+ * -------------------------------------------------------------------- */
+
+.field-kit__page-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+/* .privacy-settings-tab supplies the padding, colour and transition; the
+   active state is core's own box-shadow, restated because the core rule is
+   scoped to .privacy-settings-tab.active inside its own wrapper. */
+.field-kit__page-tab.active {
+	box-shadow: inset 0 -3px #3582c4;
+	font-weight: 600;
+}
+
+.field-kit__page-actions {
+	padding: 0 1rem 1rem;
+	text-align: center;
+}
