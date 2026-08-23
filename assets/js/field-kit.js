@@ -847,6 +847,15 @@
 				}
 			} );
 
+			// A drag that ends anywhere but on the list still has to put the
+			// item down, or it stays marked draggable and the next pointerdown
+			// on a control starts a drag instead of clicking it.
+			list.addEventListener( 'pointerup', function () {
+				list.querySelectorAll( '[draggable="true"]' ).forEach( function ( item ) {
+					item.draggable = false;
+				} );
+			} );
+
 			list.addEventListener( 'dragstart', function ( event ) {
 				dragging = event.target.closest( selector );
 

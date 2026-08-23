@@ -121,6 +121,7 @@ final class GalleryType extends AbstractMediaType {
 
 		return sprintf(
 			'<li class="field-kit__gallery-item" data-id="%d">%s' .
+			'<span class="field-kit__drag-handle dashicons dashicons-menu" aria-hidden="true"></span>' .
 			'<span class="field-kit__gallery-position screen-reader-text">%s</span>' .
 			'<span class="field-kit__gallery-actions">%s%s%s</span></li>',
 			$id,

@@ -52,6 +52,7 @@ final class SortableType extends AbstractType {
 			// repeater row.
 			$markup .= sprintf(
 				'<li class="field-kit__sortable-item" data-key="%s">' .
+				'<span class="field-kit__drag-handle dashicons dashicons-menu" aria-hidden="true"></span>' .
 				'<label><input%s /> <span>%s</span></label>' .
 				'<span class="field-kit__sortable-actions">%s%s</span></li>',
 				esc_attr( (string) $key ),
