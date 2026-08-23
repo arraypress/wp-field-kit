@@ -1,0 +1,399 @@
+/**
+ * Field Kit
+ *
+ * Deliberately small. Everything WordPress already styles — inputs, buttons,
+ * descriptions, notices, spinners, tables — uses core's own classes, so
+ * fields match the rest of the admin, follow the user's colour scheme and
+ * survive core restyles without being restyled here.
+ *
+ * What remains is the handful of widgets core has no equivalent for.
+ */
+
+/* -----------------------------------------------------------------------
+ * Layout
+ * -------------------------------------------------------------------- */
+
+.field-kit__field {
+	margin-bottom: 1.25rem;
+}
+
+.field-kit__field:last-child {
+	margin-bottom: 0;
+}
+
+.field-kit__field > label,
+.field-kit__legend {
+	display: block;
+	margin-bottom: .35rem;
+	font-weight: 600;
+}
+
+/* Core's .description carries the colour and size; only the spacing differs
+   inside a field wrapper. */
+.field-kit__field .description {
+	margin: .35rem 0 0;
+}
+
+.field-kit__fieldset {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.field-kit__required {
+	margin-left: .15rem;
+	color: #d63638;
+}
+
+.field-kit__separator {
+	margin: 1.5rem 0;
+	border: 0;
+	border-top: 1px solid #dcdcde;
+}
+
+.field-kit__heading {
+	margin: 1.5rem 0 .5rem;
+}
+
+/* -----------------------------------------------------------------------
+ * Toggle — the one control core does not provide
+ * -------------------------------------------------------------------- */
+
+.field-kit__toggle {
+	position: relative;
+	width: 2.5rem;
+	height: 1.4rem;
+	margin: 0 .5rem 0 0;
+	padding: 0;
+	border-radius: 1rem;
+	background: #c3c4c7;
+	transition: background-color .15s ease-in-out;
+	cursor: pointer;
+	appearance: none;
+	flex: none;
+}
+
+.field-kit__toggle::before {
+	content: "";
+	position: absolute;
+	top: .15rem;
+	left: .15rem;
+	width: 1.1rem;
+	height: 1.1rem;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform .15s ease-in-out;
+	margin: 0;
+}
+
+.field-kit__toggle:checked {
+	background: #2271b1;
+}
+
+.field-kit__toggle:checked::before {
+	transform: translateX(1.1rem);
+}
+
+/* Never remove the focus ring — the toggle is a real checkbox and this is
+   the only thing telling a keyboard user where they are. */
+.field-kit__toggle:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+/* The state must not be conveyed by colour alone. In forced-colours mode the
+   background is flattened, so the knob position carries it instead. */
+@media (forced-colors: active) {
+	.field-kit__toggle {
+		border: 1px solid CanvasText;
+	}
+
+	.field-kit__toggle::before {
+		background: CanvasText;
+	}
+}
+
+.field-kit__checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: .1rem;
+}
+
+/* -----------------------------------------------------------------------
+ * Choice groups
+ * -------------------------------------------------------------------- */
+
+.field-kit__radio-group-option,
+.field-kit__checkbox-group-option {
+	margin-bottom: .25rem;
+}
+
+/* Core's .button-group styles the row; these bind the radios to it. */
+.field-kit__button-group {
+	display: inline-flex;
+}
+
+.field-kit__button-group-option input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.field-kit__button-group-option label {
+	display: inline-block;
+	padding: 0 .75rem;
+	border: 1px solid #2271b1;
+	border-right-width: 0;
+	line-height: 2.15384615;
+	color: #2271b1;
+	background: #f6f7f7;
+	cursor: pointer;
+}
+
+.field-kit__button-group-option:first-child label {
+	border-radius: 3px 0 0 3px;
+}
+
+.field-kit__button-group-option:last-child label {
+	border-right-width: 1px;
+	border-radius: 0 3px 3px 0;
+}
+
+.field-kit__button-group-option input:checked + label {
+	color: #fff;
+	background: #2271b1;
+}
+
+/* Focus lands on the hidden radio, so the ring has to be drawn on the label
+   it controls or the group is unnavigable by keyboard. */
+.field-kit__button-group-option input:focus-visible + label {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+}
+
+@media (forced-colors: active) {
+	.field-kit__button-group-option input:checked + label {
+		outline: 2px solid CanvasText;
+		outline-offset: -3px;
+	}
+}
+
+/* -----------------------------------------------------------------------
+ * Range
+ * -------------------------------------------------------------------- */
+
+.field-kit__range {
+	display: flex;
+	align-items: center;
+	gap: .75rem;
+	max-width: 25rem;
+}
+
+.field-kit__range input[type="range"] {
+	flex: 1;
+}
+
+.field-kit__range-output {
+	min-width: 3.5rem;
+	font-variant-numeric: tabular-nums;
+}
+
+/* -----------------------------------------------------------------------
+ * Composite inputs
+ * -------------------------------------------------------------------- */
+
+.field-kit__dimensions,
+.field-kit__range-pair,
+.field-kit__amount {
+	display: flex;
+	align-items: flex-end;
+	gap: .5rem;
+}
+
+.field-kit__dimensions-part,
+.field-kit__range-pair-part {
+	display: flex;
+	flex-direction: column;
+	gap: .2rem;
+}
+
+.field-kit__sub-label {
+	font-size: 12px;
+	color: #646970;
+}
+
+.field-kit__dimensions-unit {
+	padding-bottom: .35rem;
+	color: #646970;
+}
+
+.field-kit__link p {
+	margin: 0 0 .5rem;
+}
+
+/* -----------------------------------------------------------------------
+ * Media, gallery, repeater, sortable
+ * -------------------------------------------------------------------- */
+
+.field-kit__media-preview img {
+	max-width: 150px;
+	height: auto;
+	display: block;
+}
+
+.field-kit__media-actions {
+	margin: .5rem 0 0;
+}
+
+.field-kit__gallery-items,
+.field-kit__repeater-rows,
+.field-kit__sortable {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.field-kit__gallery-items {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .5rem;
+}
+
+.field-kit__gallery-item {
+	position: relative;
+	margin: 0;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+.field-kit__gallery-item img {
+	display: block;
+	width: 100px;
+	height: 100px;
+	object-fit: cover;
+}
+
+.field-kit__gallery-actions {
+	display: flex;
+	justify-content: center;
+	border-top: 1px solid #dcdcde;
+}
+
+.field-kit__repeater-row,
+.field-kit__sortable-item {
+	display: flex;
+	align-items: flex-start;
+	gap: .75rem;
+	margin: 0 0 .5rem;
+	padding: .75rem;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+.field-kit__repeater-fields {
+	flex: 1;
+}
+
+.field-kit__repeater-actions,
+.field-kit__gallery-actions,
+.field-kit__sortable-item {
+	align-items: center;
+}
+
+/* The drag affordance is a hint, not the mechanism: every reorderable item
+   also carries move buttons, because a drag-only control cannot be operated
+   from a keyboard at all. */
+.field-kit__repeater-row--draggable {
+	cursor: grab;
+}
+
+.field-kit__repeater-row.is-dragging,
+.field-kit__gallery-item.is-dragging {
+	opacity: .5;
+}
+
+.field-kit__repeater-row.is-drop-target,
+.field-kit__gallery-item.is-drop-target {
+	outline: 2px dashed #2271b1;
+	outline-offset: -2px;
+}
+
+/* -----------------------------------------------------------------------
+ * Relational combobox
+ * -------------------------------------------------------------------- */
+
+.field-kit__combobox {
+	position: relative;
+	max-width: 25rem;
+}
+
+.field-kit__combobox-list {
+	position: absolute;
+	z-index: 10;
+	left: 0;
+	right: 0;
+	max-height: 15rem;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid #8c8f94;
+	border-top: 0;
+	background: #fff;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+}
+
+.field-kit__combobox-list[hidden] {
+	display: none;
+}
+
+.field-kit__combobox-option {
+	margin: 0;
+	padding: .4rem .6rem;
+	cursor: pointer;
+}
+
+/* Active-descendant highlighting, which is not focus — the focus stays in
+   the text input, so this cannot rely on :hover or :focus. */
+.field-kit__combobox-option[aria-selected="true"] {
+	background: #2271b1;
+	color: #fff;
+}
+
+@media (forced-colors: active) {
+	.field-kit__combobox-option[aria-selected="true"] {
+		outline: 2px solid CanvasText;
+		outline-offset: -2px;
+	}
+}
+
+/* -----------------------------------------------------------------------
+ * Tags
+ * -------------------------------------------------------------------- */
+
+.field-kit__tags-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .3rem;
+	margin-top: .4rem;
+}
+
+.field-kit__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: .25rem;
+	padding: .1rem .5rem;
+	border-radius: 1rem;
+	background: #f0f0f1;
+}
+
+/* -----------------------------------------------------------------------
+ * Motion
+ * -------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+	.field-kit__toggle,
+	.field-kit__toggle::before {
+		transition: none;
+	}
+}
