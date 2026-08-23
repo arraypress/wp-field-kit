@@ -16,6 +16,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
+/*
+ * The salts a real install defines. Without them EncryptedContext reports
+ * itself unavailable and its tests skip — which is the one path that must not
+ * go unexercised, since it is what keeps a credential out of a database dump.
+ */
+foreach ( [ 'AUTH_KEY', 'SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'LOGGED_IN_SALT' ] as $fk_salt ) {
+	if ( ! defined( $fk_salt ) ) {
+		define( $fk_salt, 'test-salt-' . strtolower( $fk_salt ) . '-0123456789abcdef' );
+	}
+}
+
 require_once dirname( __DIR__ ) . '/vendor/autoload.php';
 
 if ( ! function_exists( 'esc_attr' ) ) {
@@ -255,5 +266,11 @@ if ( ! function_exists( 'current_user_can' ) ) {
 if ( ! function_exists( 'rest_authorization_required_code' ) ) {
 	function rest_authorization_required_code() {
 		return 401;
+	}
+}
+
+if ( ! function_exists( 'wpautop' ) ) {
+	function wpautop( $text, $br = true ) {
+		return '<p>' . (string) $text . '</p>';
 	}
 }
