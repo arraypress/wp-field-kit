@@ -31,6 +31,22 @@ final class AjaxType extends AbstractRelationalType {
 	}
 
 	/**
+	 * The source this field actually searches.
+	 *
+	 * Set by the field set when it registered the callback, so the name in
+	 * the page corresponds to something real. Without it the field asked for
+	 * a source called "callback" that nothing had ever registered, and every
+	 * search came back empty.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function source_for( Field $field ): string {
+		return (string) $field->get( 'search_source', $this->source() );
+	}
+
+	/**
 	 * Resolve labels through the configured callback.
 	 *
 	 * A `label_callback` is preferred when supplied, since resolving a known

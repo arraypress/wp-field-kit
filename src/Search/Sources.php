@@ -21,6 +21,31 @@ namespace ArrayPress\FieldKit\Search;
 final class Sources {
 
 	/**
+	 * The registry the REST endpoint resolves against.
+	 *
+	 * Shared deliberately: a field registers its source while a page is
+	 * rendering, and the endpoint has to find it on a later request. Two
+	 * instances would mean a source that exists when the field is drawn and
+	 * does not exist when it is searched.
+	 *
+	 * @var self|null
+	 */
+	private static ?self $shared = null;
+
+	/**
+	 * The shared registry.
+	 *
+	 * @return self
+	 */
+	public static function shared(): self {
+		if ( null === self::$shared ) {
+			self::$shared = new self();
+		}
+
+		return self::$shared;
+	}
+
+	/**
 	 * Registered sources by name.
 	 *
 	 * @var array<string, Source>

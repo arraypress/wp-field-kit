@@ -290,9 +290,26 @@
 				var wrap = button.closest( '.field-kit__clipboard' );
 				var input = wrap.querySelector( '.field-kit__clipboard-value' );
 				var status = wrap.querySelector( '.field-kit__clipboard-status' );
+				var success = wrap.querySelector( '.field-kit__clipboard-success' );
 
 				Clipboard.copy( input.value ).then( function ( ok ) {
 					announce( status, ok ? t( 'copied', 'Copied to the clipboard.' ) : t( 'copyFailed', 'Could not copy.' ) );
+
+					if ( ! success || ! ok ) {
+						return;
+					}
+
+					// Shown, then hidden again after a moment — core does the
+					// same in the media modal. aria-hidden stays on it: the
+					// live region above is what announces this, and having
+					// both would say it twice.
+					success.classList.remove( 'hidden' );
+
+					window.clearTimeout( success.fkTimer );
+
+					success.fkTimer = window.setTimeout( function () {
+						success.classList.add( 'hidden' );
+					}, 3000 );
 				} );
 			} );
 		},
@@ -1487,6 +1504,156 @@
 
 	window.ArrayPressFieldKitModules.ColorPicker = ColorPicker;
 
+	/* ====================================================================
+	 * Buttons that run an action
+	 * ================================================================= */
+
+	var ActionButton = {
+
+		/**
+		 * Bind every action button within a root.
+		 *
+		 * One handler for licences, email previews, test sends and whatever
+		 * a consumer wires up: they are all the same shape — post a payload,
+		 * name a handler, show what came back.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.addEventListener( 'click', function ( event ) {
+				var button = event.target.closest( '[data-endpoint][data-action]' );
+
+				if ( ! button || button.disabled ) {
+					return;
+				}
+
+				event.preventDefault();
+				ActionButton.run( button );
+			} );
+		},
+
+		/**
+		 * Run one button's action.
+		 *
+		 * @param {HTMLButtonElement} button The button.
+		 */
+		run: function ( button ) {
+			if ( button.dataset.confirm && ! window.confirm( button.dataset.confirm ) ) {
+				return;
+			}
+
+			var wrap = button.closest( '.field-kit__field' ) || document;
+			var status = wrap.querySelector( '[aria-live]' );
+			var spinner = wrap.querySelector( '.spinner' );
+
+			// Disabled for the duration, or an impatient double click runs a
+			// licence activation twice.
+			button.disabled = true;
+
+			if ( spinner ) {
+				spinner.classList.add( 'is-active' );
+			}
+
+			fetch( button.dataset.endpoint, {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': button.dataset.nonce || config.restNonce || ''
+				},
+				body: JSON.stringify( {
+					action: button.dataset.action,
+					payload: ActionButton.payload( button, wrap )
+				} )
+			} ).then( function ( response ) {
+				return response.json().catch( function () {
+					return { success: false, message: t( 'actionFailed', 'That did not work.' ) };
+				} );
+			} ).then( function ( result ) {
+				ActionButton.report( wrap, status, result );
+			} ).catch( function () {
+				ActionButton.report( wrap, status, {
+					success: false,
+					message: t( 'actionFailed', 'That did not work.' )
+				} );
+			} ).finally( function () {
+				button.disabled = false;
+
+				if ( spinner ) {
+					spinner.classList.remove( 'is-active' );
+				}
+			} );
+		},
+
+		/**
+		 * Collect what the field wants to send.
+		 *
+		 * A licence sends its key, an email its subject and body. Rather than
+		 * a rule per type, every named input inside the field travels.
+		 *
+		 * @param {HTMLButtonElement} button The button.
+		 * @param {Element}           wrap   The field wrapper.
+		 * @return {Object} Payload.
+		 */
+		payload: function ( button, wrap ) {
+			var payload = {};
+
+			wrap.querySelectorAll( '[name]' ).forEach( function ( input ) {
+				if ( input.type === 'checkbox' || input.type === 'radio' ) {
+					if ( ! input.checked ) {
+						return;
+					}
+				}
+
+				// Bracketed names are the field's own structure; the last
+				// segment is what a handler is going to look for.
+				var name = input.name.replace( /^.*\[([^\]]+)\]$/, '$1' );
+
+				payload[ name ] = input.value;
+			} );
+
+			return payload;
+		},
+
+		/**
+		 * Show the outcome.
+		 *
+		 * Written into the field's own live region, so it is announced where
+		 * it happened rather than shouted from the page, and given a notice
+		 * class so success and failure do not read identically.
+		 *
+		 * @param {Element} wrap   The field wrapper.
+		 * @param {Element} status The live region.
+		 * @param {Object}  result What came back.
+		 */
+		report: function ( wrap, status, result ) {
+			var message = result.message || ( result.success
+				? t( 'actionDone', 'Done.' )
+				: t( 'actionFailed', 'That did not work.' ) );
+
+			if ( status ) {
+				status.classList.remove( 'field-kit__status--success', 'field-kit__status--error' );
+				status.classList.add( result.success ? 'field-kit__status--success' : 'field-kit__status--error' );
+				kit.announce( status, message );
+			}
+
+			// A handler may hand back markup to show — an email preview, for
+			// instance — which goes in a region of its own rather than into
+			// the live region, where it would be read out in full.
+			if ( result.data && result.data.html ) {
+				var preview = wrap.querySelector( '.field-kit__action-preview' );
+
+				if ( preview ) {
+					preview.innerHTML = result.data.html;
+					preview.hidden = false;
+				}
+			}
+		}
+	};
+
+	window.ArrayPressFieldKitModules.ActionButton = ActionButton;
+
+
 
 	window.ArrayPressFieldKitModules.Repeater = Repeater;
 	window.ArrayPressFieldKitModules.Media = Media;
@@ -1508,7 +1675,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'ActionButton' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

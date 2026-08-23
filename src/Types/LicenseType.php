@@ -52,8 +52,12 @@ final class LicenseType extends AbstractInputType {
 		$button = new Attributes();
 		$button->set( 'type', 'button' );
 		$button->add_class( 'button', 'field-kit__license-action' );
-		$button->set( 'data-action', $active ? 'deactivate' : 'activate' );
-		$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/license' ) );
+		$names  = (array) $field->get( 'action_names', [] );
+		$local  = $active ? 'deactivate' : 'activate';
+
+		$button->set( 'data-action', (string) ( $names[ $local ] ?? '' ) );
+		$button->set( 'data-payload-from', $field->input_id() );
+		$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/action' ) );
 		$button->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
 		$button->set( 'data-field', $field->key() );
 

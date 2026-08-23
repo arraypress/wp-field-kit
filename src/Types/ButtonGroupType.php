@@ -29,8 +29,9 @@ final class ButtonGroupType extends RadioType {
 	 * @return string
 	 */
 	protected function wrapper_class(): string {
-		// core's own .button-group, which already styles a segmented row.
-		return 'button-group';
+		// core's own .button-group styles the segmented row; the kit's class
+		// is what binds the radios to it.
+		return 'button-group field-kit__button-group';
 	}
 
 	/**

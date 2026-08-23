@@ -224,3 +224,36 @@ if ( ! function_exists( '_doing_it_wrong' ) ) {
 		$GLOBALS['fk_doing_it_wrong'][] = $message;
 	}
 }
+
+if ( ! function_exists( 'add_action' ) ) {
+	function add_action( $hook, $callback, $priority = 10, $args = 1 ) {
+		$GLOBALS['fk_actions'][ $hook ][] = $callback;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
+		$GLOBALS['fk_filters'][ $hook ][] = $callback;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'register_rest_route' ) ) {
+	function register_rest_route( $namespace, $route, $args = [], $override = false ) {
+		$GLOBALS['fk_routes'][] = $namespace . $route;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( $capability, ...$args ) {
+		return true;
+	}
+}
+
+if ( ! function_exists( 'rest_authorization_required_code' ) ) {
+	function rest_authorization_required_code() {
+		return 401;
+	}
+}

@@ -134,21 +134,34 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * Choice groups
  * -------------------------------------------------------------------- */
 
-.field-kit__radio-group-option,
-.field-kit__checkbox-group-option {
+/* One option: its label wraps its input, so the label is the row. */
+.field-kit__option {
 	display: flex;
 	align-items: center;
 	gap: .4rem;
-	margin-bottom: .25rem;
+	margin: 0 0 .25rem;
+	font-weight: 400;
 }
 
-/* Core gives labels in a form context display:block, which drops the text
-   onto its own line beneath the control it labels. */
-.field-kit__radio-group-option label,
-.field-kit__checkbox-group-option label {
-	display: inline;
-	margin: 0;
-	font-weight: 400;
+.field-kit__option:last-child {
+	margin-bottom: 0;
+}
+
+/* Options stack by default. Without this they run together on one line with
+   no separation at all — each label is an inline box and nothing puts a gap
+   between them. */
+.field-kit__radio-group,
+.field-kit__checkbox-group {
+	display: flex;
+	flex-direction: column;
+	gap: .1rem;
+}
+
+/* Laid out in a row only when asked for, and then with a real gap. */
+.field-kit__radio-group--inline,
+.field-kit__checkbox-group--inline {
+	flex-flow: row wrap;
+	gap: .25rem 1.25rem;
 }
 
 /* Core's .button-group styles the row; these bind the radios to it. */
@@ -426,8 +439,30 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 /* The drag affordance is a hint, not the mechanism: every reorderable item
    also carries move buttons, because a drag-only control cannot be operated
    from a keyboard at all. */
-.field-kit__repeater-row--draggable {
+.field-kit__repeater-row,
+.field-kit__sortable-item {
 	cursor: grab;
+}
+
+.field-kit__repeater-row:active,
+.field-kit__sortable-item:active {
+	cursor: grabbing;
+}
+
+/* A control inside a draggable row keeps its own cursor, or every input
+   looks like something to drag. */
+.field-kit__repeater-row input,
+.field-kit__repeater-row select,
+.field-kit__repeater-row textarea,
+.field-kit__repeater-row button,
+.field-kit__sortable-item input,
+.field-kit__sortable-item button {
+	cursor: auto;
+}
+
+.field-kit__repeater-row button,
+.field-kit__sortable-item button {
+	cursor: pointer;
 }
 
 .field-kit__repeater-row.is-dragging,
@@ -858,4 +893,85 @@ select.field-kit__select[multiple] {
 	padding-bottom: .4rem;
 	color: #646970;
 	white-space: nowrap;
+}
+
+/* -----------------------------------------------------------------------
+ * Action feedback
+ * -------------------------------------------------------------------- */
+
+.field-kit__clipboard-success {
+	color: #007017;
+	font-weight: 600;
+}
+
+/* core's .hidden is display:none, which is what the copy feedback toggles. */
+.field-kit__clipboard-success.hidden {
+	display: none;
+}
+
+.field-kit__action-status,
+.field-kit__email-status,
+.field-kit__license-status {
+	min-height: 1.2em;
+}
+
+.field-kit__status--success {
+	color: #007017;
+}
+
+.field-kit__status--error {
+	color: #b32d2e;
+}
+
+.field-kit__action-preview {
+	margin-top: .75rem;
+	padding: .75rem;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+/* The spinner only occupies space once it is running, or every button row
+   carries a permanent gap beside it. */
+.field-kit__field .spinner {
+	float: none;
+	margin: 0;
+}
+
+.field-kit__field .spinner:not(.is-active) {
+	display: none;
+}
+
+/* -----------------------------------------------------------------------
+ * Nested fields
+ *
+ * A field inside a group or a repeater row is laid out by the kit, not by
+ * the surrounding screen's table, so its label needs putting back above its
+ * control — otherwise the label sits flush against the input, which is what
+ * "Street[input]" was.
+ * -------------------------------------------------------------------- */
+
+.field-kit__group .field-kit__field > label,
+.field-kit__repeater-fields .field-kit__field > label,
+.field-kit__email-editor .field-kit__field > label {
+	display: block;
+	margin: 0 0 .25rem;
+	font-weight: 600;
+}
+
+/* A self-labelling control keeps its text beside the box. */
+.field-kit__group .field-kit__field .field-kit__checkbox-label,
+.field-kit__repeater-fields .field-kit__field .field-kit__checkbox-label {
+	display: flex;
+	align-items: center;
+	gap: .4rem;
+	margin: 0;
+}
+
+/* Inputs inside a nested field should not stretch to the row's full width
+   just because they can. */
+.field-kit__group .field-kit__field input[type="text"],
+.field-kit__repeater-fields .field-kit__field input[type="text"],
+.field-kit__email-editor .field-kit__field input[type="text"] {
+	width: 100%;
+	max-width: 25rem;
 }

@@ -14,6 +14,12 @@ namespace ArrayPress\FieldKit;
 
 use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Rest\ActionController;
+use ArrayPress\FieldKit\Rest\SearchController;
+use ArrayPress\FieldKit\Actions\Actions;
+use ArrayPress\FieldKit\Actions\CallbackAction;
+use ArrayPress\FieldKit\Search\CallbackSource;
+use ArrayPress\FieldKit\Search\Sources;
 
 /**
  * A group of fields bound to one storage context.
@@ -78,6 +84,129 @@ final class FieldSet {
 		$this->input_prefix = $input_prefix;
 		$this->registry     = $registry ?? new Registry();
 		$this->renderer     = new Renderer();
+
+		$this->register_search_sources();
+		$this->register_actions();
+
+		self::boot_endpoints();
+	}
+
+	/**
+	 * Register the REST routes, once per request.
+	 *
+	 * Booted from here rather than left to the consumer: a field emits an
+	 * endpoint URL whether or not anyone remembered to register the route,
+	 * and a button posting to a 404 looks exactly like a button that does
+	 * nothing. Both controllers refuse to register the same namespace twice,
+	 * so several field sets on one screen is not a problem.
+	 *
+	 * @return void
+	 */
+	private static function boot_endpoints(): void {
+		static $booted = false;
+
+		if ( $booted ) {
+			return;
+		}
+
+		$booted = true;
+
+		( new SearchController() )->boot();
+		( new ActionController() )->boot();
+	}
+
+	/**
+	 * Register a search source for every field that supplies a callback.
+	 *
+	 * Done at construction rather than at render time: the endpoint resolves
+	 * the source on a later request, by which point nothing has rendered.
+	 * The source is named after the field, so the name in the page is
+	 * meaningless to anyone who has not registered it.
+	 *
+	 * @return void
+	 */
+	private function register_search_sources(): void {
+		$sources = Sources::shared();
+
+		foreach ( $this->configs as $key => $config ) {
+			$callback = $config['search_callback'] ?? null;
+
+			if ( ! is_callable( $callback ) ) {
+				continue;
+			}
+
+			$sources->register(
+				new CallbackSource(
+					$this->source_name( (string) $key ),
+					$callback,
+					(string) ( $config['search_capability'] ?? 'edit_posts' )
+				)
+			);
+		}
+	}
+
+	/**
+	 * Register an action for every field that supplies a handler.
+	 *
+	 * Same reasoning as the search sources: the endpoint resolves the handler
+	 * on a later request, so registration cannot wait for a render, and the
+	 * name is meaningless to anyone who has not registered it.
+	 *
+	 * A field may name several — a licence has activate and deactivate, an
+	 * email has preview and test — so handlers are read from an `actions`
+	 * map as well as from a single `action_callback`.
+	 *
+	 * @return void
+	 */
+	private function register_actions(): void {
+		$actions = Actions::shared();
+
+		foreach ( $this->configs as $key => $config ) {
+			$handlers = (array) ( $config['actions'] ?? [] );
+
+			if ( isset( $config['action_callback'] ) ) {
+				$handlers['run'] = $config['action_callback'];
+			}
+
+			foreach ( $handlers as $name => $callback ) {
+				if ( ! is_callable( $callback ) ) {
+					continue;
+				}
+
+				$actions->register(
+					new CallbackAction(
+						$this->action_name( (string) $key, (string) $name ),
+						$callback,
+						(string) ( $config['action_capability'] ?? 'manage_options' )
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * The action name a field's button uses.
+	 *
+	 * @param string $key  Field key.
+	 * @param string $name Action name within the field.
+	 *
+	 * @return string
+	 */
+	public function action_name( string $key, string $name ): string {
+		return sanitize_key(
+			( '' === $this->input_prefix ? '' : $this->input_prefix . '_' ) . $key . '_' . $name
+		);
+	}
+
+	/**
+	 * The source name a callback-backed field uses.
+	 *
+	 * @param string $key Field key.
+	 *
+	 * @return string
+	 */
+	public function source_name( string $key ): string {
+		return sanitize_key( ( '' === $this->input_prefix ? '' : $this->input_prefix . '_' ) . $key );
 	}
 
 	/**
@@ -109,11 +238,43 @@ final class FieldSet {
 			[ 'input_name' => '' === $this->input_prefix ? $key : $this->input_prefix . '[' . $key . ']' ]
 		);
 
+		// A callback-backed field points at the source registered for it.
+		if ( isset( $config['search_callback'] ) ) {
+			$config['search_source'] = $this->source_name( $key );
+		}
+
+		// Likewise for its buttons: the field emits the registered names, so
+		// a button in the page corresponds to a handler that exists.
+		$config['action_names'] = $this->action_names_for( $key, $config );
+
 		$field = new Field( $key, $resolved, $config, null );
 
 		return $resolved->stores_value()
 			? $field->with_value( $this->context->read( $object_id, $field ) )
 			: $field;
+	}
+
+	/**
+	 * The registered action names for one field, keyed by their local name.
+	 *
+	 * @param string               $key    Field key.
+	 * @param array<string, mixed> $config Field configuration.
+	 *
+	 * @return array<string, string>
+	 */
+	private function action_names_for( string $key, array $config ): array {
+		$names    = [];
+		$handlers = (array) ( $config['actions'] ?? [] );
+
+		if ( isset( $config['action_callback'] ) ) {
+			$handlers['run'] = $config['action_callback'];
+		}
+
+		foreach ( array_keys( $handlers ) as $name ) {
+			$names[ (string) $name ] = $this->action_name( $key, (string) $name );
+		}
+
+		return $names;
 	}
 
 	/**

@@ -60,7 +60,7 @@ final class SearchController {
 	 * @param Sources|null $sources The available sources.
 	 */
 	public function __construct( ?Sources $sources = null ) {
-		$this->sources = $sources ?? new Sources();
+		$this->sources = $sources ?? Sources::shared();
 	}
 
 	/**

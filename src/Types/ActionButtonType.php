@@ -37,7 +37,12 @@ final class ActionButtonType extends AbstractType {
 			(string) $field->get( 'variant', 'secondary' ) === 'primary' ? 'button-primary' : 'button-secondary',
 			'field-kit__action'
 		);
-		$attributes->set( 'data-action', (string) $field->get( 'action', $field->key() ) );
+		// The registered name, not the local one: the endpoint resolves
+		// against a server-side registry, so a button naming anything else
+		// reaches nothing.
+		$names = (array) $field->get( 'action_names', [] );
+
+		$attributes->set( 'data-action', (string) ( $names['run'] ?? $field->get( 'action', '' ) ) );
 		$attributes->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/action' ) );
 		$attributes->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
 		$attributes->remove( 'name' );

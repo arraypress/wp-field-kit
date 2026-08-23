@@ -101,7 +101,7 @@ abstract class AbstractRelationalType extends SelectType {
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'field-kit__relational' );
 		$attributes->set( 'data-search-endpoint', rest_url( Runtime::rest_namespace() . '/search' ) );
-		$attributes->set( 'data-search-source', $this->source() );
+		$attributes->set( 'data-search-source', method_exists( $this, 'source_for' ) ? $this->source_for( $field ) : $this->source() );
 		$attributes->set( 'data-search-nonce', wp_create_nonce( 'wp_rest' ) );
 		$attributes->set_if( $field->has( 'min_chars' ), 'data-min-chars', $field->get( 'min_chars', 2 ) );
 

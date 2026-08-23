@@ -116,8 +116,11 @@ final class EmailEditorType extends AbstractNestedType {
 			$button = new Attributes();
 			$button->set( 'type', 'button' );
 			$button->add_class( 'button', 'field-kit__email-action' );
-			$button->set( 'data-action', $action );
-			$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/email/' . $action ) );
+			$names = (array) $field->get( 'action_names', [] );
+
+			$button->set( 'data-action', (string) ( $names[ $action ] ?? '' ) );
+			$button->set( 'data-payload-from', $field->input_id() );
+			$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/action' ) );
 			$button->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
 			$button->set( 'data-field', $field->key() );
 

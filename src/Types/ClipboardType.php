@@ -48,12 +48,18 @@ final class ClipboardType extends AbstractType {
 			)
 		);
 
+		// The success span is core's own shape, from the media modal's
+		// copy-to-clipboard control: a message beside the button that shows
+		// briefly. Visible feedback matters as much as the announced kind —
+		// a button that silently succeeds leaves everyone guessing.
 		return sprintf(
 			'<div class="field-kit__clipboard"><input%s /> <button%s>%s</button>' .
+			'<span class="success hidden field-kit__clipboard-success" aria-hidden="true">%s</span>' .
 			'<span class="field-kit__clipboard-status screen-reader-text" aria-live="polite"></span></div>',
 			$attributes->render(),
 			$button->render(),
-			esc_html__( 'Copy', 'arraypress' )
+			esc_html__( 'Copy', 'arraypress' ),
+			esc_html__( 'Copied!', 'arraypress' )
 		);
 	}
 

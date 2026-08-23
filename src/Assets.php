@@ -181,6 +181,8 @@ final class Assets {
 				'rowRemoved'       => __( 'Row removed.', 'arraypress' ),
 				'copied'           => __( 'Copied to the clipboard.', 'arraypress' ),
 				'copyFailed'       => __( 'Could not copy.', 'arraypress' ),
+				'actionDone'       => __( 'Done.', 'arraypress' ),
+				'actionFailed'     => __( 'That did not work.', 'arraypress' ),
 			],
 		];
 	}

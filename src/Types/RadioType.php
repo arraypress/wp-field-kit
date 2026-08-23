@@ -42,7 +42,7 @@ class RadioType extends AbstractType {
 			$option->set( 'type', $this->input_type() );
 			$option->set( 'name', $name );
 			$option->set( 'value', (string) $value );
-			$option->add_class( 'field-kit__' . $this->input_type() );
+			$option->add_class( 'radio' === $this->input_type() ? 'field-kit__radio' : 'field-kit__checkbox' );
 			$option->set_if( (string) $value === $current, 'checked', true );
 			$option->set_if( $required, 'required', true );
 			$option->set_if( (bool) $field->get( 'disabled' ), 'disabled', true );
@@ -51,7 +51,7 @@ class RadioType extends AbstractType {
 		}
 
 		return sprintf(
-			'<div class="field-kit__%s">%s</div>',
+			'<div class="%s">%s</div>',
 			esc_attr( $this->wrapper_class() ),
 			$markup
 		);
@@ -91,12 +91,16 @@ class RadioType extends AbstractType {
 	}
 
 	/**
-	 * Class stem for the wrapper.
+	 * The wrapper's class.
+	 *
+	 * Written out in full rather than assembled from a stem, so a search for
+	 * the class finds where it comes from — and so a stylesheet check can
+	 * tell whether anything renders it.
 	 *
 	 * @return string
 	 */
 	protected function wrapper_class(): string {
-		return 'radio-group';
+		return 'field-kit__radio-group';
 	}
 
 	/**
