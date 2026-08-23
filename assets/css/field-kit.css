@@ -300,6 +300,11 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	border-radius: 2px;
 	background: #fff;
 	overflow: hidden;
+	cursor: grab;
+}
+
+.field-kit__gallery-item:active {
+	cursor: grabbing;
 }
 
 .field-kit__gallery-item img {
@@ -307,18 +312,34 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	width: 100%;
 	height: 100px;
 	object-fit: cover;
+	pointer-events: none;
 }
 
-/* Reorder controls sit in a compact strip under the thumbnail; remove goes
-   on the tile itself, so three buttons are not competing for one narrow
-   row. */
+/* Controls stay out of the way until the tile is hovered or something
+   inside it takes focus.
+ *
+ * :focus-within is what keeps this usable. Dragging cannot be done from a
+ * keyboard at all, so the move buttons are the only way to reorder without
+ * a mouse — hiding them on hover alone would make the gallery unorderable
+ * for anyone tabbing through it, while looking perfectly fine to everyone
+ * else. */
 .field-kit__gallery-actions {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
 	display: flex;
 	justify-content: center;
 	gap: .1rem;
-	padding: .1rem 0;
-	border-top: 1px solid #dcdcde;
-	background: #f6f7f7;
+	padding: .15rem 0;
+	background: rgba(255, 255, 255, .92);
+	opacity: 0;
+	transition: opacity .1s ease-in-out;
+}
+
+.field-kit__gallery-item:hover .field-kit__gallery-actions,
+.field-kit__gallery-item:focus-within .field-kit__gallery-actions {
+	opacity: 1;
 }
 
 .wp-core-ui .field-kit__gallery-remove {
@@ -328,14 +349,37 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	width: 1.5rem;
 	height: 1.5rem;
 	border-radius: 50%;
-	background: rgba(255, 255, 255, .9);
+	background: rgba(255, 255, 255, .92);
 	color: #b32d2e;
+	opacity: 0;
+	transition: opacity .1s ease-in-out;
+}
+
+.field-kit__gallery-item:hover .field-kit__gallery-remove,
+.field-kit__gallery-item:focus-within .field-kit__gallery-remove,
+.wp-core-ui .field-kit__gallery-remove:focus-visible {
+	opacity: 1;
 }
 
 .wp-core-ui .field-kit__gallery-remove:hover,
 .wp-core-ui .field-kit__gallery-remove:focus {
 	background: #b32d2e;
 	color: #fff;
+}
+
+/* Nothing may be revealed by hover alone where hovering is not possible. */
+@media (hover: none) {
+	.field-kit__gallery-actions,
+	.wp-core-ui .field-kit__gallery-remove {
+		opacity: 1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.field-kit__gallery-actions,
+	.wp-core-ui .field-kit__gallery-remove {
+		transition: none;
+	}
 }
 
 .field-kit__repeater-row {
@@ -681,4 +725,92 @@ select.field-kit__select[multiple] {
 	display: inline-flex;
 	gap: .15rem;
 	flex: none;
+}
+
+/* -----------------------------------------------------------------------
+ * Vertical rhythm inside composite fields
+ *
+ * Several field types stack a preview, a control and a row of buttons. Each
+ * part was spaced on its own and the parts ended up flush against each
+ * other — a "Choose file" button touching the input above it, an "Add
+ * images" button touching the gallery.
+ *
+ * Rather than chase each pair, every direct child of a media block gets the
+ * same gap and the last one loses it. Declared late so it settles the
+ * earlier per-part rules instead of competing with them.
+ * -------------------------------------------------------------------- */
+
+.field-kit__media,
+.field-kit__gallery,
+.field-kit__repeater,
+.field-kit__group,
+.field-kit__license,
+.field-kit__clipboard,
+.field-kit__oembed,
+.field-kit__tags {
+	display: flow-root;
+}
+
+.field-kit__media > *,
+.field-kit__gallery > *,
+.field-kit__oembed > * {
+	margin: 0 0 .6rem;
+}
+
+.field-kit__media > :last-child,
+.field-kit__gallery > :last-child,
+.field-kit__oembed > :last-child {
+	margin-bottom: 0;
+}
+
+/* The hidden input holding the value is not a visible part and must not
+   contribute a gap of its own. */
+.field-kit__media > input[type="hidden"],
+.field-kit__gallery > input[type="hidden"] {
+	margin: 0;
+}
+
+.field-kit__gallery-items {
+	margin: 0 0 .6rem;
+}
+
+.field-kit__media-preview {
+	margin: 0 0 .6rem;
+}
+
+/* The button row is the last thing in the block, so it only needs the gap
+   above it — which the rule above already supplies. */
+.field-kit__media-actions {
+	margin: 0;
+}
+
+/* An empty preview or empty list still had a bottom margin, leaving a gap
+   above the button with nothing in it. */
+.field-kit__media-preview[data-empty="true"],
+.field-kit__gallery-items[data-empty="true"] {
+	margin: 0;
+}
+
+/* A repeater's add button needs clearing from the rows above it. */
+.field-kit__repeater > p {
+	margin: .6rem 0 0;
+}
+
+.field-kit__repeater-empty {
+	margin: 0 0 .6rem;
+}
+
+/* Composite rows that put a control beside a button want the same gap as
+   everything else, not whatever the button's own margin happened to be. */
+.field-kit__clipboard,
+.field-kit__license,
+.field-kit__amount,
+.field-kit__dimensions,
+.field-kit__range-pair {
+	margin: 0;
+}
+
+/* Tag pills sit under their input rather than against it. */
+.field-kit__tags-list:not(:empty) {
+	margin-top: .5rem;
 }
