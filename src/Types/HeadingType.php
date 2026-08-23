@@ -42,16 +42,12 @@ final class HeadingType extends AbstractLayoutType {
 		$level = (int) $field->get( 'level', 3 );
 		$level = min( 6, max( 2, $level ) );
 
-		$markup = sprintf(
+		// The description is not rendered here. The renderer appends it for
+		// every field, and printing it as well is what showed it twice.
+		return sprintf(
 			'<h%1$d class="field-kit__heading">%2$s</h%1$d>',
 			$level,
 			esc_html( $field->label() )
 		);
-
-		if ( '' !== $field->description() ) {
-			$markup .= sprintf( '<p class="description">%s</p>', wp_kses_post( $field->description() ) );
-		}
-
-		return $markup;
 	}
 }

@@ -30,6 +30,19 @@ abstract class AbstractLayoutType extends AbstractType {
 	}
 
 	/**
+	 * These draw their own heading and have no control behind it.
+	 *
+	 * The renderer must not add a <label for>: there is no input with that
+	 * id, and a label pointing at nothing is announced as an orphan rather
+	 * than being silently ignored.
+	 *
+	 * @return bool
+	 */
+	public function is_self_labelling(): bool {
+		return true;
+	}
+
+	/**
 	 * Nothing to sanitize.
 	 *
 	 * @param mixed $value Raw submitted value.

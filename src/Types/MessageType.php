@@ -59,7 +59,9 @@ final class MessageType extends AbstractLayoutType {
 		return sprintf(
 			'<div%s><p>%s</p></div>',
 			$notice->render(),
-			wp_kses_post( (string) $field->get( 'message', $field->description() ) )
+			// Only the message. Falling back to the description printed the
+			// same text twice, since the renderer appends that too.
+			wp_kses_post( (string) $field->get( 'message', '' ) )
 		);
 	}
 }

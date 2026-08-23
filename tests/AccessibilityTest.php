@@ -203,6 +203,50 @@ final class AccessibilityTest extends TestCase {
 	}
 
 	/**
+	 * No label points at an id nothing has.
+	 *
+	 * A label with a `for` that matches no element is not ignored — it is
+	 * announced as an orphan, and the thing it appears to describe is left
+	 * unnamed. Four layout types shipped like this because they carry a
+	 * label but have no control behind it.
+	 *
+	 * @param string $id Type id.
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'typeProvider' )]
+	public function test_no_label_points_at_a_missing_control( string $id ): void {
+		$markup = ( new Renderer() )->render( $this->field( $id, [ 'description' => 'A description.' ] ) );
+
+		preg_match_all( '/<label[^>]*\bfor="([^"]+)"/', $markup, $matches );
+
+		$dangling = [];
+
+		foreach ( $matches[1] as $for ) {
+			if ( ! str_contains( $markup, 'id="' . $for . '"' ) ) {
+				$dangling[] = $for;
+			}
+		}
+
+		$this->assertSame( [], $dangling, "$id: a label points at an id nothing has." );
+	}
+
+	/**
+	 * A description is rendered once, not once per renderer that thinks it
+	 * owns it.
+	 *
+	 * @param string $id Type id.
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'typeProvider' )]
+	public function test_description_is_rendered_once( string $id ): void {
+		$markup = ( new Renderer() )->render( $this->field( $id, [ 'description' => 'A unique description.' ] ) );
+
+		$this->assertSame(
+			1,
+			substr_count( $markup, 'A unique description.' ),
+			"$id: the description is rendered more than once."
+		);
+	}
+
+	/**
 	 * An option that is labelled by id must have one nothing else uses.
 	 *
 	 * A duplicate id does not raise anything: every label after the first
