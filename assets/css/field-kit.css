@@ -814,3 +814,48 @@ select.field-kit__select[multiple] {
 .field-kit__tags-list:not(:empty) {
 	margin-top: .5rem;
 }
+
+/* -----------------------------------------------------------------------
+ * Joined controls
+ *
+ * An amount and its unit are one value split across two controls, so they
+ * are drawn as one: no gap, shared border, rounded only on the outside.
+ * -------------------------------------------------------------------- */
+
+.field-kit__amount {
+	display: inline-flex;
+	align-items: stretch;
+	gap: 0;
+}
+
+.field-kit__amount input[type="number"].field-kit__amount-value {
+	width: 8rem;
+	margin: 0;
+	border-radius: 2px 0 0 2px;
+}
+
+.field-kit__amount select.field-kit__amount-unit {
+	margin: 0 0 0 -1px;
+	border-radius: 0 2px 2px 0;
+	min-height: 30px;
+}
+
+/* The two share a border, so whichever is focused has to come forward or
+   its focus ring is clipped by its neighbour. */
+.field-kit__amount input:focus,
+.field-kit__amount select:focus {
+	position: relative;
+	z-index: 1;
+}
+
+/* Same treatment wherever a control and its unit are one value. */
+.field-kit__dimensions {
+	align-items: flex-end;
+	gap: .4rem;
+}
+
+.field-kit__dimensions-unit {
+	padding-bottom: .4rem;
+	color: #646970;
+	white-space: nowrap;
+}
