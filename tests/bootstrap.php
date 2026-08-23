@@ -107,3 +107,69 @@ if ( ! function_exists( 'wp_editor' ) ) {
 		);
 	}
 }
+
+if ( ! function_exists( 'absint' ) ) {
+	function absint( $maybeint ) {
+		return abs( (int) $maybeint );
+	}
+}
+
+if ( ! function_exists( 'rest_url' ) ) {
+	function rest_url( $path = '' ) {
+		return 'https://example.test/wp-json/' . ltrim( (string) $path, '/' );
+	}
+}
+
+if ( ! function_exists( 'wp_create_nonce' ) ) {
+	function wp_create_nonce( $action = -1 ) {
+		return 'testnonce';
+	}
+}
+
+if ( ! function_exists( 'get_the_title' ) ) {
+	function get_the_title( $post = 0 ) {
+		return 'Item ' . (int) $post;
+	}
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	function get_post_meta( $post_id, $key = '', $single = false ) {
+		return $single ? '' : [];
+	}
+}
+
+if ( ! function_exists( 'get_userdata' ) ) {
+	function get_userdata( $user_id ) {
+		return null;
+	}
+}
+
+if ( ! function_exists( 'get_term' ) ) {
+	function get_term( $term, $taxonomy = '' ) {
+		return null;
+	}
+}
+
+if ( ! function_exists( 'is_wp_error' ) ) {
+	function is_wp_error( $thing ) {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_get_attachment_image' ) ) {
+	function wp_get_attachment_image( $attachment_id, $size = 'thumbnail', $icon = false, $attr = '' ) {
+		return sprintf( '<img src="test.png" alt="%s" />', htmlspecialchars( (string) ( is_array( $attr ) ? ( $attr['alt'] ?? '' ) : '' ), ENT_QUOTES ) );
+	}
+}
+
+if ( ! function_exists( 'wp_get_attachment_url' ) ) {
+	function wp_get_attachment_url( $attachment_id ) {
+		return 'https://example.test/uploads/file.pdf';
+	}
+}
+
+if ( ! function_exists( 'wp_oembed_get' ) ) {
+	function wp_oembed_get( $url, $args = '' ) {
+		return '<iframe src="' . htmlspecialchars( (string) $url, ENT_QUOTES ) . '"></iframe>';
+	}
+}

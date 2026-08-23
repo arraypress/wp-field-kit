@@ -59,6 +59,47 @@ final class Registry {
 		'radio'           => Types\RadioType::class,
 		'checkbox_group'  => Types\CheckboxGroupType::class,
 		'button_group'    => Types\ButtonGroupType::class,
+
+		// Media.
+		'image'           => Types\ImageType::class,
+		'file'            => Types\FileType::class,
+		'file_url'        => Types\FileUrlType::class,
+		'gallery'         => Types\GalleryType::class,
+
+		// Relational — one search endpoint behind all of them.
+		'post'            => Types\PostType::class,
+		'page'            => Types\PageType::class,
+		'user'            => Types\UserType::class,
+		'taxonomy'        => Types\TaxonomyType::class,
+		'ajax'            => Types\AjaxType::class,
+
+		// Nested — children go through this same registry and renderer.
+		'group'           => Types\GroupType::class,
+		'repeater'        => Types\RepeaterType::class,
+
+		// Composite — several controls stored under one key.
+		'link'            => Types\LinkType::class,
+		'dimensions'      => Types\DimensionsType::class,
+		'date_range'      => Types\DateRangeType::class,
+		'time_range'      => Types\TimeRangeType::class,
+		'amount_type'     => Types\AmountType::class,
+		'oembed'          => Types\OembedType::class,
+		'tags'            => Types\TagsType::class,
+		'sortable'        => Types\SortableType::class,
+
+		'email_editor'    => Types\EmailEditorType::class,
+		'license'         => Types\LicenseType::class,
+
+		// Actions and escape hatches.
+		'clipboard'       => Types\ClipboardType::class,
+		'action_button'   => Types\ActionButtonType::class,
+		'custom'          => Types\CustomType::class,
+
+		// Layout — these render and store nothing.
+		'heading'         => Types\HeadingType::class,
+		'separator'       => Types\SeparatorType::class,
+		'message'         => Types\MessageType::class,
+		'html'            => Types\HtmlType::class,
 	];
 
 	/**
@@ -71,9 +112,16 @@ final class Registry {
 	 * @var array<string, string>
 	 */
 	private const ALIASES = [
-		'select2'  => 'select',           // setting-fields' name for a searchable select.
-		'switch'   => 'toggle',
-		'colour'   => 'color',
+		'select2'       => 'select',   // setting-fields' name for a searchable select.
+		'switch'        => 'toggle',
+		'colour'        => 'color',
+		'term'          => 'taxonomy', // post-fields' name for the same field.
+		'post_ajax'     => 'post',     // post-fields spelled the AJAX variants
+		'taxonomy_ajax' => 'taxonomy', // separately; setting-fields' post/user/
+		'user_ajax'     => 'user',     // taxonomy were already AJAX-backed.
+		'ajax_select'   => 'ajax',     // flyouts' name for a callback search.
+		'hr'            => 'separator',
+		'notice'        => 'message',
 	];
 
 	/**
@@ -145,8 +193,11 @@ final class Registry {
 		}
 
 		if ( ! isset( $this->instances[ $id ] ) ) {
-			$class                  = self::TYPES[ $id ];
-			$this->instances[ $id ] = new $class();
+			$class = self::TYPES[ $id ];
+
+			// Handed the registry so a nested type can resolve its children,
+			// including any the consumer registered.
+			$this->instances[ $id ] = new $class( $this );
 		}
 
 		return $this->instances[ $id ];

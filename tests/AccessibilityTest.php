@@ -41,6 +41,12 @@ final class AccessibilityTest extends TestCase {
 					'label'      => 'Demo label',
 					'input_name' => 'demo_' . $id,
 					'options'    => [ 'a' => 'Alpha', 'b' => 'Beta' ],
+					'fields'     => [ 'one' => [ 'type' => 'text', 'label' => 'One' ] ],
+					// `custom` renders through the consumer's callback, and
+					// its contract is that the prepared attributes are used.
+					// Ignoring them is what these tests exist to catch, so
+					// the fixture honours them.
+					'render_callback' => static fn( $field, $attributes ) => sprintf( '<input%s />', $attributes->render() ),
 				],
 				$config
 			),

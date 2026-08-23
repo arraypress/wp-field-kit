@@ -1,0 +1,43 @@
+<?php
+/**
+ * Base Layout Type
+ *
+ * @package ArrayPress\FieldKit
+ */
+
+declare( strict_types=1 );
+
+namespace ArrayPress\FieldKit\Types;
+
+use ArrayPress\FieldKit\Field;
+
+/**
+ * Types that draw something and store nothing.
+ *
+ * Saying so once here keeps "is this field actually a field?" out of every
+ * save path, which is where the predecessor libraries leaked separators into
+ * the options table.
+ */
+abstract class AbstractLayoutType extends AbstractType {
+
+	/**
+	 * Nothing to store.
+	 *
+	 * @return bool
+	 */
+	public function stores_value(): bool {
+		return false;
+	}
+
+	/**
+	 * Nothing to sanitize.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @param Field $field The field.
+	 *
+	 * @return null
+	 */
+	public function sanitize( mixed $value, Field $field ): mixed {
+		return null;
+	}
+}

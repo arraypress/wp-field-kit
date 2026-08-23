@@ -15,6 +15,7 @@ namespace ArrayPress\FieldKit\Types;
 use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Contracts\FieldType;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Registry;
 
 /**
  * Defaults every type inherits.
@@ -25,6 +26,26 @@ use ArrayPress\FieldKit\Field;
  * bodies.
  */
 abstract class AbstractType implements FieldType {
+
+	/**
+	 * The registry that produced this type.
+	 *
+	 * Nested types need it to resolve their children. Passing it in rather
+	 * than constructing one means a consumer's custom types are visible to
+	 * fields nested inside a repeater, which they would not be otherwise.
+	 *
+	 * @var Registry|null
+	 */
+	protected ?Registry $registry;
+
+	/**
+	 * Construct.
+	 *
+	 * @param Registry|null $registry The registry that produced this type.
+	 */
+	public function __construct( ?Registry $registry = null ) {
+		$this->registry = $registry;
+	}
 
 	/**
 	 * Render the control.
