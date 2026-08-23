@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Flushable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -20,7 +21,7 @@ use ArrayPress\FieldKit\Field;
  * written once rather than per field: a settings page writing twenty options
  * separately is twenty autoloaded rows and twenty cache invalidations.
  */
-final class OptionContext implements Context {
+final class OptionContext implements Context, Flushable {
 
 	/**
 	 * The option name every field lives under.

@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Flushable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -30,7 +31,7 @@ use ArrayPress\FieldKit\Field;
  * use one — but it means an encrypted field is not something to put in a
  * migration and expect to survive.
  */
-final class EncryptedContext implements Context {
+final class EncryptedContext implements Context, Flushable {
 
 	/**
 	 * Marker identifying a value this class wrote.
@@ -87,7 +88,13 @@ final class EncryptedContext implements Context {
 	 * @return void
 	 */
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
-		if ( $this->applies( $field ) && is_string( $value ) && '' !== $value ) {
+		// A value already carrying the marker is stored as it is. Anything
+		// that writes the option back wholesale — a reset, an import, a plain
+		// update_option() — hands back what was read from the store, and
+		// encrypting that a second time leaves a value that decrypts to
+		// ciphertext and reads as nonsense.
+		if ( $this->applies( $field ) && is_string( $value ) && '' !== $value
+			&& ! str_starts_with( $value, self::PREFIX ) ) {
 			$encrypted = $this->encrypt( $value );
 
 			// A failed encryption must not fall through to storing the
@@ -211,5 +218,19 @@ final class EncryptedContext implements Context {
 		$plain = openssl_decrypt( $cipher, self::CIPHER, $key, OPENSSL_RAW_DATA, $nonce, $tag );
 
 		return false === $plain ? null : $plain;
+	}
+
+	/**
+	 * Flush the wrapped store.
+	 *
+	 * A decorator is what the field set holds, so if it did not pass this on
+	 * an option-backed set behind one would stage every value and write none.
+	 *
+	 * @return void
+	 */
+	public function save(): void {
+		if ( $this->inner instanceof Flushable ) {
+			$this->inner->save();
+		}
 	}
 }

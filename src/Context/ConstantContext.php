@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Flushable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -27,7 +28,7 @@ use ArrayPress\FieldKit\Field;
  * that reappears the day the constant is removed, with no indication of where
  * it came from.
  */
-final class ConstantContext implements Context {
+final class ConstantContext implements Context, Flushable {
 
 	/**
 	 * The context being decorated.
@@ -140,5 +141,19 @@ final class ConstantContext implements Context {
 		return defined( $name ) && '' !== (string) constant( $name )
 			? (string) constant( $name )
 			: null;
+	}
+
+	/**
+	 * Flush the wrapped store.
+	 *
+	 * A decorator is what the field set holds, so if it did not pass this on
+	 * an option-backed set behind one would stage every value and write none.
+	 *
+	 * @return void
+	 */
+	public function save(): void {
+		if ( $this->inner instanceof Flushable ) {
+			$this->inner->save();
+		}
 	}
 }

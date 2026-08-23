@@ -20,6 +20,13 @@ use PHPUnit\Framework\TestCase;
  *
  * Skipped rather than failed when a library is not checked out, so the suite
  * still runs in CI where only this repository is present.
+ *
+ * A library that has been ported has no list left to read: its renderer is
+ * this one. Those lists are recorded below as they stood the commit before
+ * the port, because the guarantee is about what the kit must still render,
+ * and reading it from a file that no longer exists turns a guarantee into a
+ * skip — which is how it went unnoticed that the term-fields check had
+ * quietly started asserting nothing.
  */
 final class CoverageTest extends TestCase {
 
@@ -88,16 +95,93 @@ final class CoverageTest extends TestCase {
 	}
 
 	/**
+	 * Every type wp-register-setting-fields rendered before its port.
+	 *
+	 * Taken from the match arms of its FieldRenderer trait at 2d8cbc3, the
+	 * commit before it was ported onto the kit.
+	 *
+	 * @var string[]
+	 */
+	private const SETTING_FIELD_TYPES = [
+		'action_button',
+		'ajax',
+		'button_group',
+		'checkbox',
+		'checkbox_group',
+		'clipboard',
+		'code',
+		'color',
+		'custom',
+		'date',
+		'datetime',
+		'dimensions',
+		'email',
+		'email_editor',
+		'file',
+		'gallery',
+		'group',
+		'heading',
+		'hidden',
+		'html',
+		'image',
+		'license',
+		'link',
+		'message',
+		'number',
+		'oembed',
+		'page',
+		'password',
+		'post',
+		'radio',
+		'range',
+		'repeater',
+		'select',
+		'select_multiple',
+		'select2',
+		'separator',
+		'sortable',
+		'taxonomy',
+		'tel',
+		'text',
+		'textarea',
+		'time',
+		'toggle',
+		'url',
+		'user',
+		'wysiwyg',
+	];
+
+	/**
+	 * Every type wp-register-term-fields rendered before its port.
+	 *
+	 * Taken from its switch arms at 7a4dee7. Short, because eight types was
+	 * the reason for the port.
+	 *
+	 * @var string[]
+	 */
+	private const TERM_FIELD_TYPES = [
+		'amount_type',
+		'checkbox',
+		'email',
+		'number',
+		'select',
+		'text',
+		'textarea',
+		'url',
+	];
+
+	/**
 	 * Every setting field type resolves.
 	 */
 	public function test_setting_fields_types_all_resolve(): void {
-		$this->assertAllResolve(
-			$this->types_from(
-				'wp-register-setting-fields/src/Traits/FieldRenderer.php',
-				"/\n\s+((?:'[a-z_0-9]+',?\s*)+)=>\s*\\\$this->render_/"
-			),
-			'wp-register-setting-fields'
-		);
+		$this->assertAllResolve( self::SETTING_FIELD_TYPES, 'wp-register-setting-fields' );
+	}
+
+	/**
+	 * Every term field type resolves.
+	 */
+	public function test_term_fields_types_all_resolve(): void {
+		$this->assertAllResolve( self::TERM_FIELD_TYPES, 'wp-register-term-fields' );
 	}
 
 	/**
@@ -138,12 +222,18 @@ final class CoverageTest extends TestCase {
 	}
 
 	/**
-	 * Every term and list-table field type resolves.
+	 * Every list-table field type resolves.
+	 *
+	 * These two still switch on a type of their own. A file with no arms left
+	 * to read has been ported, so it is asserted to be empty rather than
+	 * passed over — an empty list read from a file that still switches would
+	 * mean the pattern had stopped matching.
 	 */
-	public function test_term_and_list_table_types_all_resolve(): void {
+	public function test_list_table_types_all_resolve(): void {
+		$checked = 0;
+
 		foreach (
 			[
-				'wp-register-term-fields/src/TermFields.php',
 				'wp-register-quick-edit-fields/src/QuickEditFields.php',
 				'wp-register-bulk-edit-fields/src/BulkEditFields.php',
 			] as $relative
@@ -154,11 +244,17 @@ final class CoverageTest extends TestCase {
 				continue;
 			}
 
+			++$checked;
+
 			preg_match_all( "/case '([a-z_0-9]+)':/", (string) file_get_contents( $path ), $matches );
 
 			$types = array_diff( $matches[1], [ 'description', 'type', 'label', 'options' ] );
 
 			$this->assertAllResolve( array_values( $types ), $relative );
+		}
+
+		if ( 0 === $checked ) {
+			$this->markTestSkipped( 'Neither list-table library is checked out.' );
 		}
 	}
 

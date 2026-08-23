@@ -12,8 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit;
 
-use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Flushable;
 use ArrayPress\FieldKit\Rest\ActionController;
 use ArrayPress\FieldKit\Rest\SearchController;
 use ArrayPress\FieldKit\Actions\Actions;
@@ -379,9 +379,11 @@ final class FieldSet {
 			$stored[ $field->key() ] = $value;
 		}
 
-		// An option-backed set batches its writes, so the whole page is one
-		// database write rather than one per field.
-		if ( $this->context instanceof OptionContext ) {
+		// A batching store — an option holds every field in one row — is told
+		// once, here, rather than writing per field. Checked against the
+		// contract and not against OptionContext, because the context reaching
+		// this point is routinely a decorator wrapping one.
+		if ( $this->context instanceof Flushable ) {
 			$this->context->save();
 		}
 
