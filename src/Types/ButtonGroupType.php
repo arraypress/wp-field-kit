@@ -29,9 +29,14 @@ final class ButtonGroupType extends RadioType {
 	 * @return string
 	 */
 	protected function wrapper_class(): string {
-		// core's own .button-group styles the segmented row; the kit's class
-		// is what binds the radios to it.
-		return 'button-group field-kit__button-group';
+		// Deliberately not core's .button-group. That rule sets font-size: 0
+		// to collapse the whitespace between inline-block children and
+		// relies on .button restoring it — these are labels, not buttons, so
+		// they inherited zero-size text and the control rendered as a stack
+		// of thin coloured lines with nothing readable in it. The segmented
+		// look is a dozen lines of CSS; borrowing a class whose contract did
+		// not fit was never worth that.
+		return 'field-kit__button-group';
 	}
 
 	/**
