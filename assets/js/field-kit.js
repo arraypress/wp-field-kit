@@ -1702,4 +1702,13 @@
 	} else {
 		init( document );
 	}
+
+	// Run once more when everything has loaded. Each module marks what it has
+	// bound, so this rebinds nothing — it only picks up a control whose
+	// library was not there the first time. Belt and braces: the failure mode
+	// when a jQuery plugin has not loaded yet is that the field silently
+	// stays a plain input, with nothing in the console to explain it.
+	window.addEventListener( 'load', function () {
+		init( document );
+	} );
 } )();

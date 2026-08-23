@@ -77,7 +77,11 @@ final class Assets {
 
 		wp_register_style( $handle, $this->url . '/css/field-kit.css', [ 'dashicons' ], $version );
 
-		wp_register_script( $handle, $this->url . '/js/field-kit.js', [], $version, true );
+		// jquery is a base dependency even though the kit is vanilla: several
+		// of the core controls it drives — the colour picker above all — are
+		// jQuery plugins, and a script that runs before them finds nothing to
+		// call and fails without a word.
+		wp_register_script( $handle, $this->url . '/js/field-kit.js', [ 'jquery' ], $version, true );
 
 		wp_add_inline_script(
 			$handle,
@@ -100,9 +104,6 @@ final class Assets {
 	public function enqueue( array $dependencies = [] ): void {
 		$this->register();
 
-		wp_enqueue_style( Runtime::handle() );
-		wp_enqueue_script( Runtime::handle() );
-
 		foreach ( $dependencies['styles'] ?? [] as $style ) {
 			wp_enqueue_style( $style );
 		}
@@ -111,13 +112,46 @@ final class Assets {
 			wp_enqueue_script( $script );
 		}
 
+		$this->enqueue_code_editors( $dependencies['code_editors'] ?? [] );
+
+		// Whatever this screen's fields need has to load first, so it is
+		// added to the kit's own dependencies rather than merely enqueued
+		// alongside. Enqueue order is not load order — WordPress resolves
+		// that from dependencies — and the kit was running before jQuery and
+		// the colour picker for exactly this reason.
+		$this->depend_on( $dependencies['scripts'] ?? [] );
+
+		wp_enqueue_style( Runtime::handle() );
+		wp_enqueue_script( Runtime::handle() );
+
 		// The media frame needs its templates printed, which enqueueing the
 		// script alone does not do.
 		if ( in_array( 'media-views', $dependencies['scripts'] ?? [], true ) ) {
 			wp_enqueue_media();
 		}
+	}
 
-		$this->enqueue_code_editors( $dependencies['code_editors'] ?? [] );
+	/**
+	 * Make the kit's script load after the handles it drives.
+	 *
+	 * @param string[] $handles Script handles this screen needs.
+	 *
+	 * @return void
+	 */
+	private function depend_on( array $handles ): void {
+		$script = wp_scripts()->query( Runtime::handle(), 'registered' );
+
+		if ( ! $script ) {
+			return;
+		}
+
+		// wp_enqueue_code_editor() registers 'code-editor' itself, so it is
+		// added by name rather than being something a field could declare.
+		if ( wp_script_is( 'code-editor', 'enqueued' ) ) {
+			$handles[] = 'code-editor';
+		}
+
+		$script->deps = array_values( array_unique( array_merge( $script->deps, $handles ) ) );
 	}
 
 	/**

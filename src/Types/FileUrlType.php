@@ -49,6 +49,20 @@ final class FileUrlType extends FileType {
 	}
 
 	/**
+	 * Whether a URL is set.
+	 *
+	 * This one stores a URL rather than an attachment id, so the id check
+	 * the other media types use would call every URL empty.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function has_selection( Field $field ): bool {
+		return '' !== trim( (string) $field->value() );
+	}
+
+	/**
 	 * Coerce a submitted value to a URL.
 	 *
 	 * @param mixed $value Raw submitted value.

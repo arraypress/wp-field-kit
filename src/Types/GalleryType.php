@@ -83,6 +83,20 @@ final class GalleryType extends AbstractMediaType {
 	}
 
 	/**
+	 * Whether anything is selected.
+	 *
+	 * A gallery holds a list, so a single absint would only ever see the
+	 * first item.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function has_selection( Field $field ): bool {
+		return [] !== $this->ids( $field );
+	}
+
+	/**
 	 * Render the ordered list of items.
 	 *
 	 * @param Field $field The field.

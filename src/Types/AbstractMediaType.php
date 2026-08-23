@@ -95,7 +95,9 @@ abstract class AbstractMediaType extends AbstractType {
 	 * @return string
 	 */
 	protected function render_controls( Field $field ): string {
-		$has_value = '' !== (string) $field->value();
+		// absint rather than a string comparison, so an id of 0 left behind
+		// by an older save is treated as nothing selected.
+		$has_value = $this->has_selection( $field );
 
 		$clear = new Attributes();
 		$clear->set( 'type', 'button' );
@@ -132,6 +134,17 @@ abstract class AbstractMediaType extends AbstractType {
 	}
 
 	/**
+	 * Whether anything is actually selected.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function has_selection( Field $field ): bool {
+		return absint( $field->value() ) > 0;
+	}
+
+	/**
 	 * Coerce a submitted value to an attachment id.
 	 *
 	 * @param mixed $value Raw submitted value.
@@ -144,7 +157,14 @@ abstract class AbstractMediaType extends AbstractType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
-		return absint( $value );
+		$id = absint( $value );
+
+		// An emptied field must come back as '' rather than 0. Zero is a
+		// value as far as the field set is concerned — an unticked checkbox
+		// deliberately stores it — so returning it here persisted a
+		// meaningless attachment id, and the Remove button reappeared on the
+		// next load because '0' is not ''.
+		return 0 === $id ? '' : $id;
 	}
 
 	/**
