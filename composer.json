@@ -36,7 +36,12 @@
     "test": "phpunit",
     "lint": "phpcs",
     "format": "phpcbf --standard=phpcs-format.xml.dist",
-    "format:check": "phpcs --standard=phpcs-format.xml.dist"
+    "format:check": "phpcs --standard=phpcs-format.xml.dist",
+    "test:js": "node tests/js/smoke.js",
+    "test:all": [
+      "@test",
+      "@test:js"
+    ]
   },
   "config": {
     "optimize-autoloader": true,

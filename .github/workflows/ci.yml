@@ -33,6 +33,12 @@ jobs:
       - name: Lint
         run: find src tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
 
+      - name: JavaScript smoke test
+        # The PHP suite never executes a line of the script, so a reference
+        # that does not resolve is invisible to it — and the failure mode is
+        # every module after it silently not running.
+        run: composer test:js
+
       - name: Coding standards
         run: composer lint
 

@@ -1065,6 +1065,12 @@
 	var kit = window.ArrayPressFieldKitModules;
 	var t = kit.t;
 
+	// Pulled from the shared modules object rather than closed over: this is
+	// a separate IIFE from the one that resolved it, and referencing `config`
+	// directly here threw a ReferenceError that stopped every module after it
+	// from initialising.
+	var config = kit.config;
+
 	var Repeater = {
 
 		/**
