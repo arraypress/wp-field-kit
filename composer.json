@@ -1,0 +1,62 @@
+{
+  "name": "arraypress/wp-field-kit",
+  "description": "One field engine \u2014 type registry, accessible renderers, sanitizers, conditional logic and REST search \u2014 shared by the wp-register-*-fields libraries.",
+  "homepage": "https://github.com/arraypress/wp-field-kit/",
+  "type": "library",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "David Sherlock",
+      "homepage": "https://arraypress.com/"
+    }
+  ],
+  "require": {
+    "php": ">=8.3"
+  },
+  "require-dev": {
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "phpunit/phpunit": "^12.0",
+    "squizlabs/php_codesniffer": "^3.13.5",
+    "wp-coding-standards/wpcs": "^3.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "ArrayPress\\FieldKit\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ArrayPress\\FieldKit\\Tests\\": "tests/"
+    },
+    "exclude-from-classmap": [
+      "/tests/bootstrap.php"
+    ]
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "phpcs",
+    "format": "phpcbf --standard=phpcs-format.xml.dist",
+    "format:check": "phpcs --standard=phpcs-format.xml.dist"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "support": {
+    "issues": "https://github.com/arraypress/wp-field-kit/issues",
+    "source": "https://github.com/arraypress/wp-field-kit"
+  },
+  "keywords": [
+    "wordpress",
+    "fields",
+    "forms",
+    "settings",
+    "meta",
+    "accessibility"
+  ]
+}
