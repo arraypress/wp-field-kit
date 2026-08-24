@@ -78,6 +78,8 @@ final class Registry {
 		'group'           => Types\GroupType::class,
 		'repeater'        => Types\RepeaterType::class,
 		'files'           => Types\FilesType::class,
+		'list'            => Types\ListType::class,
+		'key_value'       => Types\KeyValueType::class,
 
 		// Composite — several controls stored under one key.
 		'link'            => Types\LinkType::class,

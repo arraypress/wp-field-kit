@@ -370,7 +370,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function rows( Field $field ): array {
+	protected function rows( Field $field ): array {
 		$value = $field->value();
 
 		if ( ! is_array( $value ) ) {
@@ -417,7 +417,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return bool
 	 */
-	private function has_content( array $row ): bool {
+	protected function has_content( array $row ): bool {
 		foreach ( $row as $value ) {
 			if ( is_array( $value ) ? [] !== $value : ( '' !== (string) $value && '0' !== (string) $value ) ) {
 				return true;
