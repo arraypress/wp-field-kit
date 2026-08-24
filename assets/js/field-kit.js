@@ -1503,7 +1503,11 @@
 
 			var image = item.querySelector( 'img' );
 			var sizes = attachment.sizes || {};
-			var thumb = sizes.thumbnail || sizes.medium || {};
+			// Medium first, matching what the server renders. Picking the
+			// thumbnail here meant a freshly added tile was a 150px file in a
+			// 150px box — visibly softer than the ones beside it, in the same
+			// gallery.
+			var thumb = sizes.medium || sizes.thumbnail || {};
 
 			if ( image ) {
 				image.src = thumb.url || attachment.url;

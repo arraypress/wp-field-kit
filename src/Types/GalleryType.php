@@ -136,11 +136,10 @@ final class GalleryType extends AbstractMediaType {
 
 		return sprintf(
 			'<li class="field-kit__gallery-item" data-id="%d">%s' .
-			'<span class="field-kit__drag-handle dashicons dashicons-menu" aria-hidden="true"></span>' .
 			'<span class="field-kit__gallery-position screen-reader-text">%s</span>' .
 			'<span class="field-kit__gallery-actions">%s%s%s</span></li>',
 			$id,
-			wp_get_attachment_image( $id, 'thumbnail', false, [ 'alt' => '' ] ),
+			wp_get_attachment_image( $id, (string) $field->get( 'preview_size', 'medium' ), false, [ 'alt' => '' ] ),
 			esc_html(
 				sprintf(
 					/* translators: 1: item position, 2: total items, 3: item name */
@@ -278,7 +277,7 @@ final class GalleryType extends AbstractMediaType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'max_items' ]
+			[ 'max_items', 'preview_size' ]
 		);
 	}
 }
