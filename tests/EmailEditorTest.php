@@ -130,6 +130,72 @@ final class EmailEditorTest extends TestCase {
 	}
 
 	/**
+	 * The collapse control carries the arrow core draws on a metabox.
+	 *
+	 * The glyph is a ::before on .toggle-indicator, and core scopes it to
+	 * .meta-box-sortables — the sortable container an edit screen's
+	 * metaboxes live in. A panel outside one is not inside it, so the button
+	 * rendered with nothing in it and there was no way to see the panel could
+	 * be collapsed at all.
+	 */
+	public function test_the_collapse_control_has_an_arrow(): void {
+		$html = ( new Renderer() )->render( $this->field() );
+
+		$this->assertStringContainsString( 'toggle-indicator', $html );
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Both states, since the closed one is a different glyph.
+		$this->assertStringContainsString( '.field-kit__email .toggle-indicator::before', $css );
+		$this->assertStringContainsString( '.field-kit__email.closed .toggle-indicator::before', $css );
+	}
+
+	/**
+	 * The panel has room at the top.
+	 *
+	 * Core's .postbox .inside has no top padding: on a metabox screen the
+	 * first thing inside brings its own margin. A field does not, so the
+	 * first control sat against the header's border.
+	 */
+	public function test_the_panel_has_padding_at_the_top(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match( '/\.field-kit__email \.inside \{([^}]*)\}/', $css, $rule );
+
+		$this->assertNotEmpty( $rule, 'The panel body has no rule.' );
+		$this->assertDoesNotMatchRegularExpression(
+			'/padding:\s*0\s/',
+			$rule[1],
+			'The panel body has no top padding, so the first control touches the header.'
+		);
+	}
+
+	/**
+	 * Every part says what it is for.
+	 *
+	 * A stack of four unlabelled boxes in a panel is worse than the same four
+	 * in a table, because the table at least puts the name beside each one.
+	 */
+	public function test_every_part_has_a_description(): void {
+		$field = $this->field(
+			[
+				'recipient' => true,
+				'heading'   => true,
+			]
+		);
+
+		$parts = ( new \ReflectionObject( $field->type() ) )->getMethod( 'parts' );
+
+		foreach ( $parts->invoke( $field->type(), $field ) as $key => $config ) {
+			$this->assertNotSame(
+				'',
+				(string) ( $config['description'] ?? '' ),
+				sprintf( 'The %s part has no description.', $key )
+			);
+		}
+	}
+
+	/**
 	 * The parts drawn are the parts saved.
 	 *
 	 * Rendering and sanitizing resolve them separately, and a set that

@@ -83,9 +83,11 @@ final class EmailEditorType extends AbstractNestedType {
 		}
 
 		$parts['subject'] = [
-			'type'  => 'text',
-			'label' => __( 'Subject', 'arraypress' ),
-			'class' => 'large-text',
+			'type'        => 'text',
+			'label'       => __( 'Subject', 'arraypress' ),
+			'class'       => 'large-text',
+			'placeholder' => __( 'The subject line the recipient sees', 'arraypress' ),
+			'description' => __( 'Merge tags work here as well as in the body.', 'arraypress' ),
 		];
 
 		if ( (bool) $field->get( 'heading', false ) ) {
@@ -93,17 +95,19 @@ final class EmailEditorType extends AbstractNestedType {
 				'type'        => 'text',
 				'label'       => __( 'Heading', 'arraypress' ),
 				'class'       => 'large-text',
-				'description' => __( 'Shown at the top of the email, above the body.', 'arraypress' ),
+				'placeholder' => __( 'Shown above the body, if the template uses one', 'arraypress' ),
+				'description' => __( 'Left empty, the template falls back to whatever it uses by default.', 'arraypress' ),
 			];
 		}
 
 		$parts['body'] = [
-			'type'  => 'wysiwyg',
-			'label' => __( 'Body', 'arraypress' ),
+			'type'        => 'wysiwyg',
+			'label'       => __( 'Body', 'arraypress' ),
+			'description' => __( 'The email itself. Add Tag inserts a merge tag where you were last typing.', 'arraypress' ),
 			// The body is where a tag is actually wanted, and the editor puts
 			// the chooser beside Add Media, where someone writing one is
 			// already looking.
-			'tags'  => $field->get( 'tags', [] ),
+			'tags'        => $field->get( 'tags', [] ),
 		];
 
 		return $parts;

@@ -1456,9 +1456,51 @@ select.field-kit__select[multiple] {
 	display: none;
 }
 
+/* Core's .postbox .inside has no top padding — on a metabox screen the
+   first thing inside is a metabox that brings its own margin. A field does
+   not, so the first control sat against the header's border. */
 .field-kit__email .inside {
-	padding: 0 12px 12px;
+	padding: 12px;
 	margin: 0;
+}
+
+/* The arrow glyph is core's, but core scopes it to .meta-box-sortables —
+   the sortable container an edit screen's metaboxes live in, which a panel
+   outside one is not inside. So the button rendered with nothing in it.
+   Restated, both states, from common.css. */
+.field-kit__email .toggle-indicator::before {
+	content: "\f142";
+	display: inline-block;
+	font: normal 20px/1 dashicons;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-decoration: none;
+	width: 20px;
+	border-radius: 50%;
+	position: relative;
+	top: .05rem;
+	color: #787c82;
+}
+
+.field-kit__email.closed .toggle-indicator::before {
+	content: "\f140";
+}
+
+.field-kit__email .handlediv:hover .toggle-indicator::before,
+.field-kit__email .handlediv:focus .toggle-indicator::before {
+	color: #1d2327;
+}
+
+/* core sizes .handlediv on a metabox screen; ours needs it too or the
+   button collapses to the glyph with no target around it. */
+.field-kit__email .handlediv {
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	color: #787c82;
 }
 
 .field-kit__email .field-kit__field {
