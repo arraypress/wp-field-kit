@@ -538,6 +538,21 @@
 				render();
 			}
 
+			/**
+			 * Put the list under the input, at the input's width.
+			 *
+			 * Measured rather than inherited. The list used to be stretched
+			 * across the wrapper with left:0;right:0, so whenever anything
+			 * made the wrapper wider than the input — which core does on a
+			 * term screen — the list hung out past the control it belongs to.
+			 * The input is the only thing that knows how wide the control is.
+			 */
+			function place() {
+				list.style.width = input.offsetWidth + 'px';
+				list.style.left = input.offsetLeft + 'px';
+				list.style.top = ( input.offsetTop + input.offsetHeight ) + 'px';
+			}
+
 			function close() {
 				list.hidden = true;
 				list.innerHTML = '';
@@ -602,6 +617,7 @@
 					empty.className = 'field-kit__combobox-option';
 					empty.textContent = t( 'noResults', 'No results found.' );
 					list.appendChild( empty );
+					place();
 					list.hidden = false;
 					input.setAttribute( 'aria-expanded', 'true' );
 					kit.announce( status, t( 'noResults', 'No results found.' ) );
@@ -623,6 +639,7 @@
 					list.appendChild( option );
 				} );
 
+				place();
 				list.hidden = false;
 				input.setAttribute( 'aria-expanded', 'true' );
 

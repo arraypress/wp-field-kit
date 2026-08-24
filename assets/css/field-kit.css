@@ -42,14 +42,6 @@ input.field-kit__combobox-input,
 	width: 100%;
 }
 
-/* And the control itself matches the width core gives the inputs beside it,
-   rather than the kit's own cap — a dropdown two thirds the width of the
-   text field above it reads as a different kind of field. */
-.form-field .field-kit__combobox {
-	width: 95%;
-	max-width: none;
-}
-
 /* Core's .description carries the colour and size; only the spacing differs
    inside a field wrapper. */
 .field-kit__field .description {
@@ -604,11 +596,15 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * Relational combobox
  * -------------------------------------------------------------------- */
 
+/* A positioning context and nothing else. It deliberately sets no width:
+   every previous round of this bug came from the wrapper and the input
+   disagreeing about how wide they were, and then something — the arrow, the
+   list — being aligned to the wrong one. The input's width is core's
+   business (.regular-text, .form-field, whatever the screen sets), and the
+   list is measured from the input in JS rather than inherited from here. */
 .field-kit__combobox {
 	position: relative;
-	display: inline-block;
-	max-width: 25rem;
-	width: 100%;
+	display: block;
 }
 
 /* The arrow is painted on the input, exactly as core paints it on a <select>
@@ -627,11 +623,20 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	background-size: 16px 16px;
 }
 
+/* Open: the arrow points the other way. A background cannot be rotated, so
+   this is the same Dashicon mirrored — arrow-up-alt2 — rather than a
+   transform on an element that no longer exists. */
+.field-kit__combobox-input[aria-expanded="true"] {
+	background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M15%2014l-5-5-5%205-2-1%207-7%207%207-2%201z%22%20fill%3D%22%231e1e1e%22%2F%3E%3C%2Fsvg%3E');
+}
+
+/* Width and offset are set from the input's measured box on every open, so
+   the list is the width of the control it belongs to and not the width of
+   whatever happens to contain it. */
 .field-kit__combobox-list {
 	position: absolute;
 	z-index: 10;
 	left: 0;
-	right: 0;
 	max-height: 15rem;
 	margin: 0;
 	padding: 0;

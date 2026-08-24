@@ -32,8 +32,12 @@ const source = fs.readFileSync(
 function makeElement() {
 	const element = {
 		dataset: {},
-		classList: { add() {}, remove() {}, contains: () => false },
+		classList: { add() {}, remove() {}, contains: () => false, toggle() {} },
 		style: {},
+		offsetWidth: 240,
+		offsetHeight: 30,
+		offsetLeft: 0,
+		offsetTop: 0,
 		hidden: false,
 		disabled: false,
 		value: '',
@@ -196,6 +200,40 @@ try {
 			console.error( `  ColorPicker: expected two field-kit:change events, got ${ JSON.stringify( dispatched ) }` );
 			failures ++;
 		}
+	}
+} )();
+
+/*
+ * The combobox list is sized from the input, not from its wrapper.
+ *
+ * It used to be stretched across the wrapper with left:0;right:0, so anything
+ * that made the wrapper wider than the input — core does, on a term screen —
+ * left the list hanging past the control it belongs to. Measured from the
+ * input, it cannot. This asserts the measurement happens at all, since the
+ * failure is invisible in markup and the PHP suite cannot reach it.
+ */
+( function () {
+	const source = fs.readFileSync(
+		path.join( __dirname, '..', '..', 'assets', 'js', 'field-kit.js' ),
+		'utf8'
+	);
+
+	const placed = /list\.style\.width\s*=\s*input\.offsetWidth/.test( source );
+	const stretched = /\.field-kit__combobox-list[\s\S]{0,400}?right:\s*0/.test(
+		fs.readFileSync(
+			path.join( __dirname, '..', '..', 'assets', 'css', 'field-kit.css' ),
+			'utf8'
+		)
+	);
+
+	if ( ! placed ) {
+		console.error( '  Combobox: the list is not measured from the input' );
+		failures ++;
+	}
+
+	if ( stretched ) {
+		console.error( '  Combobox: the list is stretched across its wrapper again' );
+		failures ++;
 	}
 } )();
 
