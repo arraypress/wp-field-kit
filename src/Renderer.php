@@ -186,13 +186,15 @@ final class Renderer {
 	 */
 	private function wrap_labelled( Field $field, string $control, string $describers, bool $with_label = true ): string {
 		$label = '';
-		$badge = Badge::for_field( $field );
+
+		// A caller drawing its own heading — a table row's header cell — owns
+		// the badge too, and gets it from Badge::for_field(). Rendering one
+		// here as well would put a pill against the side of the control,
+		// which is where it looked wrong enough to be reported.
+		$badge = $with_label ? Badge::for_field( $field ) : '';
 
 		// A self-labelling control already carries its text; a second label
 		// above it would announce the field twice.
-		// A table-row layout puts the label in its own header cell, so the
-		// caller suppresses it here — the control keeps its id and the
-		// caller's label still points at it.
 		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
 			$label = sprintf(
 				'<label for="%s">%s%s%s</label>',
@@ -205,11 +207,11 @@ final class Renderer {
 			$badge = '';
 		}
 
-		// No label was drawn — a table row's header cell holds it, or the
-		// control labels itself — so the badge goes beside the control
-		// instead. It has to appear exactly once and it has to appear: a
-		// badge is what tells someone why the field is disabled.
-		return $this->wrapper( $field, $label . $badge . $control . $describers );
+		// A self-labelling control puts its own text inside its own label, so
+		// there is nothing to append the badge to. It follows the control
+		// rather than preceding it — before the checkbox it reads as a label
+		// for the box.
+		return $this->wrapper( $field, $label . $control . $badge . $describers );
 	}
 
 	/**
@@ -226,11 +228,11 @@ final class Renderer {
 		// announced as an unnamed group, so a caller drawing its own visible
 		// heading still needs this to exist for assistive technology — it is
 		// simply not shown twice.
-		$badge = Badge::for_field( $field );
-
-		// A hidden legend hides whatever is inside it, so the badge only
-		// belongs there when the legend is actually shown.
-		$in_legend = $with_label ? $badge : '';
+		// As above: a caller drawing its own heading owns the badge. A hidden
+		// legend would hide it anyway, which for a badge is the same as
+		// leaving it out.
+		$badge     = $with_label ? Badge::for_field( $field ) : '';
+		$in_legend = $badge;
 
 		$legend = '' === $field->label()
 			? ''

@@ -455,6 +455,16 @@
 			var selected = select.options[ select.selectedIndex ];
 			input.value = selected && selected.value ? selected.text : '';
 
+			// A closed dropdown with nothing chosen must still say what it is
+			// for. The select's own empty option carries that text — it is
+			// what a native select shows — so the placeholder comes from
+			// there rather than from a second piece of configuration.
+			var empty = Array.prototype.slice.call( select.options ).filter( function ( option ) {
+				return '' === option.value;
+			} )[ 0 ];
+
+			input.placeholder = select.dataset.placeholder || ( empty ? empty.text : '' );
+
 			// The select carries the value and stays in the form; it is
 			// removed from the tab order rather than hidden, so it is not
 			// reachable twice.

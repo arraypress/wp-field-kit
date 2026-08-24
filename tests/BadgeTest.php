@@ -188,31 +188,16 @@ final class BadgeTest extends TestCase {
 	/**
 	 * A grouped field's badge goes in the legend.
 	 */
-	public function test_a_grouped_field_puts_its_badge_in_the_legend(): void {
-		$html = ( new Renderer() )->render(
-			$this->field(
-				[
-					'label'   => 'Modes',
-					'options' => [ 'a' => 'A' ],
-					'badge'   => 'Pro',
-				],
-				'radio'
-			)
-		);
-
-		$this->assertMatchesRegularExpression( '/<legend[^>]*>.*field-kit__badge.*<\/legend>/s', $html );
-	}
-
 	/**
-	 * The badge appears exactly once, wherever the label ended up.
+	 * The badge goes in the label, and nowhere else.
 	 *
-	 * A table-row layout draws the label in its own header cell and tells the
-	 * renderer to draw none. The badge was inside the label, so it vanished
-	 * with it — and a locked field with no badge is a disabled control with
-	 * no explanation, which is worse than no lock at all. Found on the live
-	 * settings page, where every field is a table row.
+	 * It first went beside the control whenever no label was drawn, which is
+	 * every field on a settings page — a table row draws its label in its own
+	 * header cell. That put a pill hard against the side of every input. A
+	 * caller that draws its own heading draws its own badge, from
+	 * Badge::for_field(), so the renderer must draw none.
 	 */
-	public function test_the_badge_appears_once_whether_or_not_a_label_is_drawn(): void {
+	public function test_the_badge_goes_in_the_label_and_nowhere_else(): void {
 		$renderer = new Renderer();
 
 		$field = $this->field(
@@ -222,24 +207,25 @@ final class BadgeTest extends TestCase {
 			]
 		);
 
-		$with    = $renderer->render( $field, '', true );
-		$without = $renderer->render( $field, '', false );
+		$with = $renderer->render( $field, '', true );
 
 		$this->assertSame( 1, substr_count( $with, 'field-kit__badge' ) );
-		$this->assertSame( 1, substr_count( $without, 'field-kit__badge' ) );
-
-		// In the label when there is one, outside it when there is not.
 		$this->assertMatchesRegularExpression( '/<label[^>]*>.*field-kit__badge.*<\/label>/s', $with );
-		$this->assertStringNotContainsString( '<label', $without );
+
+		// The caller owns the heading, so it owns the badge.
+		$this->assertStringNotContainsString( 'field-kit__badge', $renderer->render( $field, '', false ) );
+
+		// And it is still available to that caller.
+		$this->assertStringContainsString( 'field-kit__badge', Badge::for_field( $field ) );
 	}
 
 	/**
-	 * A self-labelling control still shows its badge.
+	 * A self-labelling control gets its badge after the control.
 	 *
-	 * A toggle carries its own label, so the renderer draws none — and the
-	 * badge would have gone with it.
+	 * A toggle puts its own text inside its own label, so there is nothing to
+	 * append to. Before the control it reads as a label for the box.
 	 */
-	public function test_a_self_labelling_control_still_shows_its_badge(): void {
+	public function test_a_self_labelling_control_gets_its_badge_after_the_control(): void {
 		$html = ( new Renderer() )->render(
 			$this->field(
 				[
@@ -251,30 +237,32 @@ final class BadgeTest extends TestCase {
 		);
 
 		$this->assertSame( 1, substr_count( $html, 'field-kit__badge' ) );
+		$this->assertGreaterThan( strpos( $html, '<input' ), strpos( $html, 'field-kit__badge' ) );
 	}
 
 	/**
-	 * A group with a hidden legend shows its badge outside the legend.
-	 *
-	 * Inside a screen-reader-text legend it would be invisible, which for a
-	 * badge is the same as absent.
+	 * A group's badge goes in its legend, or nowhere.
 	 */
-	public function test_a_group_with_a_hidden_legend_shows_its_badge_outside_it(): void {
-		$html = ( new Renderer() )->render(
-			$this->field(
-				[
-					'label'   => 'Modes',
-					'options' => [ 'a' => 'A' ],
-					'badge'   => 'Pro',
-				],
-				'radio'
-			),
-			'',
-			false
+	public function test_a_group_badge_goes_in_the_legend_or_nowhere(): void {
+		$renderer = new Renderer();
+
+		$field = $this->field(
+			[
+				'label'   => 'Modes',
+				'options' => [ 'a' => 'A' ],
+				'badge'   => 'Pro',
+			],
+			'radio'
 		);
 
-		$this->assertSame( 1, substr_count( $html, 'field-kit__badge' ) );
-		$this->assertDoesNotMatchRegularExpression( '/<legend[^>]*>.*field-kit__badge.*<\/legend>/s', $html );
+		$this->assertMatchesRegularExpression(
+			'/<legend[^>]*>.*field-kit__badge.*<\/legend>/s',
+			$renderer->render( $field, '', true )
+		);
+
+		// A hidden legend would hide it, which for a badge is the same as
+		// leaving it out — and the caller draws its own.
+		$this->assertStringNotContainsString( 'field-kit__badge', $renderer->render( $field, '', false ) );
 	}
 
 	/**
