@@ -263,11 +263,13 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * Range
  * -------------------------------------------------------------------- */
 
+/* No max-width: the cell it sits in already constrains it, and capping it
+   makes a slider stop short of the field beside it on a narrow screen — the
+   term screens are where that shows. */
 .field-kit__range {
 	display: flex;
 	align-items: center;
 	gap: .75rem;
-	max-width: 25rem;
 }
 
 .field-kit__range input[type="range"] {
@@ -1294,6 +1296,20 @@ li.field-kit__repeater-row {
 	margin-top: 5px;
 }
 
+/* -----------------------------------------------------------------------
+ * Narrow screens
+ *
+ * 782px is WordPress's own admin breakpoint — the width at which core turns
+ * the form table into stacked blocks and grows every control to a 40px touch
+ * target. The composites here are the parts core knows nothing about: a row
+ * of controls that fits beside a label on a desktop has to become a column
+ * when the label is above it and the viewport is 360px.
+ *
+ * Tabs wrap rather than scroll, which is what core's own do. A row of tabs
+ * that scrolls sideways hides the ones off-screen from everybody, and from a
+ * screen reader it is a list whose end nobody can find.
+ * -------------------------------------------------------------------- */
+
 @media screen and (max-width: 782px) {
 
 	.field-kit__page-screen .wrap {
@@ -1303,6 +1319,101 @@ li.field-kit__repeater-row {
 	.field-kit__page-screen .notice,
 	.field-kit__page-screen .update-nag {
 		margin: 5px 10px 15px;
+	}
+
+	/* Core's tab margin is 1rem a side, which on a phone leaves two tabs to
+	   a line and a lot of nothing between them. */
+	.field-kit__page-tabs {
+		justify-content: flex-start;
+		padding: 0 12px;
+	}
+
+	.wp-core-ui .field-kit__page-tab,
+	.field-kit__page-tab {
+		margin: 0 .75rem 0 0;
+		padding: .5rem 0 .75rem;
+	}
+
+	/* Every composite that puts controls in a row: down the screen instead,
+	   each one filling the width. */
+	.field-kit__amount,
+	.field-kit__dimensions,
+	.field-kit__range-pair,
+	.field-kit__clipboard,
+	.field-kit__license,
+	.field-kit__code,
+	.field-kit__media-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.field-kit__amount > *,
+	.field-kit__dimensions > *,
+	.field-kit__range-pair > *,
+	.field-kit__clipboard > *,
+	.field-kit__license > *,
+	.field-kit__code > * {
+		width: 100%;
+	}
+
+	/* A unit belongs beside its number, not on a line of its own. */
+	.field-kit__amount-unit--fixed,
+	.field-kit__dimensions-unit {
+		width: auto;
+		align-self: flex-start;
+	}
+
+	.field-kit__clipboard .field-kit__clipboard-value,
+	.field-kit__code-value,
+	.field-kit__select,
+	.field-kit__combobox,
+	.field-kit__combobox-input {
+		min-width: 0;
+		width: 100%;
+	}
+
+	/* A repeater row's fields always run down here: two text inputs side by
+	   side in a 360px viewport are two inputs nobody can type in. */
+	.field-kit__repeater-fields {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	/* A table repeater cannot stay a table — its columns would each be a few
+	   characters wide — so each row becomes a card with its headers hidden
+	   and its cells stacked. */
+	.field-kit__repeater--table table,
+	.field-kit__repeater--table tbody,
+	.field-kit__repeater--table tr,
+	.field-kit__repeater--table td {
+		display: block;
+		width: auto;
+	}
+
+	.field-kit__repeater--table thead {
+		display: none;
+	}
+
+	.field-kit__repeater--table tr {
+		margin: 0 0 .5rem;
+		padding: .75rem;
+		border: 1px solid #dcdcde;
+		background: #fff;
+	}
+
+	/* Tiles small enough that two still fit, rather than one filling the
+	   screen. */
+	.field-kit__gallery-item {
+		width: 100px;
+	}
+
+	.field-kit__gallery-item img {
+		height: 100px;
+	}
+
+	/* A slider needs the width more than its readout does. */
+	.field-kit__range {
+		gap: .5rem;
 	}
 }
 
@@ -1578,8 +1689,15 @@ select.field-kit__select[multiple] {
 }
 
 /* The term screens put fields in a table; without this every control is
-   pushed to the full width of a very wide cell. */
-.form-field .field-kit__field input[type="text"],
+   pushed to the full width of a very wide cell.
+
+   Not the combobox's input. Its wrapper already carries the cap, and the
+   arrow is painted on the input while the clear button is positioned against
+   the wrapper — so making the input 95% of the wrapper slides the arrow five
+   per cent inwards and straight underneath the clear button. On a 25rem
+   field that is twenty pixels, which is exactly enough to stack one on the
+   other. */
+.form-field .field-kit__field input[type="text"]:not(.field-kit__combobox-input),
 .form-field .field-kit__field input[type="url"],
 .form-field .field-kit__field input[type="email"],
 .form-field .field-kit__field input[type="tel"],
