@@ -103,4 +103,16 @@ final class AjaxType extends AbstractRelationalType {
 
 		return sanitize_text_field( (string) ( is_array( $value ) ? reset( $value ) : $value ) );
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'label_callback', 'search_callback', 'search_source' ]
+		);
+	}
 }

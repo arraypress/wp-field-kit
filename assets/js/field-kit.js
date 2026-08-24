@@ -1296,6 +1296,14 @@
 				return;
 			}
 
+			// The frame is a multi-select, so a limit has to be checked per
+			// attachment as they arrive rather than once before it opens.
+			var max = parseInt( wrap.dataset.maxItems || '0', 10 );
+
+			if ( max > 0 && list.children.length >= max ) {
+				return;
+			}
+
 			var template = list.querySelector( '.field-kit__gallery-item' );
 			var item;
 
@@ -1364,14 +1372,22 @@
 		sync: function ( list ) {
 			var wrap = list.closest( '.field-kit__gallery' );
 			var input = wrap.querySelector( '.field-kit__media-value' );
+			var items = Array.from( list.querySelectorAll( '.field-kit__gallery-item' ) );
 
-			if ( ! input ) {
-				return;
+			if ( input ) {
+				input.value = items.map( function ( item ) {
+					return item.dataset.id;
+				} ).join( ',' );
 			}
 
-			input.value = Array.from( list.querySelectorAll( '.field-kit__gallery-item' ) ).map( function ( item ) {
-				return item.dataset.id;
-			} ).join( ',' );
+			// A full gallery says so by disabling the button rather than by
+			// opening the frame and then quietly discarding the choice.
+			var max = parseInt( wrap.dataset.maxItems || '0', 10 );
+			var choose = wrap.querySelector( '.field-kit__media-choose' );
+
+			if ( choose && max > 0 ) {
+				choose.disabled = items.length >= max;
+			}
 		}
 	};
 

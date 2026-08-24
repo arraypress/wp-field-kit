@@ -286,4 +286,16 @@ class SelectType extends AbstractType {
 	public function supports_inline(): bool {
 		return true;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'creatable', 'empty_label', 'multiple', 'searchable' ]
+		);
+	}
 }

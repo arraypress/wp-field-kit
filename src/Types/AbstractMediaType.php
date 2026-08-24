@@ -189,4 +189,16 @@ abstract class AbstractMediaType extends AbstractType {
 	public function schema( Field $field ): array {
 		return [ 'type' => [ 'integer', 'string' ] ];
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'library' ]
+		);
+	}
 }

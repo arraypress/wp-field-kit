@@ -69,4 +69,16 @@ final class ImageType extends AbstractMediaType {
 			wp_get_attachment_image( $id, $size, false, [ 'alt' => $alt ] )
 		);
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'preview_size' ]
+		);
+	}
 }

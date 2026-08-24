@@ -115,4 +115,16 @@ final class LicenseType extends AbstractInputType {
 	public function supports_inline(): bool {
 		return false;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'action_names', 'is_active', 'status_message' ]
+		);
+	}
 }

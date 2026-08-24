@@ -103,4 +103,16 @@ final class CodeType extends TextareaType {
 	public function supports_inline(): bool {
 		return false;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'language' ]
+		);
+	}
 }

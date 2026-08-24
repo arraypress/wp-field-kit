@@ -122,4 +122,16 @@ final class WysiwygType extends AbstractType {
 	public function sanitize( mixed $value, Field $field ): string {
 		return wp_kses_post( (string) $value );
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'media_buttons', 'rows', 'tags', 'teeny' ]
+		);
+	}
 }

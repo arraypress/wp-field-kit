@@ -57,4 +57,16 @@ final class UserType extends AbstractRelationalType {
 
 		return $labels;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'role' ]
+		);
+	}
 }

@@ -42,4 +42,16 @@ final class HtmlType extends AbstractLayoutType {
 			wp_kses_post( (string) $content )
 		);
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'content', 'html' ]
+		);
+	}
 }

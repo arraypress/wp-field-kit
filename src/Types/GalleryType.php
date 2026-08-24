@@ -72,6 +72,7 @@ final class GalleryType extends AbstractMediaType {
 		$wrapper->add_class( 'field-kit__media', 'field-kit__gallery' );
 		$wrapper->set( 'data-frame-title', $this->frame_title() );
 		$wrapper->set( 'data-mime-type', 'image' );
+		$wrapper->set( 'data-max-items', (int) $field->get( 'max_items', 0 ) );
 
 		return sprintf(
 			'<div%s>%s<input%s />%s</div>',
@@ -234,8 +235,13 @@ final class GalleryType extends AbstractMediaType {
 	 */
 	public function sanitize( mixed $value, Field $field ): array {
 		$value = is_array( $value ) ? $value : explode( ',', (string) $value );
+		$ids   = array_values( array_filter( array_map( 'absint', $value ) ) );
+		$max   = (int) $field->get( 'max_items', 0 );
 
-		return array_values( array_filter( array_map( 'absint', $value ) ) );
+		// Enforced here as well as in the browser. A limit the script alone
+		// keeps is not a limit — the value posts as a plain comma-separated
+		// list, and anything can post one.
+		return $max > 0 ? array_slice( $ids, 0, $max ) : $ids;
 	}
 
 	/**
@@ -262,5 +268,17 @@ final class GalleryType extends AbstractMediaType {
 			'type'  => 'array',
 			'items' => [ 'type' => 'integer' ],
 		];
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'max_items' ]
+		);
 	}
 }

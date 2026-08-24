@@ -80,4 +80,16 @@ final class ActionButtonType extends AbstractType {
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return null;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'action', 'action_names', 'button_label', 'confirm', 'variant' ]
+		);
+	}
 }

@@ -150,4 +150,20 @@ interface FieldType {
 	 * @return array{scripts: string[], styles: string[]}
 	 */
 	public function dependencies(): array;
+
+	/**
+	 * The configuration keys this type reads, beyond the common ones.
+	 *
+	 * Declared so a key that nothing reads can be told apart from one that
+	 * does. Without it a typo, a renamed key or a key copied from a different
+	 * type is not an error of any kind — the array entry is simply never
+	 * looked at, the control renders with its defaults, and the only symptom
+	 * is that a documented option does nothing.
+	 *
+	 * The common keys — label, description, default and the rest of what
+	 * every field has — live on Field and are not repeated here.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array;
 }

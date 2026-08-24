@@ -240,4 +240,16 @@ abstract class AbstractType implements FieldType {
 	public function supports_inline(): bool {
 		return false;
 	}
+
+	/**
+	 * Nothing beyond the common keys, unless a type says otherwise.
+	 *
+	 * A type that reads its own configuration overrides this and merges with
+	 * parent::config_keys(), so an abstract's keys are not lost.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return [];
+	}
 }

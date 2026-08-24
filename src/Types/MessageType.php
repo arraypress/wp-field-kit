@@ -64,4 +64,16 @@ final class MessageType extends AbstractLayoutType {
 			wp_kses_post( (string) $field->get( 'message', '' ) )
 		);
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'level', 'message' ]
+		);
+	}
 }

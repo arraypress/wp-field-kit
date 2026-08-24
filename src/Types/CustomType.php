@@ -135,4 +135,16 @@ final class CustomType extends AbstractType {
 			? array_map( 'sanitize_text_field', $value )
 			: sanitize_text_field( (string) $value );
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'render_callback', 'sanitize_callback' ]
+		);
+	}
 }

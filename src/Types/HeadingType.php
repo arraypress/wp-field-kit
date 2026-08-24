@@ -50,4 +50,16 @@ final class HeadingType extends AbstractLayoutType {
 			esc_html( $field->label() )
 		);
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'level' ]
+		);
+	}
 }

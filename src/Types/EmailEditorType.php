@@ -279,4 +279,16 @@ final class EmailEditorType extends AbstractNestedType {
 	public function spans_row(): bool {
 		return true;
 	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'action_names', 'collapsed', 'heading', 'recipient', 'tags' ]
+		);
+	}
 }

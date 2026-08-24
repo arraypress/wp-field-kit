@@ -25,6 +25,87 @@ use ArrayPress\FieldKit\Contracts\FieldType;
 final class Field {
 
 	/**
+	 * Configuration every field understands, whatever its type.
+	 *
+	 * Read by Field itself, by the renderer, by the field set and by the meta
+	 * registrar rather than by any one type — which is why they are listed
+	 * here and not repeated across fifty-odd type classes.
+	 *
+	 * @var string[]
+	 */
+	public const COMMON_KEYS = [
+		// Identity and rendering.
+		'type',
+		'label',
+		'description',
+		'default',
+		'placeholder',
+		'required',
+		'options',
+		'fields',
+		'sub_fields',
+		'class',
+		'data',
+		'input_id',
+		'input_name',
+		'disabled',
+		'readonly',
+		'autocomplete',
+
+		// Conditional display. `depends` is the older spelling of `show_when`
+		// and both are read, so both are valid.
+		'show_when',
+		'depends',
+
+		// Handled outside the type: search endpoints, row actions, badges,
+		// storage and REST exposure.
+		'search_source',
+		'search_callback',
+		'search_capability',
+		'actions',
+		'action_names',
+		'action_callback',
+		'action_capability',
+		'badge',
+		'encrypted',
+		'show_in_rest',
+		'capability',
+		'meta_key',
+		'sanitize_callback',
+
+		// Consumed by a consuming library rather than by the kit: a table
+		// repeater's column width, a metabox panel's placement.
+		'column_width',
+		'panel',
+	];
+
+	/**
+	 * Keys a consuming library reads for itself.
+	 *
+	 * The kit cannot know these. A term field's `permission_callback`, a user
+	 * field's `own_capability`, a table repeater's `column_width` — each is
+	 * read by the library that renders the surface, not by any type here, and
+	 * without somewhere to declare them the check below would report every
+	 * one of them as a mistake.
+	 *
+	 * @var string[]
+	 */
+	private static array $allowed = [];
+
+	/**
+	 * Declare configuration a consuming library reads.
+	 *
+	 * Called once as a library boots.
+	 *
+	 * @param string[] $keys Configuration keys.
+	 *
+	 * @return void
+	 */
+	public static function allow_config_keys( array $keys ): void {
+		self::$allowed = array_values( array_unique( array_merge( self::$allowed, $keys ) ) );
+	}
+
+	/**
 	 * Field key, unique within its context.
 	 *
 	 * @var string
@@ -65,6 +146,66 @@ final class Field {
 		$this->type   = $type;
 		$this->config = $config;
 		$this->value  = $value;
+
+		$this->warn_about_unknown_keys();
+	}
+
+	/**
+	 * Configuration keys nothing will read.
+	 *
+	 * A key nothing reads is not an error in PHP — the entry sits in the
+	 * array, the control renders with its defaults, and the only symptom is
+	 * that a documented option quietly does nothing. Every one of these has
+	 * happened: `button_label` on a repeater, whose add button is `add_label`;
+	 * `max_items` on a repeater, whose limit is `max_rows`; a multiple select
+	 * given `display => checkbox`, which is its own type.
+	 *
+	 * @return string[]
+	 */
+	public function unknown_keys(): array {
+		return array_values(
+			array_diff(
+				array_keys( $this->config ),
+				self::COMMON_KEYS,
+				self::$allowed,
+				$this->type->config_keys()
+			)
+		);
+	}
+
+	/**
+	 * Say so, while someone is looking.
+	 *
+	 * Debug only: this is a mistake in a consumer's configuration, not a
+	 * reason to interrupt a live site, and a field that ignores a key it does
+	 * not know still renders.
+	 *
+	 * @return void
+	 */
+	private function warn_about_unknown_keys(): void {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! function_exists( '_doing_it_wrong' ) ) {
+			return;
+		}
+
+		$unknown = $this->unknown_keys();
+
+		if ( [] === $unknown ) {
+			return;
+		}
+
+		_doing_it_wrong(
+			__METHOD__,
+			esc_html(
+				sprintf(
+					/* translators: 1: field key, 2: field type, 3: comma-separated list of configuration keys */
+					__( 'The field "%1$s" (%2$s) was given configuration nothing reads: %3$s.', 'arraypress' ),
+					$this->key,
+					$this->type->id(),
+					implode( ', ', $unknown )
+				)
+			),
+			'1.0.0'
+		);
 	}
 
 	/**
