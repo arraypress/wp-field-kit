@@ -120,9 +120,10 @@ if ( ! modules ) {
 }
 
 const expected = [
-	'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder',
-	'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker',
-	'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip',
+	'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox',
+	'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor',
+	'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton',
+	'Tooltip',
 ];
 
 expected.forEach( ( name ) => {

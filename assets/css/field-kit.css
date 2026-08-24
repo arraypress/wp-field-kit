@@ -285,10 +285,38 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__dimensions,
 .field-kit__range-pair,
+/* A text field with a button that fills it in. Same shape as the clipboard
+   field: the control and its button on one line, the input taking what is
+   left. */
+.field-kit__code {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+}
+
+.field-kit__code-value {
+	flex: 1;
+	min-width: 0;
+}
+
 .field-kit__amount {
 	display: flex;
 	align-items: flex-end;
 	gap: .5rem;
+}
+
+/* The unit on the left instead, which is what a currency wants in most of
+   the world's locales. */
+.field-kit__amount--prefix {
+	flex-direction: row;
+}
+
+/* A fixed unit is text, not a control: it sits on the input's baseline rather
+   than being boxed like the select, because boxing it makes it look like
+   something you can press. */
+.field-kit__amount-unit--fixed {
+	align-self: center;
+	color: #646970;
 }
 
 .field-kit__dimensions-part,
@@ -1729,6 +1757,30 @@ select.field-kit__select[multiple] {
 	padding: .75rem;
 	border: 1px solid #dcdcde;
 	background: #fff;
+}
+
+/* An icon inside a button.
+
+   Core has no rule for this, which is why every library that puts one there
+   invents its own and gets it slightly wrong: a dashicon is a 20px inline box
+   sitting on a baseline, inside a button whose line-height is 2.15, so it
+   rides low and the label sits proud of it. Flex takes the baseline out of
+   the question entirely.
+
+   The class is set by the renderer rather than detected with :has(), so the
+   rule is deterministic and does not depend on where the markup ends up. */
+.wp-core-ui .field-kit__button--icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+}
+
+.wp-core-ui .field-kit__button--icon .dashicons {
+	font-size: 1rem;
+	width: 1rem;
+	height: 1rem;
+	line-height: 1;
 }
 
 /* The spinner only occupies space once it is running, or every button row

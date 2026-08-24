@@ -108,6 +108,10 @@ final class Button {
 			$button->add_class( (string) $config['class'] );
 		}
 
+		// Marked rather than detected with :has(), so the rule is deterministic
+		// and works wherever the markup ends up.
+		$button->set_if( '' !== $icon, 'class', 'field-kit__button--icon' );
+
 		$button->set_if( ! empty( $config['disabled'] ), 'disabled', true );
 
 		foreach ( (array) ( $config['attributes'] ?? [] ) as $name => $value ) {

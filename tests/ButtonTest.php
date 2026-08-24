@@ -141,6 +141,35 @@ final class ButtonTest extends TestCase {
 	}
 
 	/**
+	 * A button with an icon is marked, so one rule can align it.
+	 *
+	 * Core has no rule for an icon inside a button — a dashicon is a 20px
+	 * inline box on a baseline inside a button whose line-height is 2.15, so
+	 * it rides low and the label sits proud of it. Every library that puts
+	 * one there has invented its own fix and got it slightly wrong.
+	 */
+	public function test_an_icon_button_is_marked_and_aligned(): void {
+		$this->assertStringContainsString(
+			'field-kit__button--icon',
+			Button::render( [ 'label' => 'Add', 'icon' => 'plus-alt' ] )
+		);
+
+		// And not when there is no icon to align.
+		$this->assertStringNotContainsString(
+			'field-kit__button--icon',
+			Button::render( [ 'label' => 'Add' ] )
+		);
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/\.field-kit__button--icon\s*\{[^}]*align-items:\s*center/',
+			$css,
+			'Nothing aligns the icon.'
+		);
+	}
+
+	/**
 	 * An icon-only button still announces itself.
 	 *
 	 * Otherwise it is a button whose accessible name is empty, which a screen

@@ -43,6 +43,7 @@ final class Registry {
 		'range'           => Types\RangeType::class,
 		'textarea'        => Types\TextareaType::class,
 		'code'            => Types\CodeType::class,
+		'code_generator'  => Types\CodeGeneratorType::class,
 		'wysiwyg'         => Types\WysiwygType::class,
 
 		// Date and colour.

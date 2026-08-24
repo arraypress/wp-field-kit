@@ -13,12 +13,22 @@ use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Field;
 
 /**
- * A number paired with a unit, most often a percentage or a flat amount.
+ * A number with a unit attached to it.
  *
- * The unit is written to a second key, named by `type_meta_key`, because
- * consumers query and sort on it independently of the amount. Both controls
- * are labelled: a bare unit select beside a number is announced as an
- * unlabelled combo box.
+ * Two shapes, because they are the same control with the unit fixed or not.
+ *
+ * A *chosen* unit — a percentage or a flat amount, a currency, a weight — is a
+ * select beside the number, and is written to a second key named by
+ * `type_meta_key`, because consumers query and sort on it independently of the
+ * amount. Both controls are labelled: a bare unit select beside a number is
+ * announced as an unlabelled combo box.
+ *
+ * A *fixed* unit — `'unit' => '%'` — is static text rather than a control,
+ * marked aria-hidden because it is decoration on a field whose label already
+ * says what it measures. Nothing is written for it; there is nothing to write.
+ *
+ * `unit_position` puts either on the left instead, which is what a currency
+ * wants in most of the world's locales.
  */
 final class AmountType extends AbstractType {
 
@@ -38,13 +48,15 @@ final class AmountType extends AbstractType {
 	 */
 	public function defaults(): array {
 		return [
-			'type_options' => [
+			'type_options'  => [
 				'percent' => '%',
 				'flat'    => '$',
 			],
-			'type_default' => 'percent',
-			'min'          => 0,
-			'step'         => 0.01,
+			'type_default'  => 'percent',
+			'unit'          => '',
+			'unit_position' => 'suffix',
+			'min'           => 0,
+			'step'          => 0.01,
 		];
 	}
 
@@ -65,6 +77,31 @@ final class AmountType extends AbstractType {
 		$attributes->set_if( $field->has( 'step' ), 'step', $field->get( 'step' ) );
 		$attributes->set_if( '' !== $field->placeholder(), 'placeholder', $field->placeholder() );
 
+		$prefix = 'prefix' === (string) $field->get( 'unit_position', 'suffix' );
+		$fixed  = (string) $field->get( 'unit', '' );
+
+		$unit = '' === $fixed ? $this->unit_select( $field ) : sprintf(
+			'<span class="field-kit__amount-unit field-kit__amount-unit--fixed" aria-hidden="true">%s</span>',
+			esc_html( $fixed )
+		);
+
+		$input = sprintf( '<input%s />', $attributes->render() );
+
+		return sprintf(
+			'<div class="field-kit__amount%s">%s</div>',
+			$prefix ? ' field-kit__amount--prefix' : '',
+			$prefix ? $unit . $input : $input . $unit
+		);
+	}
+
+	/**
+	 * The unit as a select, for a unit the person chooses.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function unit_select( Field $field ): string {
 		$unit_id = $field->input_id() . '_unit';
 		$current = (string) $field->get( 'current_type', $field->get( 'type_default', 'percent' ) );
 		$options = '';
@@ -79,8 +116,7 @@ final class AmountType extends AbstractType {
 		}
 
 		return sprintf(
-			'<div class="field-kit__amount"><input%s />%s<select id="%s" name="%s" class="field-kit__amount-unit">%s</select></div>',
-			$attributes->render(),
+			'%s<select id="%s" name="%s" class="field-kit__amount-unit">%s</select>',
 			$this->sub_label( $unit_id, __( 'Unit', 'arraypress' ), false ),
 			esc_attr( $unit_id ),
 			esc_attr( (string) $field->get( 'type_meta_key', $field->key() . '_type' ) ),
@@ -180,7 +216,7 @@ final class AmountType extends AbstractType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'current_type', 'max', 'min', 'step', 'type_default', 'type_meta_key', 'type_options' ]
+			[ 'current_type', 'max', 'min', 'step', 'type_default', 'type_meta_key', 'type_options', 'unit', 'unit_position' ]
 		);
 	}
 }
