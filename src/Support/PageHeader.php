@@ -38,6 +38,25 @@ use ArrayPress\FieldKit\Attributes;
 final class PageHeader {
 
 	/**
+	 * The body class a screen using this header must carry.
+	 *
+	 * The header only spans the screen if `#wpcontent`'s 20px left padding is
+	 * removed, and core removes it with a body class rather than on the header
+	 * itself — `.privacy-settings #wpcontent { padding-left: 0 }` in
+	 * wp-admin/css/edit.css. Without the class the header sits 20px in from
+	 * the menu and does not look like core's, which is the only reason for
+	 * using core's markup.
+	 *
+	 * Named here rather than by the consumer so the rule and the class cannot
+	 * drift apart.
+	 *
+	 * @return string
+	 */
+	public static function body_class(): string {
+		return 'field-kit__page-screen';
+	}
+
+	/**
 	 * Render the header.
 	 *
 	 * Configured by array rather than by position: a header grew a logo and a

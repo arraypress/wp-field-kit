@@ -54,6 +54,33 @@ final class PageHeaderTest extends TestCase {
 	}
 
 	/**
+	 * The screen carries a body class, and the stylesheet acts on it.
+	 *
+	 * The header only spans the screen if #wpcontent's left padding is
+	 * removed, and core does that with a body class rather than on the header
+	 * itself. Without the class the header sits 20px in from the menu and
+	 * looks nothing like core's — which is the only reason for using core's
+	 * markup. Reported from the live page as "the margin on the left not
+	 * pulling the header across".
+	 */
+	public function test_the_body_class_is_named_and_styled(): void {
+		$class = PageHeader::body_class();
+
+		$this->assertSame( 'field-kit__page-screen', $class );
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Both selectors: .auto-fold raises the specificity for the
+		// collapsed-menu state, and core writes both for the same reason.
+		$this->assertStringContainsString( '.' . $class . ' #wpcontent', $css );
+		$this->assertStringContainsString( '.' . $class . '.auto-fold #wpcontent', $css );
+
+		// The padding removed has to be given back to whatever holds the body,
+		// or the content sits flush against the menu.
+		$this->assertStringContainsString( '.' . $class . ' .wrap', $css );
+	}
+
+	/**
 	 * The notice marker is present.
 	 *
 	 * common.js moves admin notices to sit after it. Without one they are

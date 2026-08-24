@@ -709,6 +709,56 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 }
 
 /* -----------------------------------------------------------------------
+ * A screen using the page header
+ *
+ * Core does not make the header full width; it removes #wpcontent's left
+ * padding for the two screens that use one, keyed on a body class:
+ *
+ *   .privacy-settings #wpcontent,
+ *   .privacy-settings.auto-fold #wpcontent { padding-left: 0 }
+ *
+ * Both selectors are needed — .auto-fold raises the specificity for the
+ * collapsed-menu state — and the padding it removes has to be given back to
+ * whatever holds the page body, or the content ends up flush against the
+ * menu. Core has .privacy-settings-body for that; a settings page has .wrap.
+ * -------------------------------------------------------------------- */
+
+.field-kit__page-screen #wpcontent,
+.field-kit__page-screen.auto-fold #wpcontent {
+	padding-left: 0;
+}
+
+/* .wrap is margin: 10px 20px 0 2px, so with the padding gone it would sit
+   2px from the menu. 22px is the total core keeps, and the same figure it
+   uses for notices on these screens. */
+.field-kit__page-screen .wrap {
+	margin-left: 22px;
+}
+
+/* Admin notices land after the header, outside .wrap, so they need the inset
+   too. Core's own figures for these screens. */
+.field-kit__page-screen .notice,
+.field-kit__page-screen .update-nag {
+	margin: 25px 20px 15px 22px;
+}
+
+.field-kit__page-screen .notice ~ .notice {
+	margin-top: 5px;
+}
+
+@media screen and (max-width: 782px) {
+
+	.field-kit__page-screen .wrap {
+		margin-left: 12px;
+	}
+
+	.field-kit__page-screen .notice,
+	.field-kit__page-screen .update-nag {
+		margin: 5px 10px 15px;
+	}
+}
+
+/* -----------------------------------------------------------------------
  * Screen Options tools
  *
  * A settings page's occasional controls — export, import, reset — live in
