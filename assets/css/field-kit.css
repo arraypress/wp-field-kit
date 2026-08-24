@@ -1416,7 +1416,7 @@ li.field-kit__repeater-row {
 	.field-kit__dimensions,
 	.field-kit__range-pair,
 	.field-kit__clipboard,
-	.field-kit__license,
+	.field-kit__license-control,
 	.field-kit__code,
 	.field-kit__media-actions {
 		flex-direction: column;
@@ -1427,7 +1427,7 @@ li.field-kit__repeater-row {
 	.field-kit__dimensions > *,
 	.field-kit__range-pair > *,
 	.field-kit__clipboard > *,
-	.field-kit__license > *,
+	.field-kit__license-control > *,
 	.field-kit__code > * {
 		width: 100%;
 	}
@@ -1690,11 +1690,35 @@ li.field-kit__repeater-row {
    this the button drops onto the next line. */
 .field-kit__clipboard,
 .field-kit__media-actions,
-.field-kit__amount,
-.field-kit__license {
+.field-kit__amount {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
+	gap: .5rem;
+}
+
+/* The licence is three rows: the key and its button, then the state, then
+   whatever the last action said. All four on one flex line put a sentence of
+   explanation out past the right-hand edge of everything else on the screen,
+   with the state badge stranded between the button and the sentence,
+   belonging to neither. */
+.field-kit__license {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: .5rem;
+}
+
+.field-kit__license-control {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .5rem;
+}
+
+.field-kit__license-meta {
+	display: flex;
+	align-items: center;
 	gap: .5rem;
 }
 
@@ -1969,6 +1993,10 @@ select.field-kit__select[multiple] {
 	min-height: 1.2em;
 }
 
+.field-kit__license-status {
+	margin: 0;
+}
+
 .field-kit__status--success {
 	color: #007017;
 }
@@ -1983,10 +2011,8 @@ select.field-kit__select[multiple] {
 	display: inline-flex;
 	align-items: center;
 	gap: .2rem;
-	margin-left: .5rem;
 	font-size: 12px;
 	font-weight: 600;
-	vertical-align: middle;
 }
 
 .field-kit__license-state--active {
@@ -2005,10 +2031,8 @@ select.field-kit__select[multiple] {
 }
 
 .field-kit__license-sites {
-	margin-left: .4rem;
 	color: #646970;
 	font-size: 12px;
-	vertical-align: middle;
 }
 
 .field-kit__status--error {

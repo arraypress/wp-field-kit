@@ -71,10 +71,17 @@ final class LicenseType extends AbstractInputType {
 		$button->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
 		$button->set( 'data-field', $field->key() );
 
+		// Three rows, not one line. The key, the button, the state and the
+		// status message all sat on a single flex row, which put a sentence
+		// of explanation out past the right-hand edge of everything else on
+		// the screen — and the state badge somewhere between the button and
+		// the sentence, belonging to neither.
 		return sprintf(
-			'<div class="field-kit__license">%s <button%s>%s</button>%s' .
-			'<span class="spinner"></span>' .
-			'<p class="field-kit__license-status description" aria-live="polite">%s</p></div>',
+			'<div class="field-kit__license">' .
+			'<div class="field-kit__license-control">%s<button%s>%s</button><span class="spinner"></span></div>' .
+			'%s' .
+			'<p class="field-kit__license-status description" aria-live="polite">%s</p>' .
+			'</div>',
 			parent::render( $field, $attributes ),
 			$button->render(),
 			esc_html( $active ? __( 'Deactivate', 'arraypress' ) : __( 'Activate', 'arraypress' ) ),
@@ -118,8 +125,9 @@ final class LicenseType extends AbstractInputType {
 		}
 
 		return sprintf(
+			'<div class="field-kit__license-meta">' .
 			'<span class="field-kit__license-state field-kit__license-state--%s">' .
-			'<span class="dashicons dashicons-%s" aria-hidden="true"></span>%s</span>%s',
+			'<span class="dashicons dashicons-%s" aria-hidden="true"></span>%s</span>%s</div>',
 			$active ? 'active' : 'inactive',
 			$active ? 'yes-alt' : 'marker',
 			esc_html( $active ? __( 'Active', 'arraypress' ) : __( 'Not active', 'arraypress' ) ),
