@@ -473,6 +473,25 @@
 			var selected = multiple ? null : select.options[ select.selectedIndex ];
 			input.value = selected && selected.value ? selected.text : '';
 
+			// A single control that is allowed to hold nothing gets a way
+			// back to nothing. A multiple one does not need it — each chip
+			// carries its own remove — and a required one has nothing valid
+			// to be cleared to.
+			var clearable = ! multiple && 'true' !== select.getAttribute( 'aria-required' ) && ! select.required;
+			var clear = null;
+
+			if ( clearable ) {
+				// The wrapper says so, so the input can hold room for the
+				// button whether or not it is showing — otherwise the text
+				// jumps sideways the moment something is chosen.
+				wrap.classList.add( 'field-kit__combobox--clearable' );
+
+				clear = document.createElement( 'button' );
+				clear.type = 'button';
+				clear.className = 'field-kit__combobox-clear';
+				clear.innerHTML = '<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>';
+			}
+
 			// A closed dropdown with nothing chosen must still say what it is
 			// for. The select's own empty option carries that text — it is
 			// what a native select shows — so the placeholder comes from
@@ -497,11 +516,16 @@
 			}
 
 			wrap.appendChild( input );
+
+			if ( clear ) {
+				wrap.appendChild( clear );
+			}
+
 			wrap.appendChild( select );
 			wrap.appendChild( list );
 			wrap.appendChild( status );
 
-			Combobox.bind( select, input, list, status, chips );
+			Combobox.bind( select, input, list, status, chips, clear );
 		},
 
 		/**
@@ -513,7 +537,7 @@
 		 * @param {HTMLElement}       status The live region.
 		 * @param {HTMLElement|null}  chips  Chip list, for a multiple select.
 		 */
-		bind: function ( select, input, list, status, chips ) {
+		bind: function ( select, input, list, status, chips, clear ) {
 			var active = -1;
 			var results = [];
 			var timer = null;
@@ -717,7 +741,55 @@
 				}
 
 				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				syncClear();
 				close();
+			}
+
+			/**
+			 * Show the clear button only when there is something to clear.
+			 */
+			function syncClear() {
+				if ( clear ) {
+					clear.hidden = '' === select.value;
+				}
+			}
+
+			/**
+			 * Put the control back to holding nothing.
+			 *
+			 * Emptying the input is not enough: the input is a search box and
+			 * the select is what posts, so the select has to be emptied too —
+			 * and for a remote control the option has to go, since it was
+			 * only ever there to carry the current choice.
+			 */
+			function clearValue() {
+				if ( remote ) {
+					select.innerHTML = '';
+				} else {
+					select.value = '';
+				}
+
+				input.value = '';
+				syncClear();
+				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+
+				// Focus goes back to the control rather than being dropped on
+				// the body, since the button that had it has just gone.
+				input.focus();
+			}
+
+			if ( clear ) {
+				syncClear();
+
+				clear.setAttribute(
+					'aria-label',
+					t( 'clearSelection', 'Clear the selection' )
+				);
+
+				clear.addEventListener( 'click', function ( event ) {
+					event.preventDefault();
+					clearValue();
+				} );
 			}
 
 			function choose( index ) {

@@ -435,6 +435,60 @@ try {
 	}
 } )();
 
+/*
+ * A single combobox can be put back to holding nothing.
+ *
+ * The input is a search box and the select is what posts, so emptying the
+ * visible text is not clearing the field — the select has to be emptied too,
+ * and for a remote control the option has to go, since it only ever existed
+ * to carry the current choice.
+ *
+ * Read out of the source rather than driven through the stub DOM. The button
+ * is built during init(), which needs a good deal more of a document than
+ * this file has, and a stub elaborate enough to run it would be asserting on
+ * the stub. What matters is the three decisions, and each is one line.
+ */
+( function () {
+	const source = fs.readFileSync(
+		path.join( __dirname, '..', '..', 'assets', 'js', 'field-kit.js' ),
+		'utf8'
+	);
+
+	const checks = [
+		[
+			/var clearable = ! multiple &&[^;]*required/,
+			'the clear button is offered to multiple or required controls, which have nothing to clear to',
+		],
+		[
+			/function clearValue\(\)[\s\S]{0,500}select\.innerHTML = ''/,
+			'clearing does not empty a remote control\'s option, so the old choice still posts',
+		],
+		[
+			/function clearValue\(\)[\s\S]{0,500}input\.value = ''/,
+			'clearing does not empty the input',
+		],
+		[
+			/function clearValue\(\)[\s\S]{0,700}dispatchEvent/,
+			'clearing fires no change event, so nothing watching the field hears it',
+		],
+		[
+			/clear\.hidden = '' === select\.value/,
+			'the clear button is shown when there is nothing to clear',
+		],
+		[
+			/field-kit__combobox--clearable/,
+			'the wrapper is not marked clearable, so the input reserves no room and the text jumps',
+		],
+	];
+
+	checks.forEach( ( [ pattern, complaint ] ) => {
+		if ( ! pattern.test( source ) ) {
+			console.error( `  Combobox: ${ complaint }` );
+			failures ++;
+		}
+	} );
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );

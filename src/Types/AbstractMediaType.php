@@ -101,7 +101,11 @@ abstract class AbstractMediaType extends AbstractType {
 
 		$clear = new Attributes();
 		$clear->set( 'type', 'button' );
-		$clear->add_class( 'button', 'button-link-delete', 'field-kit__media-clear' );
+		// Not .button-link-delete: that is core's red *link*, and putting it
+		// on a bordered .button gives red text inside a blue border. A
+		// bordered button that removes something is drawn the way the Site
+		// Icon's Remove is — see the stylesheet.
+		$clear->add_class( 'button', 'field-kit__button--delete', 'field-kit__media-clear' );
 		$clear->set_if( ! $has_value, 'hidden', true );
 		$clear->set(
 			'aria-label',

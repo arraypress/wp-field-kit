@@ -617,7 +617,19 @@ li.field-kit__repeater-row {
    list is measured from the input in JS rather than inherited from here. */
 .field-kit__combobox {
 	position: relative;
-	display: block;
+
+	/* Sized to the control rather than to the row. The cap used to live on
+	   the input alone, with the wrapper deliberately left to fill the row —
+	   which is fine for the arrow, painted on the input, and no good at all
+	   for the clear button, which is a real element and would be positioned
+	   against a box wider than the control it belongs to. That is the bug
+	   the arrow had three times.
+	   With the cap here and the input at width:100%, the two are the same
+	   box by construction and cannot drift apart. */
+	display: inline-block;
+	width: 100%;
+	max-width: 25rem;
+	vertical-align: top;
 }
 
 /* The arrow is painted on the input, exactly as core paints it on a <select>
@@ -628,13 +640,11 @@ li.field-kit__repeater-row {
    out in the margin. On a term screen core does change it, so it did. As a
    background it is part of the input and cannot come away from it. */
 .field-kit__combobox-input {
+	/* Fills the wrapper, which carries the cap. Core caps its own <select>
+	   at the same figure, so the control lines up with a plain select beside
+	   it. */
 	width: 100%;
-	/* Core caps its own <select> at the same figure. The cap is on the input
-	   rather than on the wrapper, because the wrapper deliberately has no
-	   width and everything else — the arrow, the list — is measured from the
-	   input. Without it the control ran the full width of the row while the
-	   plain select beside it did not. */
-	max-width: 25rem;
+	max-width: none;
 	padding-right: 2rem;
 	cursor: pointer;
 	/* The SVG is arrow-down-alt2 from Dashicons. */
@@ -647,6 +657,84 @@ li.field-kit__repeater-row {
    transform on an element that no longer exists. */
 .field-kit__combobox-input[aria-expanded="true"] {
 	background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M15%2014l-5-5-5%205-2-1%207-7%207%207-2%201z%22%20fill%3D%22%231e1e1e%22%2F%3E%3C%2Fsvg%3E');
+}
+
+/* -----------------------------------------------------------------------
+ * Destructive buttons
+ *
+ * Core has two shapes for "this removes something", and they are not the
+ * same. `.button-link-delete` is red *text* with no border — right for a
+ * link-styled control such as a row's Remove. A bordered button that removes
+ * something is drawn like the Site Icon's Remove: red text, red border, and
+ * it fills red on hover, using #b32d2e rather than the #d63638 of the link
+ * form.
+ *
+ * Combining `.button` with `.button-link-delete`, which is what this did, is
+ * neither: it produces red text inside a blue-bordered button.
+ * -------------------------------------------------------------------- */
+
+.wp-core-ui .field-kit__button--delete {
+	color: #b32d2e;
+	border-color: currentColor;
+	background: transparent;
+	box-shadow: none;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__button--delete:hover,
+.wp-core-ui .field-kit__button--delete:focus {
+	color: #fff;
+	border-color: #b32d2e;
+	background: #b32d2e;
+	box-shadow: 0 0 0 1px #b32d2e;
+}
+
+.wp-core-ui .field-kit__button--delete:disabled,
+.wp-core-ui .field-kit__button--delete[disabled] {
+	color: #8a8a8a !important;
+	border-color: #d8d8d8 !important;
+	background: transparent !important;
+}
+
+/* The clear button, between the text and the arrow./* The clear button, between the text and the arrow. Only ever rendered for a
+   control that is allowed to hold nothing: a multiple one clears through its
+   chips, and a required one has nothing valid to clear to. */
+.wp-core-ui .field-kit__combobox-clear {
+	position: absolute;
+	top: 50%;
+	right: 1.75rem;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: 0;
+	border-radius: 2px;
+	background: none;
+	color: #646970;
+	cursor: pointer;
+}
+
+.wp-core-ui .field-kit__combobox-clear:hover,
+.wp-core-ui .field-kit__combobox-clear:focus {
+	color: #d63638;
+}
+
+.field-kit__combobox-clear .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+/* Room for both controls at the right-hand end. The class is put on by the
+   script when it makes the button, rather than :has() on the button itself:
+   the padding must not change as the button appears and disappears, or the
+   text jumps sideways the moment something is chosen. */
+.field-kit__combobox--clearable .field-kit__combobox-input {
+	padding-right: 3.5rem;
 }
 
 /* The chosen values of a multiple combobox, above the input so the input is
