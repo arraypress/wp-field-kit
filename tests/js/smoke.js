@@ -239,9 +239,132 @@ try {
 	}
 } )();
 
+/*
+ * Adding a row leaves it usable.
+ *
+ * The template is rendered for a row that has no position, so both its move
+ * buttons come out disabled — and the row that used to be last still has its
+ * "move down" switched off. add() renumbered the clone and stopped there, so
+ * every added row was stuck where it landed. And nothing ran the modules over
+ * the new markup, so a combobox, colour picker or media button inside a row
+ * added after page load was inert: it rendered, and did nothing.
+ *
+ * Both are invisible to the PHP suite, which never adds a row.
+ */
+( function () {
+	/**
+	 * A repeater row carrying a pair of move buttons.
+	 *
+	 * @param {boolean} up   Whether "move up" starts disabled.
+	 * @param {boolean} down Whether "move down" starts disabled.
+	 * @return {object} The row.
+	 */
+	function makeRow( up, down ) {
+		const moveUp = Object.assign( makeElement(), { disabled: up, dataset: { action: 'move-up' } } );
+		const moveDown = Object.assign( makeElement(), { disabled: down, dataset: { action: 'move-down' } } );
+		const row = makeElement();
+
+		row.moveUp = moveUp;
+		row.moveDown = moveDown;
+		row.classList.contains = ( name ) => 'field-kit__repeater-row' === name;
+		row.querySelector = ( selector ) => {
+			if ( selector.includes( 'move-up' ) ) {
+				return moveUp;
+			}
+
+			if ( selector.includes( 'move-down' ) ) {
+				return moveDown;
+			}
+
+			return null;
+		};
+		row.querySelectorAll = () => [];
+		row.cloneNode = () => makeRow( up, down );
+
+		return row;
+	}
+
+	// One saved row, and a template whose row arrives with both moves off.
+	const first = makeRow( true, true );
+	const list = makeElement();
+
+	list.children = [ first ];
+	list.classList.contains = ( name ) => 'field-kit__repeater-rows' === name;
+	list.querySelectorAll = () => list.children;
+	list.appendChild = ( node ) => list.children.push( node );
+
+	const template = makeElement();
+	template.content = { firstElementChild: makeRow( true, true ) };
+
+	const wrap = makeElement();
+	list.closest = () => wrap;
+	wrap.dataset = { fieldName: 'rates' };
+	wrap.querySelector = ( selector ) => {
+		if ( selector.includes( 'template' ) ) {
+			return template;
+		}
+
+		if ( selector.includes( 'rows' ) ) {
+			return list;
+		}
+
+		return null;
+	};
+
+	const initialised = [];
+	const realInit = modules.init;
+	modules.init = ( root ) => initialised.push( root );
+
+	try {
+		modules.Repeater.add( wrap );
+	} catch ( error ) {
+		console.error( `  Repeater.add threw: ${ error.message }` );
+		failures ++;
+	} finally {
+		modules.init = realInit;
+	}
+
+	const added = list.children[ 1 ];
+
+	if ( ! added ) {
+		console.error( '  Repeater: no row was added' );
+		failures ++;
+	} else {
+		if ( added.moveUp.disabled ) {
+			console.error( '  Repeater: an added row cannot be moved up; it kept the template\'s disabled state' );
+			failures ++;
+		}
+
+		if ( first.moveDown.disabled ) {
+			console.error( '  Repeater: the row above an added one still cannot be moved down' );
+			failures ++;
+		}
+
+		if ( ! first.moveUp.disabled ) {
+			console.error( '  Repeater: the first row was given a move up' );
+			failures ++;
+		}
+
+		if ( ! added.moveDown.disabled ) {
+			console.error( '  Repeater: the last row was given a move down' );
+			failures ++;
+		}
+
+		if ( ! initialised.includes( added ) ) {
+			console.error( '  Repeater: the added row was never initialised; anything enhanced inside it is inert' );
+			failures ++;
+		}
+
+		if ( 'false' !== list.dataset.empty ) {
+			console.error( '  Repeater: the list still reports itself empty' );
+			failures ++;
+		}
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );
 }
 
-console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly` );
+console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live` );

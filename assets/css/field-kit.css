@@ -1715,6 +1715,15 @@ select.field-kit__select[multiple] {
 	margin: 0 0 .75rem;
 }
 
+/* core sets .widefat cells to 8px 10px, which is the right amount of room
+   for a line of text. Every cell here holds a form control that is 30px tall
+   on its own, so at that padding the control sits all but against the frame
+   and the header all but against the top of it. */
+.field-kit__repeater-table th,
+.field-kit__repeater-table td {
+	padding: 12px;
+}
+
 .field-kit__repeater-table th {
 	font-weight: 600;
 }

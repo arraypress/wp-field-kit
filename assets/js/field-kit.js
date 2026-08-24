@@ -1451,7 +1451,20 @@
 			var row = template.content.firstElementChild.cloneNode( true );
 
 			list.appendChild( row );
-			Repeater.reindex( list );
+
+			// Through Reorder rather than reindex(): the template is rendered
+			// for a row that has no position yet, so it arrives with both its
+			// move buttons disabled — and the row that used to be last still
+			// has its "move down" switched off. sync() renumbers and settles
+			// all of that; reindex() on its own only renumbers, which left
+			// every added row unable to move in either direction.
+			kit.Reorder.sync( list );
+
+			// The new row's markup has never been past the modules, so a
+			// combobox, colour picker or media button inside it is inert
+			// until it has. init() is re-entrant — every module marks what it
+			// has bound — so this reaches only what was just inserted.
+			kit.init( row );
 
 			var empty = wrap.querySelector( '.field-kit__repeater-empty' );
 
@@ -1487,7 +1500,10 @@
 			var next = row.nextElementSibling || row.previousElementSibling;
 
 			row.remove();
-			Repeater.reindex( list );
+
+			// sync() rather than reindex(), for the same reason as add(): the
+			// new first and last rows have moves that are no longer possible.
+			kit.Reorder.sync( list );
 
 			var empty = wrap.querySelector( '.field-kit__repeater-empty' );
 
