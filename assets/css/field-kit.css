@@ -927,7 +927,7 @@ li.field-kit__repeater-row {
 	background: transparent !important;
 }
 
-/* The clear button, between the text and the arrow./* The clear button, between the text and the arrow. Only ever rendered for a
+/* The clear button, between the text and the arrow. Only ever rendered for a
    control that is allowed to hold nothing: a multiple one clears through its
    chips, and a required one has nothing valid to clear to. */
 .wp-core-ui .field-kit__combobox-clear {
