@@ -1269,12 +1269,26 @@
 
 				var over = event.target.closest( selector );
 
-				if ( over && over !== dragging ) {
-					var after = over.getBoundingClientRect();
-					var before = ( event.clientY - after.top ) / after.height > 0.5;
-
-					list.insertBefore( dragging, before ? over.nextElementSibling : over );
+				if ( ! over || over === dragging ) {
+					return;
 				}
+
+				// Past the halfway line of the item under the pointer, the
+				// dragged one belongs after it rather than before.
+				var box = over.getBoundingClientRect();
+				var past = ( event.clientY - box.top ) / box.height > 0.5;
+				var reference = past ? over.nextElementSibling : over;
+
+				// Already exactly there. dragover fires continuously — many
+				// times per second — and the list has been reordered
+				// underneath the pointer since the last one, so without this
+				// a single crossing keeps re-inserting and the item travels
+				// two or three places at once instead of one.
+				if ( reference === dragging || dragging.nextElementSibling === reference ) {
+					return;
+				}
+
+				list.insertBefore( dragging, reference );
 			} );
 
 			[ 'dragend', 'drop' ].forEach( function ( type ) {

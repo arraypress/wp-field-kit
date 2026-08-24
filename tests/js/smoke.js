@@ -489,6 +489,31 @@ try {
 	} );
 } )();
 
+/*
+ * A drag moves an item one place, not two.
+ *
+ * dragover fires continuously — many times per second — and the list has
+ * already been reordered underneath the pointer since the previous one.
+ * Without a guard, a single crossing keeps re-inserting and the item travels
+ * two or three places at once, which is what a drag in a flyout was doing.
+ */
+( function () {
+	const source = fs.readFileSync(
+		path.join( __dirname, '..', '..', 'assets', 'js', 'field-kit.js' ),
+		'utf8'
+	);
+
+	if ( ! /reference === dragging \|\| dragging\.nextElementSibling === reference/.test( source ) ) {
+		console.error( '  Reorder: a dragover with nothing to change still re-inserts, so one drag moves several places' );
+		failures ++;
+	}
+
+	if ( ! /if \( ! over \|\| over === dragging \)/.test( source ) ) {
+		console.error( '  Reorder: dragover no longer bails when there is nothing under the pointer' );
+		failures ++;
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );
