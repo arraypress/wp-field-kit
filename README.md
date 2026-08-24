@@ -95,7 +95,7 @@ Text and numeric
 : `text` `email` `url` `tel` `password` `hidden` `number` `range` `textarea` `code` `wysiwyg` `code_generator`
 
 Date, time and colour
-: `date` `time` `datetime` `color` `date_range` `time_range`
+: `date` `time` `datetime` `color` `gradient` `date_range` `time_range`
 
 Choice
 : `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice`

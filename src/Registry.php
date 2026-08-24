@@ -51,6 +51,7 @@ final class Registry {
 		'time'            => Types\TimeType::class,
 		'datetime'        => Types\DatetimeType::class,
 		'color'           => Types\ColorType::class,
+		'gradient'        => Types\GradientType::class,
 
 		// Choice.
 		'select'          => Types\SelectType::class,

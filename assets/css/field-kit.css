@@ -293,6 +293,67 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	gap: .5rem;
 }
 
+/* Gradient swatches. A radio group underneath, exactly like the cards — the
+   input is hidden from sight but not from the accessibility tree or the tab
+   order, and the swatch is what a checked one looks like. */
+.field-kit__gradients {
+	display: grid;
+	grid-template-columns: repeat(var(--field-kit-gradient-columns, 4), minmax(0, 1fr));
+	gap: .75rem;
+	max-width: 40rem;
+}
+
+.field-kit__gradient {
+	display: flex;
+	flex-direction: column;
+	gap: .35rem;
+	cursor: pointer;
+}
+
+/* Off-screen rather than display:none, which would take it out of the tab
+   order and stop the arrow keys moving between the options. */
+.field-kit__gradient-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+
+.field-kit__gradient-swatch {
+	display: block;
+	height: 3.5rem;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+}
+
+/* The empty choice has no gradient to show, so it shows the absence of one —
+   core's own checkerboard shorthand for transparent. */
+.field-kit__gradient--none .field-kit__gradient-swatch {
+	background:
+		linear-gradient(45deg, #dcdcde 25%, transparent 25%, transparent 75%, #dcdcde 75%) 0 0 / 12px 12px,
+		linear-gradient(45deg, #dcdcde 25%, transparent 25%, transparent 75%, #dcdcde 75%) 6px 6px / 12px 12px,
+		#fff;
+}
+
+.field-kit__gradient-label {
+	font-size: 12px;
+	color: #50575e;
+}
+
+.field-kit__gradient-input:checked + .field-kit__gradient-swatch {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	box-shadow: 0 0 0 2px var(--wp-admin-theme-color, #2271b1);
+}
+
+/* Focus is the keyboard's version of hover, and the input it belongs to is
+   off-screen — so the swatch has to show it instead. */
+.field-kit__gradient-input:focus-visible + .field-kit__gradient-swatch {
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: 2px;
+}
+
 /* A text field with a button that fills it in. Same shape as the clipboard
    field: the control and its button on one line, the input taking what is
    left. */
@@ -1206,13 +1267,10 @@ li.field-kit__repeater-row {
    couple of pixels to its left. */
 .field-kit__page-header--left,
 .field-kit__page-header--left .privacy-settings-title-section {
-	text-align: left;
 	justify-content: flex-start;
-}
-
-.field-kit__page-header--left .privacy-settings-title-section {
 	gap: .5rem;
 	padding: 8px 20px 0 22px;
+	text-align: left;
 }
 
 .field-kit__page-header--left h1 {
@@ -1287,9 +1345,13 @@ li.field-kit__repeater-row {
 
 /* Admin notices land after the header, outside .wrap, so they need the inset
    too. Core's own figures for these screens. */
+/* Core's own is `25px 20px 15px 22px`, because on its two screens the notice
+   sits directly in #wpbody-content with nothing else supplying the gutter.
+   Here the .wrap below already has one, so those numbers indent every notice
+   relative to the content underneath it. */
 .field-kit__page-screen .notice,
 .field-kit__page-screen .update-nag {
-	margin: 25px 20px 15px 22px;
+	margin: 25px 0 15px;
 }
 
 .field-kit__page-screen .notice ~ .notice {
@@ -1318,7 +1380,7 @@ li.field-kit__repeater-row {
 
 	.field-kit__page-screen .notice,
 	.field-kit__page-screen .update-nag {
-		margin: 5px 10px 15px;
+		margin: 5px 0 15px;
 	}
 
 	/* Core's tab margin is 1rem a side, which on a phone leaves two tabs to
@@ -1516,6 +1578,15 @@ li.field-kit__repeater-row {
 
 .field-kit__page-badge {
 	align-self: center;
+
+	/* The same bottom margin core gives the heading beside it.
+	   `.privacy-settings-header h1` is `margin: 0 0.8rem 1rem`, and the title
+	   section is a flex row with `align-items: center` — which centres the
+	   *margin* box. So the heading's text sits half of that 1rem above the
+	   row's centre while a badge with no margin sits on it, and the badge
+	   reads as eight pixels low. Matching the margin makes both boxes centre
+	   the same way. */
+	margin-bottom: 1rem;
 	margin-left: .6rem;
 	padding: .1rem .5rem;
 	border: 1px solid #dcdcde;

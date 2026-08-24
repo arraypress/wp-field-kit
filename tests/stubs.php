@@ -399,3 +399,13 @@ if ( ! function_exists( 'number_format_i18n' ) ) {
 		return number_format( (float) $number, (int) $decimals );
 	}
 }
+
+/*
+ * The site's own gradient presets. Core defines a dozen and a theme adds its
+ * own; both arrive grouped by origin.
+ */
+if ( ! function_exists( 'wp_get_global_settings' ) ) {
+	function wp_get_global_settings( $path = [], $context = [] ) {
+		return $GLOBALS['fk_global_settings'] ?? [];
+	}
+}
