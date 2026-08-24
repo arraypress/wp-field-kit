@@ -83,31 +83,6 @@ final class PostSource implements Source {
 	}
 
 	/**
-	 * Resolve titles for known ids.
-	 *
-	 * @param string[] $ids Ids to resolve.
-	 *
-	 * @return array<string, string>
-	 */
-	public function labels( array $ids ): array {
-		$labels = [];
-
-		foreach ( array_map( 'absint', $ids ) as $id ) {
-			if ( 0 === $id ) {
-				continue;
-			}
-
-			$title = get_the_title( $id );
-
-			if ( '' !== $title ) {
-				$labels[ (string) $id ] = $title;
-			}
-		}
-
-		return $labels;
-	}
-
-	/**
 	 * The post type to query, restricted to what really exists.
 	 *
 	 * @param array<string, mixed> $args Arguments the field supplied.

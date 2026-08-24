@@ -41,6 +41,10 @@ class SelectType extends AbstractType {
 				'data-placeholder',
 				$field->placeholder()
 			);
+
+			// A control allowed to invent values is a tag input. Same
+			// combobox, one permission.
+			$attributes->set_if( (bool) $field->get( 'creatable', false ), 'data-creatable', 'true' );
 		}
 
 		return sprintf(
@@ -186,6 +190,13 @@ class SelectType extends AbstractType {
 	 * @return string[]
 	 */
 	protected function allowed_values( Field $field ): array {
+		// A creatable control has no allow-list by definition — the point of
+		// it is that a value need not be one of the options. Returning the
+		// options would silently discard every value anyone created.
+		if ( (bool) $field->get( 'creatable', false ) ) {
+			return [];
+		}
+
 		$allowed = [];
 
 		foreach ( $field->options() as $value => $label ) {

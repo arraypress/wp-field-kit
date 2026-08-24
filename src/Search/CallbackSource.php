@@ -96,29 +96,6 @@ final class CallbackSource implements Source {
 	}
 
 	/**
-	 * Resolve labels for known ids.
-	 *
-	 * @param string[] $ids Ids to resolve.
-	 *
-	 * @return array<string, string>
-	 */
-	public function labels( array $ids ): array {
-		if ( [] === $ids ) {
-			return [];
-		}
-
-		$labels = [];
-
-		foreach ( $this->normalize( ( $this->callback )( '', $ids, [] ) ) as $result ) {
-			if ( in_array( $result['id'], $ids, true ) ) {
-				$labels[ $result['id'] ] = $result['text'];
-			}
-		}
-
-		return $labels;
-	}
-
-	/**
 	 * Coerce whatever the callable returned into the endpoint's shape.
 	 *
 	 * Both the `[ id, text ]` shape and a plain `value => label` map are

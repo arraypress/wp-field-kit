@@ -79,7 +79,20 @@ abstract class AbstractRelationalType extends SelectType {
 			);
 		}
 
-		foreach ( $this->resolve_labels( $ids, $field ) as $id => $label ) {
+		$labels = $this->resolve_labels( $ids, $field );
+
+		// A created value never had an id to resolve, so it labels itself.
+		// Without this a tag someone added disappears from the control on the
+		// next load while still being stored.
+		if ( (bool) $field->get( 'creatable', false ) ) {
+			foreach ( array_map( 'strval', (array) $this->selected_values( $field ) ) as $raw ) {
+				if ( '' !== $raw && ! isset( $labels[ $raw ] ) ) {
+					$labels[ $raw ] = $raw;
+				}
+			}
+		}
+
+		foreach ( $labels as $id => $label ) {
 			$markup .= sprintf(
 				'<option value="%s" selected>%s</option>',
 				esc_attr( (string) $id ),
@@ -112,6 +125,8 @@ abstract class AbstractRelationalType extends SelectType {
 		// A field with a callback is resolved server-side by key, so the
 		// callable itself never reaches the page.
 		$attributes->set_if( $field->has( 'search_callback' ), 'data-search-field', $field->key() );
+
+		$attributes->set_if( (bool) $field->get( 'creatable', false ), 'data-creatable', 'true' );
 
 		return parent::render( $field, $attributes );
 	}
@@ -151,6 +166,16 @@ abstract class AbstractRelationalType extends SelectType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
+		// A creatable relational field stores whatever was typed alongside
+		// the ids it found — a new tag has no id yet, and absint() would
+		// turn it into 0 and throw it away.
+		if ( (bool) $field->get( 'creatable', false ) ) {
+			$values = array_map( 'sanitize_text_field', array_map( 'strval', (array) $value ) );
+			$values = array_values( array_filter( $values, static fn( $one ) => '' !== $one ) );
+
+			return $this->is_multiple( $field ) ? $values : ( $values[0] ?? '' );
+		}
+
 		if ( $this->is_multiple( $field ) ) {
 			return array_values( array_filter( array_map( 'absint', (array) $value ) ) );
 		}

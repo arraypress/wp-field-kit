@@ -64,6 +64,40 @@ final class AccessibilityTest extends TestCase {
 	}
 
 	/**
+	 * A control without a stored value is still a control with a label.
+	 *
+	 * spans_row() used to be derived from stores_value(), which conflated two
+	 * different questions. A clipboard and an action button store nothing —
+	 * there is no value to save — but both have a name, and the table gave
+	 * them a spanning cell with no header, so both lost their label entirely.
+	 */
+	public function test_a_valueless_control_still_wants_a_label(): void {
+		$registry = new Registry();
+
+		foreach ( [ 'clipboard', 'action_button' ] as $id ) {
+			$type = $registry->get( $id );
+
+			$this->assertFalse(
+				$type->stores_value(),
+				sprintf( '%s was expected to store nothing; this test is about the ones that do not.', $id )
+			);
+
+			$this->assertFalse(
+				$type->spans_row(),
+				sprintf( '%s spans the row, so a table gives it no header cell and it has no label.', $id )
+			);
+		}
+
+		// And the layout types, which genuinely have nothing to label.
+		foreach ( [ 'heading', 'message', 'html', 'separator' ] as $id ) {
+			$this->assertTrue(
+				$registry->get( $id )->spans_row(),
+				sprintf( '%s has no label to sit beside and should span.', $id )
+			);
+		}
+	}
+
+	/**
 	 * Every type produces a control the label can be associated with.
 	 *
 	 * @param string $id Type id.

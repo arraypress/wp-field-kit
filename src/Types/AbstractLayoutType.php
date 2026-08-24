@@ -53,4 +53,13 @@ abstract class AbstractLayoutType extends AbstractType {
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return null;
 	}
+
+	/**
+	 * A heading, a notice or a rule has no label to sit beside.
+	 *
+	 * @return bool
+	 */
+	public function spans_row(): bool {
+		return true;
+	}
 }

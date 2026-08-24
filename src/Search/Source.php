@@ -52,17 +52,4 @@ interface Source {
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
 	public function search( string $term, array $args, int $page, int $limit ): array;
-
-	/**
-	 * Resolve labels for a known set of ids.
-	 *
-	 * Searching for a term and resolving a stored selection are usually
-	 * different queries, so they are separate methods rather than one with a
-	 * special case.
-	 *
-	 * @param string[] $ids Ids to resolve.
-	 *
-	 * @return array<string, string>
-	 */
-	public function labels( array $ids ): array;
 }

@@ -135,13 +135,16 @@ abstract class AbstractType implements FieldType {
 	/**
 	 * Whether the field wants the whole row.
 	 *
-	 * A layout type has no label to sit beside, so it spans by default.
-	 * Anything that stores a value is a control until it says otherwise.
+	 * False here, and true only where a type says so. It used to be derived
+	 * from `stores_value()`, which conflated two different questions: a
+	 * clipboard and an action button store nothing and are still controls
+	 * with a name — and they lost their label entirely, because the table
+	 * gave them a spanning cell with no header.
 	 *
 	 * @return bool
 	 */
 	public function spans_row(): bool {
-		return ! $this->stores_value();
+		return false;
 	}
 
 	/**

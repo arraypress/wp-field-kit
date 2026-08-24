@@ -630,6 +630,60 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M15%2014l-5-5-5%205-2-1%207-7%207%207-2%201z%22%20fill%3D%22%231e1e1e%22%2F%3E%3C%2Fsvg%3E');
 }
 
+/* The chosen values of a multiple combobox, above the input so the input is
+   left free to keep searching rather than holding one of them. */
+.field-kit__combobox-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .25rem;
+	margin: 0 0 .35rem;
+	padding: 0;
+	list-style: none;
+}
+
+.field-kit__combobox-chips:empty {
+	display: none;
+	margin: 0;
+}
+
+.field-kit__combobox-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: .15rem;
+	margin: 0;
+	padding: .1rem .2rem .1rem .5rem;
+	border: 1px solid #c3c4c7;
+	border-radius: 2px;
+	background: #f6f7f7;
+	font-size: 12px;
+	line-height: 1.8;
+}
+
+.field-kit__combobox-chip-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.field-kit__combobox-chip-remove:hover,
+.field-kit__combobox-chip-remove:focus {
+	color: #b32d2e;
+}
+
+.field-kit__combobox-chip-remove .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	line-height: 1;
+}
+
 /* Width and offset are set from the input's measured box on every open, so
    the list is the width of the control it belongs to and not the width of
    whatever happens to contain it. */

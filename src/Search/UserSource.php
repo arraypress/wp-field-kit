@@ -81,25 +81,4 @@ final class UserSource implements Source {
 			'more'    => ( $page * $limit ) < (int) $query->get_total(),
 		];
 	}
-
-	/**
-	 * Resolve display names for known ids.
-	 *
-	 * @param string[] $ids Ids to resolve.
-	 *
-	 * @return array<string, string>
-	 */
-	public function labels( array $ids ): array {
-		$labels = [];
-
-		foreach ( array_map( 'absint', $ids ) as $id ) {
-			$user = 0 === $id ? false : get_userdata( $id );
-
-			if ( $user ) {
-				$labels[ (string) $id ] = sprintf( '%s (%s)', $user->display_name, $user->user_email );
-			}
-		}
-
-		return $labels;
-	}
 }

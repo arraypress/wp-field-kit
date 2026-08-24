@@ -166,6 +166,89 @@ final class FieldSetTest extends TestCase {
 	}
 
 	/**
+	 * A creatable control keeps a value its options never offered.
+	 *
+	 * That is the whole difference between a picker and a tag input. A
+	 * select's option list is normally an allow-list, and leaving that in
+	 * place would have discarded every value anyone created — silently, on
+	 * save, with the control showing it right up until the reload.
+	 */
+	public function test_a_creatable_select_keeps_an_invented_value(): void {
+		[ $set, $context ] = $this->option_set(
+			[
+				'picker' => [
+					'type'    => 'select2',
+					'options' => [ 'a' => 'A' ],
+				],
+				'tags'   => [
+					'type'      => 'select2',
+					'creatable' => true,
+					'multiple'  => true,
+					'options'   => [ 'a' => 'A' ],
+				],
+			]
+		);
+
+		$set->save(
+			[
+				'picker' => 'invented',
+				'tags'   => [ 'a', 'invented' ],
+			]
+		);
+
+		// The picker checks against its options; the tag input does not.
+		$this->assertArrayNotHasKey( 'picker', $context->values() );
+		$this->assertSame( [ 'a', 'invented' ], $context->values()['tags'] );
+	}
+
+	/**
+	 * A creatable relational field stores what was typed, not absint() of it.
+	 *
+	 * A new tag has no id yet. absint() turns it into 0, and the field set
+	 * treats 0 as a value, so it would have stored a row of zeroes.
+	 */
+	public function test_a_creatable_relational_field_keeps_text(): void {
+		[ $set, $context ] = $this->option_set(
+			[
+				'related' => [
+					'type'      => 'post',
+					'creatable' => true,
+					'multiple'  => true,
+				],
+			]
+		);
+
+		$set->save( [ 'related' => [ '42', 'A brand new thing' ] ] );
+
+		$this->assertSame( [ '42', 'A brand new thing' ], $context->values()['related'] );
+	}
+
+	/**
+	 * A created value labels itself when the field renders again.
+	 *
+	 * It never had an id to resolve, so without this a tag someone added
+	 * vanishes from the control on the next load while still being stored.
+	 */
+	public function test_a_created_value_survives_a_reload(): void {
+		[ $set ] = $this->option_set(
+			[
+				'related' => [
+					'type'      => 'post',
+					'creatable' => true,
+					'multiple'  => true,
+				],
+			]
+		);
+
+		$GLOBALS['fk_options']['fk_test'] = [ 'related' => [ 'A brand new thing' ] ];
+
+		$html = $set->render_field( $set->field( 'related' ) );
+
+		$this->assertStringContainsString( 'A brand new thing', $html );
+		$this->assertStringContainsString( 'data-creatable="true"', $html );
+	}
+
+	/**
 	 * A relational field with nothing selected stores nothing.
 	 *
 	 * Zero is a value to the field set, deliberately — an unticked checkbox

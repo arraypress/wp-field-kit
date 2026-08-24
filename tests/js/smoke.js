@@ -48,6 +48,7 @@ function makeElement() {
 		querySelector: () => null,
 		querySelectorAll: () => [],
 		closest: () => null,
+		hidden: false,
 		getAttribute: () => null,
 		setAttribute() {},
 		hasAttribute: () => false,

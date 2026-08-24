@@ -96,25 +96,6 @@ final class SearchController {
 				'args'                => $this->args(),
 			]
 		);
-
-		register_rest_route(
-			$namespace,
-			'/labels',
-			[
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => [ $this, 'labels' ],
-				'permission_callback' => [ $this, 'check_permission' ],
-				'args'                => [
-					'source' => $this->args()['source'],
-					'ids'    => [
-						'description' => __( 'Ids to resolve.', 'arraypress' ),
-						'type'        => 'array',
-						'required'    => true,
-						'items'       => [ 'type' => 'string' ],
-					],
-				],
-			]
-		);
 	}
 
 	/**
@@ -211,22 +192,6 @@ final class SearchController {
 				'results' => array_values( $found['results'] ?? [] ),
 				'more'    => (bool) ( $found['more'] ?? false ),
 			]
-		);
-	}
-
-	/**
-	 * Resolve labels for a set of ids.
-	 *
-	 * @param WP_REST_Request $request The request.
-	 *
-	 * @return WP_REST_Response
-	 */
-	public function labels( WP_REST_Request $request ): WP_REST_Response {
-		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
-		$ids    = array_map( 'sanitize_text_field', (array) $request->get_param( 'ids' ) );
-
-		return new WP_REST_Response(
-			[ 'labels' => $source->labels( array_slice( $ids, 0, self::MAX_LIMIT ) ) ]
 		);
 	}
 

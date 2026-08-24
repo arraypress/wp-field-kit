@@ -88,27 +88,6 @@ final class TermSource implements Source {
 	}
 
 	/**
-	 * Resolve names for known ids.
-	 *
-	 * @param string[] $ids Ids to resolve.
-	 *
-	 * @return array<string, string>
-	 */
-	public function labels( array $ids ): array {
-		$labels = [];
-
-		foreach ( array_map( 'absint', $ids ) as $id ) {
-			$term = 0 === $id ? null : get_term( $id );
-
-			if ( $term instanceof \WP_Term ) {
-				$labels[ (string) $id ] = $term->name;
-			}
-		}
-
-		return $labels;
-	}
-
-	/**
 	 * The taxonomy to query, restricted to what really exists.
 	 *
 	 * @param array<string, mixed> $args Arguments the field supplied.

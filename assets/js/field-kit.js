@@ -128,7 +128,16 @@
 				return Conditions.matches( condition, Conditions.valueOf( field, condition.field ) );
 			} );
 
-			field.hidden = ! met;
+			// On a settings, term or user screen a field is one cell of a
+			// table row, and hiding the cell's contents leaves the row's
+			// header behind — the label of a field that is not there. The row
+			// is only taken when this wrapper is the row's own field: a
+			// conditional field nested inside a repeater must not take the
+			// whole repeater's row with it.
+			var row = field.closest( 'tr' );
+			var target = row && row.querySelector( '.field-kit__field' ) === field ? row : field;
+
+			target.hidden = ! met;
 
 			// Hidden inputs are still submitted, and a disabled one is not —
 			// the server deletes a field whose conditions fail, but not
@@ -396,13 +405,6 @@
 					return;
 				}
 
-				if ( ! select.dataset.searchEndpoint && select.multiple ) {
-					// A multiple select has no combobox pattern here yet, and
-					// upgrading it half-way would lose the ability to pick
-					// more than one.
-					return;
-				}
-
 				select.dataset.fkBound = '1';
 				Combobox.build( select );
 			} );
@@ -456,7 +458,19 @@
 			status.className = 'screen-reader-text';
 			status.setAttribute( 'aria-live', 'polite' );
 
-			var selected = select.options[ select.selectedIndex ];
+			var multiple = select.multiple;
+
+			// A multiple select shows what is chosen as removable chips above
+			// the input, the way every tag control does — the input is left
+			// free to keep searching rather than holding one of the values.
+			var chips = null;
+
+			if ( multiple ) {
+				chips = document.createElement( 'ul' );
+				chips.className = 'field-kit__combobox-chips';
+			}
+
+			var selected = multiple ? null : select.options[ select.selectedIndex ];
 			input.value = selected && selected.value ? selected.text : '';
 
 			// A closed dropdown with nothing chosen must still say what it is
@@ -477,12 +491,17 @@
 			select.classList.add( 'screen-reader-text' );
 
 			select.parentNode.insertBefore( wrap, select );
+
+			if ( chips ) {
+				wrap.appendChild( chips );
+			}
+
 			wrap.appendChild( input );
 			wrap.appendChild( select );
 			wrap.appendChild( list );
 			wrap.appendChild( status );
 
-			Combobox.bind( select, input, list, status );
+			Combobox.bind( select, input, list, status, chips );
 		},
 
 		/**
@@ -492,12 +511,19 @@
 		 * @param {HTMLInputElement}  input  The visible input.
 		 * @param {HTMLElement}       list   The listbox.
 		 * @param {HTMLElement}       status The live region.
+		 * @param {HTMLElement|null}  chips  Chip list, for a multiple select.
 		 */
-		bind: function ( select, input, list, status ) {
+		bind: function ( select, input, list, status, chips ) {
 			var active = -1;
 			var results = [];
 			var timer = null;
 			var remote = !! select.dataset.searchEndpoint;
+			var multiple = select.multiple;
+
+			// Whether a value the list does not offer can be added anyway.
+			// This is what makes a control a tag input rather than a picker:
+			// the same combobox, allowed to invent an option.
+			var creatable = 'true' === select.dataset.creatable;
 
 			// A local list needs no minimum: there is nothing to spare by
 			// waiting, and an empty query means "show me everything".
@@ -581,6 +607,119 @@
 				options[ active ].scrollIntoView( { block: 'nearest' } );
 			}
 
+			/**
+			 * The option carrying a value, creating it if it is allowed to.
+			 *
+			 * @param {string} value The value.
+			 * @param {string} text  Its label.
+			 * @return {HTMLOptionElement|null} The option.
+			 */
+			function optionFor( value, text ) {
+				var existing = Array.prototype.slice.call( select.options ).filter(
+					function ( option ) {
+						return option.value === value;
+					}
+				)[ 0 ];
+
+				if ( existing ) {
+					return existing;
+				}
+
+				var option = document.createElement( 'option' );
+				option.value = value;
+				option.text = text;
+				select.appendChild( option );
+
+				return option;
+			}
+
+			/**
+			 * Draw the chosen values as removable chips.
+			 */
+			function renderChips() {
+				if ( ! chips ) {
+					return;
+				}
+
+				chips.innerHTML = '';
+
+				Array.prototype.slice.call( select.selectedOptions ).forEach( function ( option ) {
+					var chip = document.createElement( 'li' );
+					chip.className = 'field-kit__combobox-chip';
+
+					var label = document.createElement( 'span' );
+					label.textContent = option.text;
+
+					var remove = document.createElement( 'button' );
+					remove.type = 'button';
+					remove.className = 'field-kit__combobox-chip-remove';
+
+					// Named, not just an ×: a row of identical "Remove"
+					// buttons is a row nobody can tell apart by ear.
+					remove.setAttribute(
+						'aria-label',
+						t( 'removeItem', 'Remove' ) + ': ' + option.text
+					);
+					remove.innerHTML = '<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>';
+					remove.addEventListener( 'click', function () {
+						option.selected = false;
+
+						// An invented option has nothing to go back to, so it
+						// is removed rather than left in the list unselected.
+						if ( 'true' === option.dataset.fkCreated ) {
+							option.remove();
+						}
+
+						renderChips();
+						select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+						input.focus();
+					} );
+
+					chip.appendChild( label );
+					chip.appendChild( remove );
+					chips.appendChild( chip );
+				} );
+			}
+
+			/**
+			 * Take a value, however it was arrived at.
+			 *
+			 * @param {string}  value   The value.
+			 * @param {string}  text    Its label.
+			 * @param {boolean} created Whether it was invented rather than chosen.
+			 */
+			function take( value, text, created ) {
+				if ( multiple ) {
+					var option = optionFor( value, text );
+
+					if ( created ) {
+						option.dataset.fkCreated = 'true';
+					}
+
+					option.selected = true;
+					input.value = '';
+					renderChips();
+				} else if ( remote && ! created ) {
+					// A searched result is not in the select yet, and the
+					// previous one is no longer a valid choice.
+					select.innerHTML = '';
+
+					var single = document.createElement( 'option' );
+					single.value = value;
+					single.text = text;
+					single.selected = true;
+					select.appendChild( single );
+					input.value = text;
+				} else {
+					optionFor( value, text ).selected = true;
+					select.value = value;
+					input.value = text;
+				}
+
+				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+				close();
+			}
+
 			function choose( index ) {
 				var result = results[ index ];
 
@@ -588,29 +727,38 @@
 					return;
 				}
 
-				if ( remote ) {
-					// A searched result is not in the select yet, and the
-					// previous one is no longer a valid choice.
-					select.innerHTML = '';
+				take( String( result.id ), result.text, false );
+			}
 
-					var option = document.createElement( 'option' );
-					option.value = result.id;
-					option.text = result.text;
-					option.selected = true;
-					select.appendChild( option );
-				} else {
-					// The option is already there. Replacing the list would
-					// throw away every other choice the field offers.
-					select.value = result.id;
+			/**
+			 * Add whatever is typed, for a control allowed to invent values.
+			 */
+			function create() {
+				var value = input.value.trim();
+
+				if ( '' === value ) {
+					return;
 				}
 
-				input.value = result.text;
-				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
-				close();
+				take( value, value, true );
 			}
 
 			function render() {
 				list.innerHTML = '';
+
+				// A creatable control offers what was typed as the first row,
+				// so the pointer has the same way in as the keyboard.
+				var typed = input.value.trim();
+
+				if ( creatable && '' !== typed && ! results.some( function ( result ) {
+					return String( result.text ).toLowerCase() === typed.toLowerCase();
+				} ) ) {
+					results = [ {
+						id: typed,
+						text: typed,
+						create: true
+					} ].concat( results );
+				}
 
 				if ( ! results.length ) {
 					var empty = document.createElement( 'li' );
@@ -631,9 +779,19 @@
 					option.id = list.id + '__' + i;
 					option.setAttribute( 'role', 'option' );
 					option.setAttribute( 'aria-selected', 'false' );
-					option.textContent = result.text;
+					option.textContent = result.create
+						? t( 'addItem', 'Add' ) + ' “' + result.text + '”'
+						: result.text;
+
 					option.addEventListener( 'mousedown', function ( event ) {
 						event.preventDefault();
+
+						if ( result.create ) {
+							take( String( result.id ), String( result.text ), true );
+
+							return;
+						}
+
 						choose( i );
 					} );
 					list.appendChild( option );
@@ -734,6 +892,8 @@
 				}
 			}
 
+			renderChips();
+
 			// Clicking the control opens it, which is what a dropdown does.
 			// The arrow is painted on the input rather than being an element
 			// of its own, so there is nothing else to click.
@@ -779,6 +939,13 @@
 						if ( ! list.hidden && active > -1 ) {
 							event.preventDefault();
 							choose( active );
+						} else if ( creatable && '' !== input.value.trim() ) {
+							// Enter on typed text that matched nothing is how
+							// every tag control in existence adds a value, and
+							// preventing the default keeps it from submitting
+							// the form instead.
+							event.preventDefault();
+							create();
 						}
 						break;
 					case 'Escape':
