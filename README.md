@@ -161,6 +161,37 @@ A field can name handlers, which are registered the same way and reached over th
 ],
 ```
 
+A handler returns `[ 'success' => bool, 'message' => string ]`, and the message is announced in the field's own live
+region. It may also return `data.html`, which is written into a preview area — that is how the email editor shows what
+it would send.
+
+### Reporting a new state
+
+A licence handler should also return `data.state`, because activating a licence changes what the field *is*, not only
+what it has to say:
+
+```php
+return [
+    'success' => true,
+    'message' => __( 'Licence activated.', 'my-plugin' ),
+    'data'    => [
+        'state' => [
+            'active' => true,
+            'key'    => $masked,
+            'sites'  => [ 1, 3 ],
+        ],
+    ],
+];
+```
+
+The field then swaps its badge, its seat count and its button — Activate becomes Deactivate, and posts to the other
+handler — without a page load. Without it the activation succeeds, the message says so, and the badge beside it still
+reads "Not active": two contradictory answers on the same row, with a reload the only way to find out which is true.
+
+`key` is what the box should show afterwards, and it is the handler's decision because only the handler knows. The
+field masks a stored key when it renders one, so returning the masked form on activation and the whole key on
+deactivation is what makes the live state match what a reload would give.
+
 ## Conditional fields
 
 ```php
