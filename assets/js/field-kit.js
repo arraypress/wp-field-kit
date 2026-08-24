@@ -91,7 +91,11 @@
 
 			// One delegated listener rather than one per watched input: the
 			// watched field may not exist yet inside a repeater row.
-			[ 'change', 'input' ].forEach( function ( type ) {
+			//
+			// field-kit:change is the kit's own signal, used where firing a
+			// native change would be read by the control that wrote the value
+			// as a fresh edit. See ColorPicker.
+			[ 'change', 'input', 'field-kit:change' ].forEach( function ( type ) {
 				root.addEventListener( type, function () {
 					fields.forEach( function ( field ) {
 						Conditions.evaluate( field );
@@ -1650,17 +1654,32 @@
 
 				input.dataset.fkBound = '1';
 
+				/**
+				 * Tell the kit the value moved, without telling iris.
+				 *
+				 * iris fires its change callback *before* it writes the new
+				 * value to the input — verified in iris.min.js `_change`,
+				 * which calls `_trigger("change")` and only then
+				 * `element.val()`. It also listens for `change` on the input
+				 * itself and re-reads the value when one arrives.
+				 *
+				 * So dispatching a native change from here handed iris the
+				 * *old* value and it reset the picker: the palette opened,
+				 * swatches highlighted, and clicking one changed nothing.
+				 * From the clear callback it was worse — that one is reached
+				 * from iris's own change listener, so a native change there
+				 * loops.
+				 *
+				 * A custom event does neither. Conditions listens for it.
+				 */
+				function notify() {
+					input.dispatchEvent( new CustomEvent( 'field-kit:change', { bubbles: true } ) );
+				}
+
 				$( input ).wpColorPicker( {
 					palettes: input.dataset.palette ? input.dataset.palette.split( ',' ) : true,
-					change: function () {
-						// The plugin writes the value without firing an event
-						// the rest of the kit can see, so conditional logic
-						// watching this field would never re-evaluate.
-						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
-					},
-					clear: function () {
-						input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
-					}
+					change: notify,
+					clear: notify
 				} );
 			} );
 		}

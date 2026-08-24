@@ -78,6 +78,7 @@ const context = {
 	fetch: () => Promise.resolve( { ok: true, json: () => Promise.resolve( {} ) } ),
 	CSS: { escape: ( value ) => String( value ) },
 	Event: function ( type ) { this.type = type; },
+	CustomEvent: function ( type ) { this.type = type; },
 	URL,
 	Promise,
 	navigator: { clipboard: null },
@@ -146,9 +147,61 @@ try {
 	failures ++;
 }
 
+/*
+ * The colour picker must not fire a native change.
+ *
+ * iris runs its change callback before it writes the value, and re-reads the
+ * input when a change arrives — so a native change handed it the old value
+ * and it reset the picker. The palette opened, swatches highlighted, and
+ * clicking one did nothing. From the clear callback the same dispatch loops,
+ * because that one is reached from iris's own change listener.
+ *
+ * Asserted here because it is invisible in markup and the PHP suite cannot
+ * reach it: the whole failure lives in which event name is used.
+ */
+( function () {
+	const dispatched = [];
+	const input = makeElement();
+
+	input.dispatchEvent = ( event ) => dispatched.push( event.type );
+	input.classList.contains = ( name ) => name === 'field-kit__color';
+
+	let options = null;
+
+	context.window.jQuery = Object.assign(
+		() => ( { wpColorPicker: ( passed ) => { options = passed; } } ),
+		{ fn: { wpColorPicker: () => {} } }
+	);
+
+	const root = Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) =>
+			( 'input.field-kit__color' === selector ? [ input ] : [] ),
+	} );
+
+	modules.ColorPicker.init( root );
+
+	if ( ! options || typeof options.change !== 'function' ) {
+		console.error( '  ColorPicker: wpColorPicker was never called with a change callback' );
+		failures ++;
+	} else {
+		options.change();
+		options.clear();
+
+		if ( dispatched.includes( 'change' ) ) {
+			console.error( '  ColorPicker: fires a native change, which iris reads as a fresh edit' );
+			failures ++;
+		}
+
+		if ( 2 !== dispatched.filter( ( type ) => 'field-kit:change' === type ).length ) {
+			console.error( `  ColorPicker: expected two field-kit:change events, got ${ JSON.stringify( dispatched ) }` );
+			failures ++;
+		}
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );
 }
 
-console.log( `  ${ expected.length } modules loaded and initialised cleanly` );
+console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly` );
