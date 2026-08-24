@@ -129,9 +129,17 @@ final class MergeTags {
 	/**
 	 * The dialog itself.
 	 *
-	 * core's media-modal shape, which is what the media library and the block
-	 * editor's own dialogs use — so it matches the admin without a stylesheet
-	 * of its own beyond the list inside it.
+	 * Its own dialog rather than core's media modal, for two reasons found by
+	 * using one. `media-views.css` is only on the page when something calls
+	 * `wp_enqueue_media()`, so on a screen with an email but no media field
+	 * the modal had no styling at all and rendered as inline content. And the
+	 * media frame is built around a sidebar and a toolbar this does not have,
+	 * so its `.media-frame-title { left: 200px }` and
+	 * `.media-frame-content { top: 84px }` push a plain dialog's contents
+	 * into the wrong place — overriding them is more CSS than writing forty
+	 * lines of dialog.
+	 *
+	 * `wp-core-ui` stays, because the buttons inside it are core's.
 	 *
 	 * @param string                                                    $modal_id Dialog id.
 	 * @param array<int, array{name: string, tag: string, description: string}> $tags     Resolved tags.
@@ -173,20 +181,21 @@ final class MergeTags {
 		}
 
 		return sprintf(
-			'<div id="%1$s" class="field-kit__tag-modal media-modal wp-core-ui" role="dialog" aria-modal="true" aria-labelledby="%1$s-title" hidden>' .
-			'<button type="button" class="media-modal-close"><span class="media-modal-icon">' .
-			'<span class="screen-reader-text">%2$s</span></span></button>' .
-			'<div class="media-modal-content">' .
-			'<div class="media-frame-title"><h1 id="%1$s-title">%3$s</h1></div>' .
-			'<div class="media-frame-content field-kit__tag-frame">' .
+			'<div id="%1$s" class="field-kit__tag-modal wp-core-ui" role="dialog" aria-modal="true" aria-labelledby="%1$s-title" hidden>' .
+			'<div class="field-kit__tag-modal-header">' .
+			'<h2 id="%1$s-title">%3$s</h2>' .
+			'<button type="button" class="field-kit__tag-close" aria-label="%2$s">' .
+			'<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>' .
+			'</button></div>' .
+			'<div class="field-kit__tag-frame">' .
 			'<p class="field-kit__tag-search">' .
 			'<label class="screen-reader-text" for="%1$s-search">%4$s</label>' .
 			'<input type="search" id="%1$s-search" class="field-kit__tag-search-input" placeholder="%4$s" autocomplete="off" />' .
 			'</p>' .
 			'<ul class="field-kit__tag-items">%5$s</ul>' .
 			'<p class="field-kit__tag-empty" hidden>%6$s</p>' .
-			'</div></div></div>' .
-			'<div class="field-kit__tag-backdrop media-modal-backdrop" hidden></div>',
+			'</div></div>' .
+			'<div class="field-kit__tag-backdrop" hidden></div>',
 			esc_attr( $modal_id ),
 			esc_html__( 'Close dialog', 'arraypress' ),
 			esc_html__( 'Insert a merge tag', 'arraypress' ),

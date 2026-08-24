@@ -109,7 +109,7 @@ final class MergeTagsTest extends TestCase {
 	public function test_the_dialog_is_a_labelled_modal(): void {
 		$html = MergeTags::modal( 'body_tags', MergeTags::resolve( [ '{site_name}' ] ) );
 
-		$this->assertStringContainsString( 'class="field-kit__tag-modal media-modal wp-core-ui"', $html );
+		$this->assertStringContainsString( 'class="field-kit__tag-modal wp-core-ui"', $html );
 		$this->assertStringContainsString( 'role="dialog"', $html );
 		$this->assertStringContainsString( 'aria-modal="true"', $html );
 		$this->assertStringContainsString( 'aria-labelledby="body_tags-title"', $html );
@@ -117,7 +117,12 @@ final class MergeTagsTest extends TestCase {
 
 		// Closed until asked for, backdrop and all.
 		$this->assertStringContainsString( 'hidden>', $html );
-		$this->assertStringContainsString( 'media-modal-backdrop', $html );
+		$this->assertStringContainsString( 'field-kit__tag-backdrop', $html );
+
+		// Not core's media modal. Its stylesheet is only on the page when
+		// something has called wp_enqueue_media(), so a screen with an email
+		// and no media field had a dialog with no styling at all.
+		$this->assertStringNotContainsString( 'media-modal', $html );
 	}
 
 	/**

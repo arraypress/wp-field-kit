@@ -178,6 +178,120 @@ final class ContextTest extends TestCase {
 
 
 	/**
+	 * Every type encrypts, not only the ones that store a string.
+	 *
+	 * write() only encrypted strings, so a group, a repeater, a set of
+	 * checkboxes — anything marked encrypted whose value is an array — went
+	 * into the database in the clear, with no error and nothing on the page
+	 * to say so. The field said encrypted and the database said otherwise,
+	 * which is the worst answer available.
+	 *
+	 * @dataProvider valueProvider
+	 *
+	 * @param mixed $value A value of some type.
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'valueProvider' )]
+	public function test_every_value_type_round_trips_encrypted( mixed $value ): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+
+		$context->write( 0, $field, $value );
+		$inner->save();
+
+		$stored = $GLOBALS['fk_options']['fk_test']['api_key'];
+
+		// In the store: a marked string, whatever the value was.
+		$this->assertIsString( $stored );
+		$this->assertStringStartsWith( 'fkenc:', $stored );
+
+		// Nothing recognisable from the plaintext survives into it.
+		$this->assertStringNotContainsString(
+			'sk-live',
+			(string) wp_json_encode( $GLOBALS['fk_options']['fk_test'] )
+		);
+
+		// And back out with its type intact.
+		$this->assertSame( $value, $context->read( 0, $field ) );
+	}
+
+	/**
+	 * One value of every shape a field can store.
+	 *
+	 * @return array<string, array{0: mixed}>
+	 */
+	public static function valueProvider(): array {
+		return [
+			'string'       => [ 'sk-live-DO-NOT-LEAK' ],
+			'int'          => [ 42 ],
+			'zero'         => [ 0 ],
+			'float'        => [ 1.5 ],
+			'true'         => [ true ],
+			'false'        => [ false ],
+			'list'         => [ [ 'sk-live-one', 'sk-live-two' ] ],
+			'map'          => [
+				[
+					'user' => 'sk-live-user',
+					'pass' => 'sk-live-pass',
+				],
+			],
+			'nested'       => [ [ 'rows' => [ [ 'key' => 'sk-live-nested' ] ] ] ],
+			'numeric text' => [ '0123' ],
+		];
+	}
+
+	/**
+	 * A value stored before types were encoded still reads.
+	 *
+	 * The old marker's payload is the plain string, and there is no way to
+	 * tell it from the new one by looking — `123` under one is a string and
+	 * under the other an int — so the marker is versioned and the old one is
+	 * still read.
+	 */
+	public function test_a_value_written_by_the_old_format_still_reads(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+
+		// Written the way the previous version wrote it: the raw string as
+		// the payload, under the unversioned marker.
+		$encrypt = ( new \ReflectionObject( $context ) )->getMethod( 'encrypt' );
+
+		$GLOBALS['fk_options']['fk_test'] = [
+			'api_key' => $encrypt->invoke( $context, 'fkenc:', 'sk-live-DO-NOT-LEAK' ),
+		];
+
+		$this->assertSame( 'sk-live-DO-NOT-LEAK', $context->read( 0, $field ) );
+	}
+
+	/**
+	 * An empty value is not encrypted.
+	 *
+	 * There is nothing in it to protect, and encrypting it would make "no
+	 * value" and "a value" tell each other apart by length.
+	 */
+	public function test_an_empty_value_is_stored_as_it_is(): void {
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+
+		foreach ( [ '', [], null ] as $empty ) {
+			$context->write( 0, $field, $empty );
+			$inner->save();
+
+			$this->assertSame( $empty, $GLOBALS['fk_options']['fk_test']['api_key'] );
+		}
+	}
+
+	/**
 	 * A value that is already ciphertext is not encrypted a second time.
 	 *
 	 * Anything that writes an option back wholesale — a reset, an import, a

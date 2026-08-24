@@ -1788,7 +1788,7 @@
 
 			button.addEventListener( 'click', open );
 
-			var closer = modal.querySelector( '.media-modal-close' );
+			var closer = modal.querySelector( '.field-kit__tag-close' );
 
 			if ( closer ) {
 				closer.addEventListener( 'click', close );

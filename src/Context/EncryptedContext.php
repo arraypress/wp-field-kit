@@ -34,9 +34,21 @@ use ArrayPress\FieldKit\Field;
 final class EncryptedContext implements Context, Flushable {
 
 	/**
-	 * Marker identifying a value this class wrote.
+	 * Marker identifying a value this class wrote, before it encoded types.
+	 *
+	 * The payload is the plain string. Read only — nothing writes it now.
 	 */
 	private const PREFIX = 'fkenc:';
+
+	/**
+	 * Marker identifying a value whose payload is JSON.
+	 *
+	 * Versioned rather than reused, because the two cannot be told apart by
+	 * looking: a v0 payload of `123` and a v1 payload of `123` decode to a
+	 * string and an int respectively, and guessing would silently change the
+	 * type of every stored number.
+	 */
+	private const PREFIX_JSON = 'fkenc:j:';
 
 	/**
 	 * The cipher. GCM authenticates as well as encrypts, so a tampered
@@ -71,11 +83,27 @@ final class EncryptedContext implements Context, Flushable {
 	public function read( int|string $object_id, Field $field ): mixed {
 		$value = $this->inner->read( $object_id, $field );
 
+		// Ciphertext is always a string, whatever went in.
 		if ( ! $this->applies( $field ) || ! is_string( $value ) ) {
 			return $value;
 		}
 
-		return $this->decrypt( $value ) ?? '';
+		$json = str_starts_with( $value, self::PREFIX_JSON );
+		$plain = $this->decrypt( $value );
+
+		if ( null === $plain ) {
+			return '';
+		}
+
+		if ( ! $json ) {
+			return $plain;
+		}
+
+		$decoded = json_decode( $plain, true );
+
+		// A payload that will not decode is not something to hand back as a
+		// raw JSON string: that would put `{"a":1}` in a text field.
+		return null === $decoded && 'null' !== $plain ? '' : $decoded;
 	}
 
 	/**
@@ -88,14 +116,15 @@ final class EncryptedContext implements Context, Flushable {
 	 * @return void
 	 */
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
-		// A value already carrying the marker is stored as it is. Anything
-		// that writes the option back wholesale — a reset, an import, a plain
-		// update_option() — hands back what was read from the store, and
-		// encrypting that a second time leaves a value that decrypts to
-		// ciphertext and reads as nonsense.
-		if ( $this->applies( $field ) && is_string( $value ) && '' !== $value
-			&& ! str_starts_with( $value, self::PREFIX ) ) {
-			$encrypted = $this->encrypt( $value );
+		if ( $this->applies( $field ) && $this->worth_encrypting( $value ) ) {
+			// Every type, not only the ones that store a string. A group, a
+			// repeater, a set of checkboxes — anything marked encrypted has
+			// to be, and silently storing an array in the clear because it
+			// was not a string is the worst possible answer: the field says
+			// encrypted and the database says otherwise.
+			$encoded = wp_json_encode( $value );
+
+			$encrypted = false === $encoded ? null : $this->encrypt( self::PREFIX_JSON, $encoded );
 
 			// A failed encryption must not fall through to storing the
 			// plaintext: that is the one outcome worse than not saving.
@@ -107,6 +136,28 @@ final class EncryptedContext implements Context, Flushable {
 		}
 
 		$this->inner->write( $object_id, $field, $value );
+	}
+
+	/**
+	 * Whether a value needs encrypting on the way in.
+	 *
+	 * Two things are left alone. Emptiness, which reveals nothing and would
+	 * otherwise make "no value" indistinguishable from "a value" by length.
+	 * And anything already carrying a marker: everything that writes an
+	 * option back wholesale — a reset, an import, a plain update_option() —
+	 * hands back what it read, and encrypting that again leaves a value that
+	 * decrypts to ciphertext.
+	 *
+	 * @param mixed $value The value about to be stored.
+	 *
+	 * @return bool
+	 */
+	private function worth_encrypting( mixed $value ): bool {
+		if ( null === $value || '' === $value || [] === $value ) {
+			return false;
+		}
+
+		return ! is_string( $value ) || ! str_starts_with( $value, self::PREFIX );
 	}
 
 	/**
@@ -166,11 +217,12 @@ final class EncryptedContext implements Context, Flushable {
 	 * The nonce and the authentication tag travel with the ciphertext,
 	 * because both are needed to decrypt and neither is a secret.
 	 *
-	 * @param string $value Plain value.
+	 * @param string $prefix Marker to write it under.
+	 * @param string $value  Plain value.
 	 *
 	 * @return string|null Null when encryption failed.
 	 */
-	private function encrypt( string $value ): ?string {
+	private function encrypt( string $prefix, string $value ): ?string {
 		$key = self::key();
 
 		if ( '' === $key ) {
@@ -185,7 +237,7 @@ final class EncryptedContext implements Context, Flushable {
 			return null;
 		}
 
-		return self::PREFIX . base64_encode( $nonce . $tag . $cipher );
+		return $prefix . base64_encode( $nonce . $tag . $cipher );
 	}
 
 	/**
@@ -199,12 +251,19 @@ final class EncryptedContext implements Context, Flushable {
 	 * @return string|null Null when the value is unreadable.
 	 */
 	private function decrypt( string $value ): ?string {
-		if ( ! str_starts_with( $value, self::PREFIX ) ) {
+		// Longest marker first: the JSON one begins with the legacy one, so
+		// testing in the other order strips too little and the payload no
+		// longer base64-decodes.
+		$prefix = str_starts_with( $value, self::PREFIX_JSON )
+			? self::PREFIX_JSON
+			: ( str_starts_with( $value, self::PREFIX ) ? self::PREFIX : '' );
+
+		if ( '' === $prefix ) {
 			return $value;
 		}
 
 		$key = self::key();
-		$raw = base64_decode( substr( $value, strlen( self::PREFIX ) ), true );
+		$raw = base64_decode( substr( $value, strlen( $prefix ) ), true );
 
 		if ( '' === $key || false === $raw ) {
 			return null;

@@ -1423,14 +1423,76 @@ select.field-kit__select[multiple] {
 /* -----------------------------------------------------------------------
  * Merge tag chooser
  *
- * core's .media-modal, which is what the media library and the block
- * editor's own dialogs use, so the frame, the backdrop and the close button
- * are already styled. Only the list inside it is the kit's.
+ * Its own dialog rather than core's media modal. media-views.css is only on
+ * the page when something calls wp_enqueue_media(), so on a screen with an
+ * email but no media field the modal had no styling at all; and the media
+ * frame's geometry is built around a sidebar and a toolbar this does not
+ * have. A dialog for picking one item out of a list is forty lines.
  * -------------------------------------------------------------------- */
 
 .field-kit__tag-modal[hidden],
 .field-kit__tag-backdrop[hidden] {
 	display: none;
+}
+
+.field-kit__tag-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	background: rgba(0, 0, 0, .7);
+}
+
+/* Sized to its contents rather than to the viewport: this picks one row out
+   of a short list, and core's media modal — inset 30px on every side — is a
+   whole screen for it. */
+.field-kit__tag-modal {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	z-index: 100001;
+	display: flex;
+	flex-direction: column;
+	width: min(30rem, calc(100vw - 2rem));
+	max-height: min(28rem, calc(100vh - 4rem));
+	transform: translate(-50%, -50%);
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 5px 15px rgba(0, 0, 0, .3);
+}
+
+.field-kit__tag-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: .5rem;
+	padding: .75rem 1rem;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.field-kit__tag-modal-header h2 {
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.field-kit__tag-close {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	border: 0;
+	border-radius: 2px;
+	background: none;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.field-kit__tag-close:hover,
+.field-kit__tag-close:focus {
+	background: #f0f0f1;
+	color: #1d2327;
 }
 
 .field-kit__tag-button .dashicons {
@@ -1442,8 +1504,7 @@ select.field-kit__select[multiple] {
 }
 
 .field-kit__tag-frame {
-	top: 50px;
-	padding: 16px;
+	padding: 1rem;
 	overflow-y: auto;
 }
 
