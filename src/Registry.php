@@ -80,6 +80,7 @@ final class Registry {
 		'files'           => Types\FilesType::class,
 		'list'            => Types\ListType::class,
 		'key_value'       => Types\KeyValueType::class,
+		'card_choice'     => Types\CardChoiceType::class,
 
 		// Composite — several controls stored under one key.
 		'link'            => Types\LinkType::class,
