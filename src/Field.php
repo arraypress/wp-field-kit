@@ -67,6 +67,7 @@ final class Field {
 		'action_callback',
 		'action_capability',
 		'badge',
+		'tooltip',
 		'encrypted',
 		'show_in_rest',
 		'capability',

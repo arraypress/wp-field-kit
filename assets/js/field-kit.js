@@ -2543,6 +2543,99 @@
 		}
 	};
 
+	/* ====================================================================
+	 * Tooltips
+	 * ================================================================= */
+
+	var Tooltip = {
+
+		/**
+		 * Bind every tooltip within a root.
+		 *
+		 * The panel is already in the markup and already hidden, so a tooltip
+		 * that this never reaches is a button that does nothing rather than
+		 * an explanation that does not exist — the panel is still associated
+		 * with the button through aria-describedby, so it is still announced.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__tooltip' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var button = wrap.querySelector( '.field-kit__tooltip-toggle' );
+				var panel = wrap.querySelector( '.field-kit__tooltip-panel' );
+
+				if ( ! button || ! panel ) {
+					return;
+				}
+
+				function open() {
+					panel.hidden = false;
+					button.setAttribute( 'aria-expanded', 'true' );
+					Tooltip.place( panel );
+				}
+
+				function close() {
+					panel.hidden = true;
+					button.setAttribute( 'aria-expanded', 'false' );
+				}
+
+				// Hover and focus both, because a tooltip that only opens on
+				// hover is one that does not exist for anyone using a
+				// keyboard — which is the failing this component was written
+				// to avoid.
+				wrap.addEventListener( 'mouseenter', open );
+				wrap.addEventListener( 'mouseleave', close );
+				button.addEventListener( 'focus', open );
+				button.addEventListener( 'blur', close );
+
+				// Click as well, for touch, where there is no hover at all.
+				button.addEventListener( 'click', function ( event ) {
+					event.preventDefault();
+
+					if ( panel.hidden ) {
+						open();
+					} else {
+						close();
+					}
+				} );
+
+				button.addEventListener( 'keydown', function ( event ) {
+					if ( 'Escape' === event.key && ! panel.hidden ) {
+						event.stopPropagation();
+						close();
+					}
+				} );
+			} );
+		},
+
+		/**
+		 * Flip the panel below the icon when there is no room above it.
+		 *
+		 * A tooltip on the first field of a metabox opens off the top of the
+		 * scrolled area otherwise, which is the one place it is guaranteed to
+		 * be unreadable.
+		 *
+		 * @param {Element} panel The panel.
+		 */
+		place: function ( panel ) {
+			delete panel.dataset.position;
+
+			var box = panel.getBoundingClientRect();
+
+			if ( box.top < 0 ) {
+				panel.dataset.position = 'below';
+			}
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Tooltip = Tooltip;
+
 	window.ArrayPressFieldKitModules.ActionButton = ActionButton;
 
 
@@ -2567,7 +2660,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

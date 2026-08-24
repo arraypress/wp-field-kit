@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit;
 
 use ArrayPress\FieldKit\Support\Badge;
+use ArrayPress\FieldKit\Support\Tooltip;
 use ArrayPress\FieldKit\Support\Markup;
 
 /**
@@ -193,25 +194,35 @@ final class Renderer {
 		// which is where it looked wrong enough to be reported.
 		$badge = $with_label ? Badge::for_field( $field ) : '';
 
+		// The same reasoning as the badge, for the same reason: a caller
+		// drawing its own heading puts the help icon beside that heading, not
+		// beside the control.
+		$tooltip = $with_label ? Tooltip::for_field( $field ) : '';
+
 		// A self-labelling control already carries its text; a second label
 		// above it would announce the field twice.
 		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
 			$label = sprintf(
-				'<label for="%s">%s%s%s</label>',
+				// The tooltip is outside the <label>: its button would
+				// otherwise be a control inside a label, and clicking it
+				// would move focus to the field instead of opening the panel.
+				'<label for="%s">%s%s%s</label>%s',
 				esc_attr( $field->input_id() ),
 				esc_html( $field->label() ),
 				$this->required_marker( $field ),
-				$badge
+				$badge,
+				$tooltip
 			);
 
-			$badge = '';
+			$badge   = '';
+			$tooltip = '';
 		}
 
 		// A self-labelling control puts its own text inside its own label, so
 		// there is nothing to append the badge to. It follows the control
 		// rather than preceding it — before the checkbox it reads as a label
 		// for the box.
-		return $this->wrapper( $field, $label . $control . $badge . $describers );
+		return $this->wrapper( $field, $label . $control . $badge . $tooltip . $describers );
 	}
 
 	/**
@@ -232,7 +243,8 @@ final class Renderer {
 		// legend would hide it anyway, which for a badge is the same as
 		// leaving it out.
 		$badge     = $with_label ? Badge::for_field( $field ) : '';
-		$in_legend = $badge;
+		$tooltip   = $with_label ? Tooltip::for_field( $field ) : '';
+		$in_legend = $badge . $tooltip;
 
 		$legend = '' === $field->label()
 			? ''
@@ -247,7 +259,10 @@ final class Renderer {
 				$in_legend
 			);
 
-		$badge = '' === $in_legend ? $badge : '';
+		if ( '' !== $in_legend ) {
+			$badge   = '';
+			$tooltip = '';
+		}
 
 		$fieldset = new Attributes();
 		$fieldset->add_class( 'field-kit__fieldset' );
@@ -260,7 +275,7 @@ final class Renderer {
 
 		return $this->wrapper(
 			$field,
-			sprintf( '<fieldset%s>%s%s%s%s</fieldset>', $fieldset->render(), $legend, $badge, $control, $describers )
+			sprintf( '<fieldset%s>%s%s%s%s%s</fieldset>', $fieldset->render(), $legend, $badge, $tooltip, $control, $describers )
 		);
 	}
 

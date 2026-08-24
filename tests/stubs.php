@@ -353,3 +353,19 @@ if ( ! function_exists( 'get_queried_object_id' ) ) {
 		return (int) ( $GLOBALS['fk_queried_object'] ?? 0 );
 	}
 }
+
+/*
+ * wp_kses, for the tooltip.
+ *
+ * Not an approximation of core's parser — a stub cannot be — but enough to
+ * assert the contract that matters here: markup outside the allow-list does
+ * not survive.
+ */
+
+if ( ! function_exists( 'wp_kses' ) ) {
+	function wp_kses( $content, $allowed = [], $protocols = [] ) {
+		$tags = implode( '', array_map( static fn( $tag ) => '<' . $tag . '>', array_keys( (array) $allowed ) ) );
+
+		return strip_tags( (string) $content, $tags );
+	}
+}
