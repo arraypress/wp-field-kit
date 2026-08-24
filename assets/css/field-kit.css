@@ -308,8 +308,22 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	color: #646970;
 }
 
-.field-kit__link p {
+.field-kit__link-part {
 	margin: 0 0 .5rem;
+}
+
+.field-kit__link-part:last-child {
+	margin-bottom: 0;
+}
+
+/* Core's link dialog labels its inputs at the same size as the input's own
+   text and sits them tight above it. Ours were spaced like field headings,
+   which made three parts read as three fields. */
+.field-kit__link .field-kit__sub-label {
+	margin-bottom: .15rem;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #50575e;
 }
 
 /* -----------------------------------------------------------------------
@@ -1003,7 +1017,6 @@ select.field-kit__select[multiple] {
 .field-kit__range-pair-part .field-kit__sub-label,
 .field-kit__link .field-kit__sub-label {
 	display: block;
-	margin: 0;
 	font-weight: 400;
 }
 

@@ -55,12 +55,18 @@ final class LinkType extends AbstractType {
 		$target->set( 'value', '_blank' );
 		$target->set_if( '_blank' === $value['target'], 'checked', true );
 
+		// The shape core's own link dialog uses: each input under its own
+		// small label, then the new-tab checkbox on its own line. Divs rather
+		// than paragraphs, because a <p> here inherited the description's
+		// spacing and left the three parts further apart than the fields
+		// around them.
 		return sprintf(
 			'<div class="field-kit__link">' .
-			'<p>%s<input%s /></p>' .
-			'<p>%s<input%s /></p>' .
-			'<p><label class="field-kit__checkbox-label" for="%s"><input%s /><span>%s</span></label></p>' .
-			'</div>',
+			'<div class="field-kit__link-part">%s<input%s /></div>' .
+			'<div class="field-kit__link-part">%s<input%s /></div>' .
+			'<div class="field-kit__link-part">' .
+			'<label class="field-kit__checkbox-label" for="%s"><input%s /> %s</label>' .
+			'</div></div>',
 			$this->sub_label( (string) $url->get( 'id' ), __( 'URL', 'arraypress' ) ),
 			$url->render(),
 			$this->sub_label( (string) $text->get( 'id' ), __( 'Link text', 'arraypress' ) ),
