@@ -1692,3 +1692,65 @@ select.field-kit__select[multiple] {
 	font-size: 14px;
 	line-height: 1.4;
 }
+
+/* -----------------------------------------------------------------------
+ * Table repeater
+ *
+ * A stack of rows is right when a row is a handful of fields with long
+ * labels. It is wrong when a row is three short columns repeated twenty
+ * times — a tax rate, a price tier, a redirect — where the labels belong
+ * once at the top and the rows want to line up under them.
+ *
+ * core's .wp-list-table does the frame, so this is only what a list table
+ * does not expect: form controls in its cells.
+ * -------------------------------------------------------------------- */
+
+.field-kit__repeater-table {
+	margin: 0 0 .75rem;
+}
+
+.field-kit__repeater-table th {
+	font-weight: 600;
+}
+
+.field-kit__repeater-table td {
+	vertical-align: middle;
+}
+
+/* A control in a cell fills it: the column header is the width, not the
+   control's own preference. */
+.field-kit__repeater-table td .field-kit__field {
+	margin: 0;
+}
+
+.field-kit__repeater-table td input[type="text"],
+.field-kit__repeater-table td input[type="number"],
+.field-kit__repeater-table td input[type="email"],
+.field-kit__repeater-table td input[type="url"],
+.field-kit__repeater-table td select,
+.field-kit__repeater-table td .field-kit__combobox,
+.field-kit__repeater-table td .field-kit__combobox-input {
+	width: 100%;
+	max-width: none;
+	margin: 0;
+}
+
+/* The actions column is as wide as its buttons and no wider. */
+.field-kit__repeater-table .field-kit__repeater-actions,
+.field-kit__repeater-table .field-kit__repeater-actions-head {
+	width: 1%;
+	white-space: nowrap;
+	text-align: right;
+}
+
+/* A row's description would be a second line inside a cell, which in a table
+   of twenty rows is twenty lines of the same sentence. */
+.field-kit__repeater-table td .field-kit__field .description {
+	display: none;
+}
+
+/* core stripes list-table rows; a cloned row has no stripe until the browser
+   recalculates, and :nth-child does that for free. */
+.field-kit__repeater-table tbody tr:nth-child(odd) {
+	background: #f6f7f7;
+}

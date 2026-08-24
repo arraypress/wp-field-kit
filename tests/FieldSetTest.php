@@ -166,6 +166,139 @@ final class FieldSetTest extends TestCase {
 	}
 
 	/**
+	 * A table repeater draws its labels once, at the top.
+	 *
+	 * A stack of rows is right when a row is a handful of fields with long
+	 * labels. It is wrong when a row is three short columns repeated twenty
+	 * times — a tax rate, a price tier — where the labels belong once at the
+	 * top and the rows want to line up under them.
+	 */
+	public function test_a_table_repeater_has_column_headers(): void {
+		[ $set ] = $this->option_set(
+			[
+				'rates' => [
+					'type'   => 'repeater',
+					'layout' => 'table',
+					'fields' => [
+						'country' => [
+							'type'  => 'text',
+							'label' => 'Country',
+						],
+						'rate'    => [
+							'type'  => 'number',
+							'label' => 'Rate',
+						],
+					],
+				],
+			]
+		);
+
+		$html = $set->render_field( $set->field( 'rates' ) );
+
+		$this->assertStringContainsString( 'wp-list-table', $html );
+		$this->assertStringContainsString( '<th scope="col">Country</th>', $html );
+		$this->assertStringContainsString( '<th scope="col">Rate</th>', $html );
+
+		// The header is the label, so a cell does not repeat it.
+		$this->assertStringNotContainsString( '<label for="rates_row0_country">Country</label>', $html );
+	}
+
+	/**
+	 * The template's row is inside the table.
+	 *
+	 * A <tr> inside a <template> that sits in a <div> is dropped by the HTML
+	 * parser — template content is parsed in the context the template appears
+	 * in — so the row to clone would simply not be there and Add row would
+	 * add nothing.
+	 */
+	public function test_a_table_repeaters_template_is_inside_the_table(): void {
+		[ $set ] = $this->option_set(
+			[
+				'rates' => [
+					'type'   => 'repeater',
+					'layout' => 'table',
+					'fields' => [ 'country' => [ 'type' => 'text' ] ],
+				],
+			]
+		);
+
+		$html = $set->render_field( $set->field( 'rates' ) );
+
+		$template = strpos( $html, '<template' );
+		$closes   = strpos( $html, '</table>' );
+
+		$this->assertIsInt( $template );
+		$this->assertIsInt( $closes );
+		$this->assertLessThan( $closes, $template, 'The template is outside the table, so its row will be dropped.' );
+	}
+
+	/**
+	 * A stacked repeater is still the default.
+	 */
+	public function test_a_repeater_is_stacked_unless_asked_otherwise(): void {
+		[ $set ] = $this->option_set(
+			[
+				'rows' => [
+					'type'   => 'repeater',
+					'fields' => [ 'name' => [ 'type' => 'text' ] ],
+				],
+			]
+		);
+
+		$html = $set->render_field( $set->field( 'rows' ) );
+
+		$this->assertStringContainsString( '<ol class="field-kit__repeater-rows"', $html );
+		$this->assertStringNotContainsString( 'wp-list-table', $html );
+	}
+
+	/**
+	 * A table repeater saves the same way a stacked one does.
+	 */
+	public function test_a_table_repeater_saves(): void {
+		[ $set, $context ] = $this->option_set(
+			[
+				'rates' => [
+					'type'   => 'repeater',
+					'layout' => 'table',
+					'fields' => [
+						'country' => [ 'type' => 'text' ],
+						'rate'    => [ 'type' => 'number' ],
+					],
+				],
+			]
+		);
+
+		$set->save(
+			[
+				'rates' => [
+					[
+						'country' => 'IE',
+						'rate'    => '23',
+					],
+					[
+						'country' => 'GB',
+						'rate'    => '20',
+					],
+				],
+			]
+		);
+
+		$this->assertSame(
+			[
+				[
+					'country' => 'IE',
+					'rate'    => 23,
+				],
+				[
+					'country' => 'GB',
+					'rate'    => 20,
+				],
+			],
+			$context->values()['rates']
+		);
+	}
+
+	/**
 	 * A creatable control keeps a value its options never offered.
 	 *
 	 * That is the whole difference between a picker and a tag input. A

@@ -11,6 +11,7 @@ namespace ArrayPress\FieldKit\Types;
 
 use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Renderer;
 
 /**
  * A repeating set of fields.
@@ -68,6 +69,26 @@ final class RepeaterType extends AbstractNestedType {
 			$markup .= $this->render_row( $field, (int) $index, $row, $total );
 		}
 
+		if ( $this->is_table( $field ) ) {
+			$wrapper->add_class( 'field-kit__repeater--table' );
+
+			// The template goes inside the table. A <tr> inside a <template>
+			// that sits in a <div> is dropped by the HTML parser — template
+			// content is parsed in the context the template appears in — so
+			// the row to clone would simply not be there.
+			return sprintf(
+				'<div%s><table class="wp-list-table widefat striped field-kit__repeater-table">%s' .
+				'<tbody class="field-kit__repeater-rows" data-empty="%s">%s</tbody>%s</table>%s%s</div>',
+				$wrapper->render(),
+				$this->render_head( $field ),
+				$total > 0 ? 'false' : 'true',
+				$markup,
+				$this->render_template( $field ),
+				$this->render_empty_message( $total ),
+				$this->render_add_button( $field )
+			);
+		}
+
 		return sprintf(
 			'<div%s><ol class="field-kit__repeater-rows" data-empty="%s">%s</ol>%s%s%s</div>',
 			$wrapper->render(),
@@ -97,6 +118,10 @@ final class RepeaterType extends AbstractNestedType {
 			$total
 		);
 
+		if ( $this->is_table( $field ) ) {
+			return $this->render_table_row( $field, $index, $row, $position );
+		}
+
 		return sprintf(
 			'<li class="field-kit__repeater-row" data-index="%d">' .
 			'<span class="field-kit__repeater-position screen-reader-text">%s</span>' .
@@ -107,6 +132,103 @@ final class RepeaterType extends AbstractNestedType {
 			// Scoped by row: without it every row reuses the same child ids
 			// and each label after the first points at the wrong control.
 			$this->render_children( $field, $row, $field->input_name() . '[' . $index . ']', 'row' . $index ),
+			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
+			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
+			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
+		);
+	}
+
+	/**
+	 * Whether this repeater is drawn as a table.
+	 *
+	 * A stack of rows is right when a row is a handful of fields with long
+	 * labels. It is wrong when a row is three short columns repeated twenty
+	 * times — a tax rate, a price tier, a redirect — where the labels belong
+	 * once at the top and the rows want to line up under them.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	private function is_table( Field $field ): bool {
+		return 'table' === (string) $field->get( 'layout', 'stacked' );
+	}
+
+	/**
+	 * The column headers, from the row's own fields.
+	 *
+	 * Derived rather than configured, so the columns cannot drift from the
+	 * fields underneath them.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function render_head( Field $field ): string {
+		$cells = '';
+
+		foreach ( $field->sub_fields() as $key => $config ) {
+			$width = (string) ( $config['column_width'] ?? '' );
+
+			$cells .= sprintf(
+				'<th scope="col"%s>%s</th>',
+				'' === $width ? '' : sprintf( ' style="width:%s"', esc_attr( $width ) ),
+				esc_html( (string) ( $config['label'] ?? $key ) )
+			);
+		}
+
+		// The actions column has no heading to give it, and an empty <th> is
+		// announced as a blank column header rather than skipped.
+		$cells .= sprintf(
+			'<td class="field-kit__repeater-actions-head"><span class="screen-reader-text">%s</span></td>',
+			esc_html__( 'Actions', 'arraypress' )
+		);
+
+		return sprintf( '<thead><tr>%s</tr></thead>', $cells );
+	}
+
+	/**
+	 * One row of a table repeater.
+	 *
+	 * @param Field                $field    The field.
+	 * @param int                  $index    Row index.
+	 * @param array<string, mixed> $row      Row values.
+	 * @param string               $position Human row position.
+	 *
+	 * @return string
+	 */
+	private function render_table_row( Field $field, int $index, array $row, string $position ): string {
+		$total = count( $this->rows( $field ) );
+		$cells = '';
+
+		foreach ( array_keys( $field->sub_fields() ) as $key ) {
+			$child = $this->child(
+				$field,
+				(string) $key,
+				(array) $field->sub_fields()[ $key ],
+				$row[ $key ] ?? null,
+				$field->input_name() . '[' . $index . ']',
+				'row' . $index
+			);
+
+			$cells .= sprintf(
+				'<td data-colname="%s">%s</td>',
+				esc_attr( (string) ( $field->sub_fields()[ $key ]['label'] ?? $key ) ),
+				// The column header is the label, so the renderer draws none
+				// — but the control keeps its id and the header cell is not a
+				// <label>, so each control carries its own hidden one.
+				null === $child ? '' : ( new Renderer() )->render( $child, '', false )
+			);
+		}
+
+		// No position cell: it would be a column the header does not have, and
+		// every row action already carries the position in its own label.
+		return sprintf(
+			'<tr class="field-kit__repeater-row" data-index="%d">' .
+			'%s' .
+			'<td class="field-kit__repeater-actions">%s%s%s</td></tr>',
+			$index,
+			$cells,
 			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
 			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
 			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
