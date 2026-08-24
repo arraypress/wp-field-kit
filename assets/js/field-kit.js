@@ -380,8 +380,22 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( 'select.field-kit__relational' ).forEach( function ( select ) {
-				if ( ! select.dataset.searchEndpoint || select.dataset.fkBound ) {
+			// Two kinds, one control. A relational field searches a server;
+			// an enhanced select filters the options it was already given.
+			// The enhanced ones used to be rendered with the class and no
+			// behaviour behind it at all, so a `select2` field was a plain
+			// dropdown with a promise attached.
+			var selector = 'select.field-kit__relational, select.field-kit__select--enhanced';
+
+			root.querySelectorAll( selector ).forEach( function ( select ) {
+				if ( select.dataset.fkBound ) {
+					return;
+				}
+
+				if ( ! select.dataset.searchEndpoint && select.multiple ) {
+					// A multiple select has no combobox pattern here yet, and
+					// upgrading it half-way would lose the ability to pick
+					// more than one.
 					return;
 				}
 
@@ -448,13 +462,24 @@
 			select.setAttribute( 'aria-hidden', 'true' );
 			select.classList.add( 'screen-reader-text' );
 
+			// The affordance that makes this read as a dropdown rather than as
+			// a text field. Its label is the field's, so a screen reader
+			// announces which dropdown it opens.
+			var toggle = document.createElement( 'button' );
+			toggle.type = 'button';
+			toggle.className = 'field-kit__combobox-toggle';
+			toggle.tabIndex = -1;
+			toggle.setAttribute( 'aria-hidden', 'true' );
+			toggle.innerHTML = '<span class="dashicons dashicons-arrow-down-alt2"></span>';
+
 			select.parentNode.insertBefore( wrap, select );
 			wrap.appendChild( input );
+			wrap.appendChild( toggle );
 			wrap.appendChild( select );
 			wrap.appendChild( list );
 			wrap.appendChild( status );
 
-			Combobox.bind( select, input, list, status );
+			Combobox.bind( select, input, list, status, toggle );
 		},
 
 		/**
@@ -464,12 +489,52 @@
 		 * @param {HTMLInputElement}  input  The visible input.
 		 * @param {HTMLElement}       list   The listbox.
 		 * @param {HTMLElement}       status The live region.
+		 * @param {HTMLElement}       toggle The open/close affordance.
 		 */
-		bind: function ( select, input, list, status ) {
+		bind: function ( select, input, list, status, toggle ) {
 			var active = -1;
 			var results = [];
 			var timer = null;
-			var minChars = parseInt( select.dataset.minChars || '0', 10 );
+			var remote = !! select.dataset.searchEndpoint;
+
+			// A local list needs no minimum: there is nothing to spare by
+			// waiting, and an empty query means "show me everything".
+			var minChars = remote ? parseInt( select.dataset.minChars || '0', 10 ) : 0;
+
+			/**
+			 * Every option the select carries, as search results.
+			 *
+			 * Read fresh each time rather than cached at build: a select's
+			 * options can be rewritten by conditional logic or by another
+			 * field, and a stale copy would offer choices that no longer
+			 * exist.
+			 *
+			 * @return {Array} Results.
+			 */
+			function options() {
+				return Array.prototype.slice.call( select.options )
+					.filter( function ( option ) {
+						return '' !== option.value;
+					} )
+					.map( function ( option ) {
+						return { id: option.value, text: option.text };
+					} );
+			}
+
+			/**
+			 * Filter the local options by a term.
+			 *
+			 * @param {string} term Search term.
+			 */
+			function filter( term ) {
+				var needle = term.toLowerCase().trim();
+
+				results = options().filter( function ( result ) {
+					return '' === needle || result.text.toLowerCase().indexOf( needle ) > -1;
+				} );
+
+				render();
+			}
 
 			function close() {
 				list.hidden = true;
@@ -506,13 +571,21 @@
 					return;
 				}
 
-				select.innerHTML = '';
+				if ( remote ) {
+					// A searched result is not in the select yet, and the
+					// previous one is no longer a valid choice.
+					select.innerHTML = '';
 
-				var option = document.createElement( 'option' );
-				option.value = result.id;
-				option.text = result.text;
-				option.selected = true;
-				select.appendChild( option );
+					var option = document.createElement( 'option' );
+					option.value = result.id;
+					option.text = result.text;
+					option.selected = true;
+					select.appendChild( option );
+				} else {
+					// The option is already there. Replacing the list would
+					// throw away every other choice the field offers.
+					select.value = result.id;
+				}
 
 				input.value = result.text;
 				select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
@@ -582,11 +655,33 @@
 				} );
 			}
 
+			/**
+			 * Show results for the current input, from wherever they come.
+			 *
+			 * @param {string} term Search term.
+			 */
+			function open( term ) {
+				if ( remote ) {
+					search( term );
+
+					return;
+				}
+
+				filter( term );
+			}
+
 			input.addEventListener( 'input', function () {
 				window.clearTimeout( timer );
 
 				if ( input.value.length < minChars ) {
 					close();
+
+					return;
+				}
+
+				if ( ! remote ) {
+					// Nothing to spare by waiting on a list already in the page.
+					filter( input.value );
 
 					return;
 				}
@@ -597,11 +692,55 @@
 				}, 250 );
 			} );
 
+			// Clicking anywhere in the control opens it, which is what a
+			// dropdown does. A local list opens showing everything; a remote
+			// one waits for a term it can actually search on.
+			function openAll() {
+				if ( ! list.hidden ) {
+					close();
+
+					return;
+				}
+
+				input.focus();
+
+				if ( ! remote ) {
+					filter( '' );
+
+					return;
+				}
+
+				if ( input.value.length >= minChars ) {
+					open( input.value );
+				}
+			}
+
+			toggle.addEventListener( 'mousedown', function ( event ) {
+				event.preventDefault();
+				openAll();
+			} );
+
+			if ( ! remote ) {
+				input.addEventListener( 'mousedown', function () {
+					if ( list.hidden ) {
+						window.setTimeout( function () {
+							filter( '' );
+						}, 0 );
+					}
+				} );
+			}
+
 			input.addEventListener( 'keydown', function ( event ) {
 				switch ( event.key ) {
 					case 'ArrowDown':
 						event.preventDefault();
-						list.hidden ? search( input.value ) : highlight( active + 1 );
+
+						if ( list.hidden ) {
+							open( remote ? input.value : '' );
+						} else {
+							highlight( active + 1 );
+						}
+
 						break;
 					case 'ArrowUp':
 						event.preventDefault();

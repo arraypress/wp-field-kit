@@ -53,6 +53,7 @@ final class Registry {
 
 		// Choice.
 		'select'          => Types\SelectType::class,
+		'select2'         => Types\EnhancedSelectType::class,
 		'select_multiple' => Types\SelectMultipleType::class,
 		'checkbox'        => Types\CheckboxType::class,
 		'toggle'          => Types\ToggleType::class,
@@ -112,7 +113,6 @@ final class Registry {
 	 * @var array<string, string>
 	 */
 	private const ALIASES = [
-		'select2'       => 'select',   // setting-fields' name for a searchable select.
 		'switch'        => 'toggle',
 		'colour'        => 'color',
 		'term'          => 'taxonomy', // post-fields' name for the same field.

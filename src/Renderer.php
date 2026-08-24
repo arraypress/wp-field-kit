@@ -12,6 +12,7 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit;
 
+use ArrayPress\FieldKit\Support\Badge;
 use ArrayPress\FieldKit\Support\Markup;
 
 /**
@@ -98,7 +99,14 @@ final class Renderer {
 			$field->placeholder()
 		);
 
-		$attributes->set_if( (bool) $field->get( 'disabled' ), 'disabled', true );
+		// A showing badge locks the control. Rendering the field but leaving it
+		// settable would let someone configure a feature the install will not
+		// honour, and then wonder why nothing happens.
+		$attributes->set_if(
+			(bool) $field->get( 'disabled' ) || Badge::locks( $field ),
+			'disabled',
+			true
+		);
 		$attributes->set_if( (bool) $field->get( 'readonly' ), 'readonly', true );
 		$attributes->set_if( $field->has( 'class' ), 'class', $field->get( 'class' ) );
 		$attributes->set_if( $field->has( 'autocomplete' ), 'autocomplete', $field->get( 'autocomplete' ) );
@@ -186,10 +194,11 @@ final class Renderer {
 		// caller's label still points at it.
 		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
 			$label = sprintf(
-				'<label for="%s">%s%s</label>',
+				'<label for="%s">%s%s%s</label>',
 				esc_attr( $field->input_id() ),
 				esc_html( $field->label() ),
-				$this->required_marker( $field )
+				$this->required_marker( $field ),
+				Badge::for_field( $field )
 			);
 		}
 
@@ -216,10 +225,11 @@ final class Renderer {
 				// The inner span is core's own shape — options-general.php and
 				// options-discussion.php both write it this way — and exists
 				// because a legend cannot be positioned reliably on its own.
-				'<legend class="field-kit__legend%s"><span>%s%s</span></legend>',
+				'<legend class="field-kit__legend%s"><span>%s%s%s</span></legend>',
 				$with_label ? '' : ' screen-reader-text',
 				esc_html( $field->label() ),
-				$this->required_marker( $field )
+				$this->required_marker( $field ),
+				Badge::for_field( $field )
 			);
 
 		$fieldset = new Attributes();
@@ -265,6 +275,10 @@ final class Renderer {
 
 		$attributes->add_class( 'field-kit__field', 'field-kit__field--' . $field->type()->id() );
 		$attributes->set( 'data-field-key', $field->key() );
+
+		if ( Badge::locks( $field ) ) {
+			$attributes->add_class( 'field-kit__field--locked' );
+		}
 
 		$conditions = Conditions::from( $field->get( 'show_when', $field->get( 'depends', [] ) ) );
 

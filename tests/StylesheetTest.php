@@ -46,6 +46,12 @@ final class StylesheetTest extends TestCase {
 		// AbstractType / Renderer: 'field-kit__field--' . $type->id()
 		'field-kit__field--conditional',
 
+		// The wrapper carries field-kit__field--{type} for every registered
+		// type, built from the id at render time. Only the ones the stylesheet
+		// actually targets need listing.
+		'field-kit__field--heading',
+		'field-kit__field--locked',
+
 		// Emitted by a consuming library, not by the kit: a term screen
 		// writes its own row heading.
 		'field-kit__row-label',

@@ -20,6 +20,7 @@ use ArrayPress\FieldKit\Actions\Actions;
 use ArrayPress\FieldKit\Actions\CallbackAction;
 use ArrayPress\FieldKit\Search\CallbackSource;
 use ArrayPress\FieldKit\Search\Sources;
+use ArrayPress\FieldKit\Support\Badge;
 
 /**
  * A group of fields bound to one storage context.
@@ -355,6 +356,14 @@ final class FieldSet {
 
 		foreach ( $this->fields( $object_id ) as $field ) {
 			if ( ! $field->type()->stores_value() ) {
+				continue;
+			}
+
+			// A locked or disabled control sends nothing, so the rules below would
+			// read it as cleared and delete the stored value. An install that lost
+			// a licence would have its premium settings wiped by the next unrelated
+			// save, and get them back as blanks when the licence returned.
+			if ( (bool) $field->get( 'disabled' ) || Badge::locks( $field ) ) {
 				continue;
 			}
 

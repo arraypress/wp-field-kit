@@ -51,8 +51,25 @@
 	border-top: 1px solid #dcdcde;
 }
 
+/* Core's own shape for a settings-page subheading: h2.title on
+   options-general.php carries the weight and the spacing, and a rule below
+   the text is what breaks a long page into readable blocks. Restated here
+   because the kit's heading is not always an h2 — the level is configurable
+   so the document outline stays correct — and core scopes its rule to the
+   tag. */
 .field-kit__heading {
 	margin: 1.5rem 0 .5rem;
+	padding-bottom: .4rem;
+	border-bottom: 1px solid #dcdcde;
+	font-size: 1.3em;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #1d2327;
+}
+
+/* A heading immediately after another needs no gap above it. */
+.field-kit__field--heading:first-child .field-kit__heading {
+	margin-top: 0;
 }
 
 /* -----------------------------------------------------------------------
@@ -99,7 +116,7 @@ input[type="checkbox"].field-kit__toggle:checked::before {
 }
 
 input[type="checkbox"].field-kit__toggle:checked {
-	background: #2271b1;
+	background: var(--wp-admin-theme-color, #2271b1);
 	border-color: transparent;
 }
 
@@ -108,7 +125,7 @@ input[type="checkbox"].field-kit__toggle:checked::before {
 }
 
 input[type="checkbox"].field-kit__toggle:focus-visible {
-	outline: 2px solid #2271b1;
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
 	outline-offset: 2px;
 }
 
@@ -182,10 +199,10 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 .field-kit__button-group-option label {
 	display: inline-block;
 	padding: 0 .75rem;
-	border: 1px solid #2271b1;
+	border: 1px solid var(--wp-admin-theme-color, #2271b1);
 	border-right-width: 0;
 	line-height: 2.15384615;
-	color: #2271b1;
+	color: var(--wp-admin-theme-color, #2271b1);
 	background: #f6f7f7;
 	cursor: pointer;
 }
@@ -201,13 +218,13 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__button-group-option input:checked + label {
 	color: #fff;
-	background: #2271b1;
+	background: var(--wp-admin-theme-color, #2271b1);
 }
 
 /* Focus lands on the hidden radio, so the ring has to be drawn on the label
    it controls or the group is unnavigable by keyboard. */
 .field-kit__button-group-option input:focus-visible + label {
-	outline: 2px solid #2271b1;
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
 	outline-offset: -2px;
 }
 
@@ -476,8 +493,70 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__repeater-row.is-drop-target,
 .field-kit__gallery-item.is-drop-target {
-	outline: 2px dashed #2271b1;
+	outline: 2px dashed var(--wp-admin-theme-color, #2271b1);
 	outline-offset: -2px;
+}
+
+/* -----------------------------------------------------------------------
+ * Badges
+ *
+ * A pill beside a label marking a field this install cannot use. The field
+ * still renders, so the feature is visible; the control is disabled, so
+ * nobody sets a value that will not be honoured.
+ * -------------------------------------------------------------------- */
+
+.field-kit__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: .2rem;
+	margin-left: .4rem;
+	padding: .05rem .45rem;
+	border-radius: 9999px;
+	background: var(--wp-admin-theme-color, #2271b1);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1.7;
+	text-transform: uppercase;
+	letter-spacing: .02em;
+	text-decoration: none;
+	vertical-align: middle;
+}
+
+/* Core underlines a link inside a label at a specificity a bare class loses
+   to, so the prefix is what keeps the pill from carrying a line under it. */
+.wp-core-ui a.field-kit__badge,
+.wp-core-ui a.field-kit__badge:hover,
+.wp-core-ui a.field-kit__badge:focus {
+	color: #fff;
+	text-decoration: none;
+}
+
+.wp-core-ui a.field-kit__badge:hover,
+.wp-core-ui a.field-kit__badge:focus {
+	background: var(--wp-admin-theme-color-darker-10, #135e96);
+}
+
+.field-kit__badge .dashicons {
+	font-size: 12px;
+	width: 12px;
+	height: 12px;
+	line-height: 1;
+}
+
+/* A locked field is readable but plainly not editable. Core already greys a
+   disabled control; this dims the rest of the row so the state reads at a
+   glance rather than only on the input. */
+.field-kit__field--locked > label,
+.field-kit__field--locked .field-kit__legend {
+	opacity: 1;
+}
+
+.field-kit__field--locked .field-kit__combobox-input,
+.field-kit__field--locked input,
+.field-kit__field--locked select,
+.field-kit__field--locked textarea {
+	cursor: not-allowed;
 }
 
 /* -----------------------------------------------------------------------
@@ -486,7 +565,49 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__combobox {
 	position: relative;
+	display: inline-block;
 	max-width: 25rem;
+	width: 100%;
+}
+
+/* The input has to read as a closed dropdown, not as a text field. Core's
+   select styling is the reference: same border, same radius, same height,
+   and room on the right for the arrow. Without this the control worked and
+   nobody could tell it was a dropdown at all. */
+.field-kit__combobox-input {
+	width: 100%;
+	padding-right: 2rem;
+	cursor: pointer;
+}
+
+.field-kit__combobox-toggle {
+	position: absolute;
+	top: 1px;
+	right: 1px;
+	bottom: 1px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.9rem;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.field-kit__combobox-toggle .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 1;
+	transition: transform .15s ease-in-out;
+}
+
+/* The arrow turns over when the list is open, which is the only visible
+   difference between the two states of a closed control. */
+.field-kit__combobox-input[aria-expanded="true"] ~ .field-kit__combobox-toggle .dashicons {
+	transform: rotate(180deg);
 }
 
 .field-kit__combobox-list {
@@ -518,7 +639,7 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 /* Active-descendant highlighting, which is not focus — the focus stays in
    the text input, so this cannot rely on :hover or :focus. */
 .field-kit__combobox-option[aria-selected="true"] {
-	background: #2271b1;
+	background: var(--wp-admin-theme-color, #2271b1);
 	color: #fff;
 }
 
@@ -583,7 +704,7 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
    active state is core's own box-shadow, restated because the core rule is
    scoped to .privacy-settings-tab.active inside its own wrapper. */
 .field-kit__page-tab.active {
-	box-shadow: inset 0 -3px #3582c4;
+	box-shadow: inset 0 -3px var(--wp-admin-theme-color, #2271b1);
 	font-weight: 600;
 }
 
@@ -1061,7 +1182,7 @@ select.field-kit__select[multiple] {
 	overflow: visible;
 	clip-path: none;
 	background: #f0f0f1;
-	outline: 2px solid #2271b1;
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
 	outline-offset: -2px;
 }
 

@@ -105,6 +105,67 @@ final class FieldSetTest extends TestCase {
 	}
 
 	/**
+	 * A `select2` field is a searchable select, not a plain one.
+	 *
+	 * It was an alias for `select`, so every field written as `select2` — the
+	 * name the settings library used for a searchable dropdown — rendered as
+	 * a bare native dropdown with no search box. The class the JS looks for
+	 * was never emitted, so nothing upgraded it.
+	 */
+	public function test_select2_renders_the_searchable_control(): void {
+		[ $set ] = $this->option_set(
+			[
+				'plain'  => [
+					'type'    => 'select',
+					'options' => [ 'a' => 'A' ],
+				],
+				'search' => [
+					'type'    => 'select2',
+					'options' => [ 'a' => 'A' ],
+				],
+				'opt_in' => [
+					'type'       => 'select',
+					'searchable' => true,
+					'options'    => [ 'a' => 'A' ],
+				],
+			]
+		);
+
+		$rendered = [];
+
+		foreach ( $set->fields() as $field ) {
+			$rendered[ $field->key() ] = $set->render_field( $field );
+		}
+
+		$this->assertStringNotContainsString( 'field-kit__select--enhanced', $rendered['plain'] );
+		$this->assertStringContainsString( 'field-kit__select--enhanced', $rendered['search'] );
+		$this->assertStringContainsString( 'field-kit__select--enhanced', $rendered['opt_in'] );
+	}
+
+	/**
+	 * A `select2` value is still checked against its own options.
+	 */
+	public function test_select2_rejects_a_value_outside_its_options(): void {
+		[ $set, $context ] = $this->option_set(
+			[
+				'choice' => [
+					'type'    => 'select2',
+					'options' => [
+						'a' => 'A',
+						'b' => 'B',
+					],
+				],
+			]
+		);
+
+		$set->save( [ 'choice' => 'c' ] );
+		$this->assertSame( [], $context->values() );
+
+		$set->save( [ 'choice' => 'b' ] );
+		$this->assertSame( [ 'choice' => 'b' ], $context->values() );
+	}
+
+	/**
 	 * A relational field with nothing selected stores nothing.
 	 *
 	 * Zero is a value to the field set, deliberately — an unticked checkbox
