@@ -476,24 +476,13 @@
 			select.setAttribute( 'aria-hidden', 'true' );
 			select.classList.add( 'screen-reader-text' );
 
-			// The affordance that makes this read as a dropdown rather than as
-			// a text field. Its label is the field's, so a screen reader
-			// announces which dropdown it opens.
-			var toggle = document.createElement( 'button' );
-			toggle.type = 'button';
-			toggle.className = 'field-kit__combobox-toggle';
-			toggle.tabIndex = -1;
-			toggle.setAttribute( 'aria-hidden', 'true' );
-			toggle.innerHTML = '<span class="dashicons dashicons-arrow-down-alt2"></span>';
-
 			select.parentNode.insertBefore( wrap, select );
 			wrap.appendChild( input );
-			wrap.appendChild( toggle );
 			wrap.appendChild( select );
 			wrap.appendChild( list );
 			wrap.appendChild( status );
 
-			Combobox.bind( select, input, list, status, toggle );
+			Combobox.bind( select, input, list, status );
 		},
 
 		/**
@@ -503,9 +492,8 @@
 		 * @param {HTMLInputElement}  input  The visible input.
 		 * @param {HTMLElement}       list   The listbox.
 		 * @param {HTMLElement}       status The live region.
-		 * @param {HTMLElement}       toggle The open/close affordance.
 		 */
-		bind: function ( select, input, list, status, toggle ) {
+		bind: function ( select, input, list, status ) {
 			var active = -1;
 			var results = [];
 			var timer = null;
@@ -729,20 +717,18 @@
 				}
 			}
 
-			toggle.addEventListener( 'mousedown', function ( event ) {
-				event.preventDefault();
-				openAll();
-			} );
+			// Clicking the control opens it, which is what a dropdown does.
+			// The arrow is painted on the input rather than being an element
+			// of its own, so there is nothing else to click.
+			input.addEventListener( 'mousedown', function () {
+				if ( ! list.hidden ) {
+					return;
+				}
 
-			if ( ! remote ) {
-				input.addEventListener( 'mousedown', function () {
-					if ( list.hidden ) {
-						window.setTimeout( function () {
-							filter( '' );
-						}, 0 );
-					}
-				} );
-			}
+				// Deferred, so the click that opened it does not also place a
+				// caret and immediately close it again.
+				window.setTimeout( openAll, 0 );
+			} );
 
 			input.addEventListener( 'keydown', function ( event ) {
 				switch ( event.key ) {

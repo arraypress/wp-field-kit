@@ -201,4 +201,50 @@ final class StylesheetTest extends TestCase {
 		);
 	}
 
+
+	/**
+	 * The combobox arrow is painted on the input, not positioned near it.
+	 *
+	 * It was a separately positioned element inside the wrapper, aligned to
+	 * the wrapper rather than to the input — so any rule anywhere that changed
+	 * the input's width left the arrow floating out in the margin. Core's
+	 * `.form-field input[type="text"] { width: 95% }` is such a rule, so on
+	 * every term screen it did, and it was "fixed" three times by arguing
+	 * about specificity instead of removing the coupling.
+	 *
+	 * As a background on the input it is part of the input and cannot come
+	 * away from it, whatever sets the width. This asserts the coupling stays
+	 * removed.
+	 */
+	public function test_the_combobox_arrow_is_painted_on_the_input(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Every rule whose selector names the class — it has more than one,
+		// and only one of them carries the arrow.
+		preg_match_all( '/([^{}]*field-kit__combobox-input[^{}]*)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
+
+		$this->assertNotEmpty( $rules, 'The combobox input has no rule at all.' );
+
+		$declarations = implode( ' ', array_column( $rules, 2 ) );
+
+		$this->assertStringContainsString(
+			'background',
+			$declarations,
+			'The arrow must be a background on the input, not a separate element.'
+		);
+
+		$this->assertStringNotContainsString(
+			'field-kit__combobox-toggle',
+			$css,
+			'A positioned arrow element is back; it will detach from the input again.'
+		);
+
+		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+
+		$this->assertStringNotContainsString(
+			'combobox-toggle',
+			$js,
+			'The script still builds a separate arrow element.'
+		);
+	}
 }

@@ -611,44 +611,20 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	width: 100%;
 }
 
-/* The input has to read as a closed dropdown, not as a text field. Core's
-   select styling is the reference: same border, same radius, same height,
-   and room on the right for the arrow. Without this the control worked and
-   nobody could tell it was a dropdown at all. */
+/* The arrow is painted on the input, exactly as core paints it on a <select>
+   — the same SVG, the same position, the same size, lifted from
+   forms.css. It used to be a separately positioned button inside the
+   wrapper, which meant it was aligned to the wrapper and not to the input:
+   any rule anywhere that changed the input's width left the arrow floating
+   out in the margin. On a term screen core does change it, so it did. As a
+   background it is part of the input and cannot come away from it. */
 .field-kit__combobox-input {
 	width: 100%;
 	padding-right: 2rem;
 	cursor: pointer;
-}
-
-.field-kit__combobox-toggle {
-	position: absolute;
-	top: 1px;
-	right: 1px;
-	bottom: 1px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.9rem;
-	padding: 0;
-	border: 0;
-	background: none;
-	color: #50575e;
-	cursor: pointer;
-}
-
-.field-kit__combobox-toggle .dashicons {
-	font-size: 16px;
-	width: 16px;
-	height: 16px;
-	line-height: 1;
-	transition: transform .15s ease-in-out;
-}
-
-/* The arrow turns over when the list is open, which is the only visible
-   difference between the two states of a closed control. */
-.field-kit__combobox-input[aria-expanded="true"] ~ .field-kit__combobox-toggle .dashicons {
-	transform: rotate(180deg);
+	/* The SVG is arrow-down-alt2 from Dashicons. */
+	background: #fff url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%231e1e1e%22%2F%3E%3C%2Fsvg%3E') no-repeat right 8px top 55%;
+	background-size: 16px 16px;
 }
 
 .field-kit__combobox-list {
