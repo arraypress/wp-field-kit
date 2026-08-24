@@ -203,6 +203,35 @@ final class StylesheetTest extends TestCase {
 
 
 	/**
+	 * A row a pointer can choose reacts to the pointer.
+	 *
+	 * The combobox highlighted for the keyboard — aria-activedescendant, set
+	 * as you arrow through — and did nothing at all under the mouse, so a
+	 * list of results looked inert to the majority of people using it.
+	 */
+	public function test_choosable_rows_have_a_hover_state(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		foreach ( [ 'field-kit__combobox-option', 'field-kit__tag-item' ] as $class ) {
+			preg_match_all( '/\.' . preg_quote( $class, '/' ) . '[^{,]*:hover/', $css, $found );
+
+			// Not the keyboard highlight restated with :hover — that exists
+			// so a stray pointer does not repaint the active row, and it
+			// matches the same pattern while doing nothing for a pointer on
+			// any other row.
+			$plain = array_filter(
+				$found[0],
+				static fn( $selector ) => ! str_contains( $selector, 'aria-selected' )
+			);
+
+			$this->assertNotEmpty(
+				$plain,
+				sprintf( '%s can be clicked but does not react to a pointer.', $class )
+			);
+		}
+	}
+
+	/**
 	 * The combobox arrow is painted on the input, not positioned near it.
 	 *
 	 * It was a separately positioned element inside the wrapper, aligned to

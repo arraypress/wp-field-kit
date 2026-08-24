@@ -655,12 +655,28 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 .field-kit__combobox-option {
 	margin: 0;
 	padding: .4rem .6rem;
+}
+
+/* Only a real option is choosable. The "No results found." row shares the
+   class so it lines up with the rest of the list, and pointing at it as
+   though it could be picked is a small lie. */
+.field-kit__combobox-option[role="option"] {
 	cursor: pointer;
 }
 
+/* Hover is a lighter treatment than the keyboard highlight below, on
+   purpose: the two can be on different rows at the same time — the pointer
+   over one while aria-activedescendant is on another — and if they looked
+   alike there would be two rows claiming to be the selection. */
+.field-kit__combobox-option[role="option"]:hover {
+	background: #f0f0f1;
+}
+
 /* Active-descendant highlighting, which is not focus — the focus stays in
-   the text input, so this cannot rely on :hover or :focus. */
-.field-kit__combobox-option[aria-selected="true"] {
+   the text input, so this cannot rely on :hover or :focus. Restated with
+   :hover so the keyboard highlight is not repainted by a stray pointer. */
+.field-kit__combobox-option[aria-selected="true"],
+.field-kit__combobox-option[aria-selected="true"]:hover {
 	background: var(--wp-admin-theme-color, #2271b1);
 	color: #fff;
 }
