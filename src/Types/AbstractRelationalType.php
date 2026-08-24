@@ -38,6 +38,27 @@ abstract class AbstractRelationalType extends SelectType {
 	abstract protected function source(): string;
 
 	/**
+	 * The source this field actually searches.
+	 *
+	 * Usually the type's own name. A type whose source is decided per field
+	 * rather than per type overrides this — an AJAX field's callback is
+	 * registered under a name derived from where the field lives, so the name
+	 * in the page has to be that one and not the type's.
+	 *
+	 * Declared here rather than asked for with method_exists() at the call
+	 * site, because a class asking whether it has its own method is a class
+	 * that has not decided what its interface is — and it hides the answer
+	 * from every tool that would otherwise check the call.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function source_for( Field $field ): string {
+		return $this->source();
+	}
+
+	/**
 	 * Resolve the labels for the currently selected ids.
 	 *
 	 * Only the selection is rendered as options — the point of searching is
@@ -114,7 +135,7 @@ abstract class AbstractRelationalType extends SelectType {
 	public function render( Field $field, Attributes $attributes ): string {
 		$attributes->add_class( 'field-kit__relational' );
 		$attributes->set( 'data-search-endpoint', rest_url( Runtime::rest_namespace() . '/search' ) );
-		$attributes->set( 'data-search-source', method_exists( $this, 'source_for' ) ? $this->source_for( $field ) : $this->source() );
+		$attributes->set( 'data-search-source', $this->source_for( $field ) );
 		$attributes->set( 'data-search-nonce', wp_create_nonce( 'wp_rest' ) );
 		$attributes->set_if( $field->has( 'min_chars' ), 'data-min-chars', $field->get( 'min_chars', 2 ) );
 

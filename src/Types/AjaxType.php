@@ -42,7 +42,7 @@ final class AjaxType extends AbstractRelationalType {
 	 *
 	 * @return string
 	 */
-	public function source_for( Field $field ): string {
+	protected function source_for( Field $field ): string {
 		return (string) $field->get( 'search_source', $this->source() );
 	}
 
