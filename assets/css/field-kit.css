@@ -592,6 +592,40 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	text-align: center;
 }
 
+/* Each control in the header is its own form, because these change state and
+   a link that changes state can be followed by a prefetch. Inline-flex keeps
+   them on one row inside the centred header. */
+.field-kit__page-actions form {
+	display: inline-flex;
+	align-items: center;
+	gap: .35rem;
+	margin: 0 .25rem;
+	vertical-align: middle;
+}
+
+/* core's .privacy-settings-title-section is a centred flex row, so the logo
+   and badge need no positioning — only a size and something to sit beside. */
+.field-kit__page-logo {
+	max-height: 40px;
+	width: auto;
+	margin-right: .6rem;
+}
+
+.field-kit__page-badge {
+	align-self: center;
+	margin-left: .6rem;
+	padding: .1rem .5rem;
+	border: 1px solid #dcdcde;
+	border-radius: 9999px;
+	background: #f6f7f7;
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	text-transform: uppercase;
+	letter-spacing: .02em;
+}
+
 /* -----------------------------------------------------------------------
  * Corrections against core's own rules
  *

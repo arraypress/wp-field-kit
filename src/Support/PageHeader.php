@@ -40,30 +40,97 @@ final class PageHeader {
 	/**
 	 * Render the header.
 	 *
-	 * @param string                                                   $title    Page title.
-	 * @param array<string, array{label: string, url: string}>          $tabs     Tabs, keyed by slug.
-	 * @param string                                                   $current  Slug of the active tab.
-	 * @param string                                                   $actions  Optional markup for the right-hand side.
+	 * Configured by array rather than by position: a header grew a logo and a
+	 * badge the moment it was used for a commercial plugin, and a fifth and
+	 * sixth positional argument is how a call becomes unreadable.
+	 *
+	 * @param array{
+	 *     title?: string,
+	 *     logo?: string,
+	 *     badge?: string|array{text?: string, class?: string}|callable,
+	 *     tabs?: array<string, array{label: string, url: string}>,
+	 *     current?: string,
+	 *     actions?: string
+	 * } $config Header configuration.
 	 *
 	 * @return string
 	 */
-	public static function render( string $title, array $tabs = [], string $current = '', string $actions = '' ): string {
-		$markup = sprintf(
-			'<div class="privacy-settings-header field-kit__page-header">' .
-			'<div class="privacy-settings-title-section"><h1>%s</h1></div>',
-			esc_html( $title )
-		);
+	public static function render( array $config = [] ): string {
+		$title   = (string) ( $config['title'] ?? '' );
+		$tabs    = (array) ( $config['tabs'] ?? [] );
+		$actions = (string) ( $config['actions'] ?? '' );
+
+		// The title section is a centred flex row in core, so a logo and a
+		// badge sit beside the heading without a rule of our own.
+		$markup = '<div class="privacy-settings-header field-kit__page-header">'
+			. '<div class="privacy-settings-title-section">'
+			. self::logo( (string) ( $config['logo'] ?? '' ) )
+			. sprintf( '<h1>%s</h1>', esc_html( $title ) )
+			. self::badge( $config['badge'] ?? '' )
+			. '</div>';
 
 		if ( '' !== $actions ) {
 			$markup .= sprintf( '<div class="field-kit__page-actions">%s</div>', $actions );
 		}
 
 		if ( [] !== $tabs ) {
-			$markup .= self::tabs( $tabs, $current );
+			$markup .= self::tabs( $tabs, (string) ( $config['current'] ?? '' ) );
 		}
 
 		// Where admin notices land. Not optional.
 		return $markup . '</div><hr class="wp-header-end">';
+	}
+
+	/**
+	 * Render the logo, if there is one.
+	 *
+	 * Alt text is empty on purpose. The heading beside it already says the
+	 * same thing, and a screen reader announcing the plugin's name twice is
+	 * worse than not describing a decorative image.
+	 *
+	 * @param string $url Image URL.
+	 *
+	 * @return string
+	 */
+	private static function logo( string $url ): string {
+		if ( '' === $url ) {
+			return '';
+		}
+
+		$image = new Attributes();
+		$image->set( 'src', $url );
+		$image->set( 'alt', '' );
+		$image->add_class( 'field-kit__page-logo' );
+
+		return sprintf( '<img%s />', $image->render() );
+	}
+
+	/**
+	 * Render the badge, if there is one.
+	 *
+	 * @param string|array{text?: string, class?: string}|callable $badge The badge.
+	 *
+	 * @return string
+	 */
+	private static function badge( mixed $badge ): string {
+		if ( is_callable( $badge ) ) {
+			// Through kses, because a callable returning raw markup is a
+			// callable returning whatever a filter put into it.
+			return wp_kses_post( (string) $badge() );
+		}
+
+		$text  = is_array( $badge ) ? (string) ( $badge['text'] ?? '' ) : (string) $badge;
+		$class = is_array( $badge ) ? (string) ( $badge['class'] ?? '' ) : '';
+
+		if ( '' === $text ) {
+			return '';
+		}
+
+		$span = new Attributes();
+		$span->add_class( 'field-kit__page-badge' );
+		$span->add_class( ...array_filter( [ $class ] ) );
+
+		return sprintf( '<span%s>%s</span>', $span->render(), esc_html( $text ) );
 	}
 
 	/**
