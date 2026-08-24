@@ -186,6 +186,7 @@ final class Renderer {
 	 */
 	private function wrap_labelled( Field $field, string $control, string $describers, bool $with_label = true ): string {
 		$label = '';
+		$badge = Badge::for_field( $field );
 
 		// A self-labelling control already carries its text; a second label
 		// above it would announce the field twice.
@@ -198,11 +199,17 @@ final class Renderer {
 				esc_attr( $field->input_id() ),
 				esc_html( $field->label() ),
 				$this->required_marker( $field ),
-				Badge::for_field( $field )
+				$badge
 			);
+
+			$badge = '';
 		}
 
-		return $this->wrapper( $field, $label . $control . $describers );
+		// No label was drawn — a table row's header cell holds it, or the
+		// control labels itself — so the badge goes beside the control
+		// instead. It has to appear exactly once and it has to appear: a
+		// badge is what tells someone why the field is disabled.
+		return $this->wrapper( $field, $label . $badge . $control . $describers );
 	}
 
 	/**
@@ -219,6 +226,12 @@ final class Renderer {
 		// announced as an unnamed group, so a caller drawing its own visible
 		// heading still needs this to exist for assistive technology — it is
 		// simply not shown twice.
+		$badge = Badge::for_field( $field );
+
+		// A hidden legend hides whatever is inside it, so the badge only
+		// belongs there when the legend is actually shown.
+		$in_legend = $with_label ? $badge : '';
+
 		$legend = '' === $field->label()
 			? ''
 			: sprintf(
@@ -229,8 +242,10 @@ final class Renderer {
 				$with_label ? '' : ' screen-reader-text',
 				esc_html( $field->label() ),
 				$this->required_marker( $field ),
-				Badge::for_field( $field )
+				$in_legend
 			);
+
+		$badge = '' === $in_legend ? $badge : '';
 
 		$fieldset = new Attributes();
 		$fieldset->add_class( 'field-kit__fieldset' );
@@ -243,7 +258,7 @@ final class Renderer {
 
 		return $this->wrapper(
 			$field,
-			sprintf( '<fieldset%s>%s%s%s</fieldset>', $fieldset->render(), $legend, $control, $describers )
+			sprintf( '<fieldset%s>%s%s%s%s</fieldset>', $fieldset->render(), $legend, $badge, $control, $describers )
 		);
 	}
 

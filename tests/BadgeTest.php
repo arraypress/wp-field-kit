@@ -204,6 +204,80 @@ final class BadgeTest extends TestCase {
 	}
 
 	/**
+	 * The badge appears exactly once, wherever the label ended up.
+	 *
+	 * A table-row layout draws the label in its own header cell and tells the
+	 * renderer to draw none. The badge was inside the label, so it vanished
+	 * with it — and a locked field with no badge is a disabled control with
+	 * no explanation, which is worse than no lock at all. Found on the live
+	 * settings page, where every field is a table row.
+	 */
+	public function test_the_badge_appears_once_whether_or_not_a_label_is_drawn(): void {
+		$renderer = new Renderer();
+
+		$field = $this->field(
+			[
+				'label' => 'Advanced sync',
+				'badge' => 'Pro',
+			]
+		);
+
+		$with    = $renderer->render( $field, '', true );
+		$without = $renderer->render( $field, '', false );
+
+		$this->assertSame( 1, substr_count( $with, 'field-kit__badge' ) );
+		$this->assertSame( 1, substr_count( $without, 'field-kit__badge' ) );
+
+		// In the label when there is one, outside it when there is not.
+		$this->assertMatchesRegularExpression( '/<label[^>]*>.*field-kit__badge.*<\/label>/s', $with );
+		$this->assertStringNotContainsString( '<label', $without );
+	}
+
+	/**
+	 * A self-labelling control still shows its badge.
+	 *
+	 * A toggle carries its own label, so the renderer draws none — and the
+	 * badge would have gone with it.
+	 */
+	public function test_a_self_labelling_control_still_shows_its_badge(): void {
+		$html = ( new Renderer() )->render(
+			$this->field(
+				[
+					'label' => 'Advanced sync',
+					'badge' => 'Pro',
+				],
+				'toggle'
+			)
+		);
+
+		$this->assertSame( 1, substr_count( $html, 'field-kit__badge' ) );
+	}
+
+	/**
+	 * A group with a hidden legend shows its badge outside the legend.
+	 *
+	 * Inside a screen-reader-text legend it would be invisible, which for a
+	 * badge is the same as absent.
+	 */
+	public function test_a_group_with_a_hidden_legend_shows_its_badge_outside_it(): void {
+		$html = ( new Renderer() )->render(
+			$this->field(
+				[
+					'label'   => 'Modes',
+					'options' => [ 'a' => 'A' ],
+					'badge'   => 'Pro',
+				],
+				'radio'
+			),
+			'',
+			false
+		);
+
+		$this->assertSame( 1, substr_count( $html, 'field-kit__badge' ) );
+		$this->assertDoesNotMatchRegularExpression( '/<legend[^>]*>.*field-kit__badge.*<\/legend>/s', $html );
+	}
+
+	/**
 	 * A locked field's stored value survives a save.
 	 *
 	 * The control is disabled, so the browser sends nothing for it. Left to

@@ -708,6 +708,53 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	font-weight: 600;
 }
 
+/* -----------------------------------------------------------------------
+ * Screen Options tools
+ *
+ * A settings page's occasional controls — export, import, reset — live in
+ * the Screen Options panel rather than beside the page title. Emitted by
+ * wp-register-setting-fields; styled here because that library ships no
+ * stylesheet of its own.
+ * -------------------------------------------------------------------- */
+
+.field-kit__screen-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem 3rem;
+	padding: .5rem 0 1rem;
+}
+
+.field-kit__screen-tool {
+	min-width: 18rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.field-kit__screen-tool-title {
+	padding: 0;
+	font-weight: 600;
+}
+
+.field-kit__screen-tool .description {
+	margin: .2rem 0 .6rem;
+	max-width: 32rem;
+}
+
+.field-kit__screen-tool-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem 1rem;
+}
+
+.field-kit__screen-tool-controls form {
+	display: inline-flex;
+	align-items: center;
+	gap: .4rem;
+	margin: 0;
+}
+
 .field-kit__page-actions {
 	padding: 0 1rem 1rem;
 	text-align: center;

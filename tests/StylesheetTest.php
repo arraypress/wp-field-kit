@@ -52,13 +52,32 @@ final class StylesheetTest extends TestCase {
 		'field-kit__field--heading',
 		'field-kit__field--locked',
 
-		// Emitted by a consuming library, not by the kit: a term screen
-		// writes its own row heading.
-		'field-kit__row-label',
-
 		// Modifiers a consumer opts into.
 		'field-kit__radio-group--inline',
 		'field-kit__checkbox-group--inline',
+	];
+
+	/**
+	 * Classes a consuming library emits, styled here because it ships no CSS.
+	 *
+	 * Separate from the list above on purpose. That one is checked back
+	 * against this repository's own source; these cannot be, since what
+	 * writes them is in another repository. Keeping them apart is what stops
+	 * the check on the first list from having to make exceptions — and an
+	 * exception is where a genuine mismatch hides.
+	 *
+	 * @var string[]
+	 */
+	private const EMITTED_BY_A_CONSUMER = [
+		// wp-register-term-fields: a term screen's own row heading.
+		'field-kit__row-label',
+
+		// wp-register-setting-fields: a settings page's export, import and
+		// reset controls, which live in the Screen Options panel.
+		'field-kit__screen-tools',
+		'field-kit__screen-tool',
+		'field-kit__screen-tool-title',
+		'field-kit__screen-tool-controls',
 	];
 
 	/**
@@ -105,7 +124,9 @@ final class StylesheetTest extends TestCase {
 			}
 		}
 
-		return array_values( array_unique( array_merge( $found, self::BUILT_AT_RUNTIME ) ) );
+		return array_values(
+			array_unique( array_merge( $found, self::BUILT_AT_RUNTIME, self::EMITTED_BY_A_CONSUMER ) )
+		);
 	}
 
 	/**
@@ -166,8 +187,9 @@ final class StylesheetTest extends TestCase {
 				$stem = rtrim( $stem, '-' );
 			}
 
-			if ( ! $found && ! str_starts_with( $class, 'field-kit__row-label' )
-				&& ! str_contains( $class, '--inline' ) ) {
+			// A modifier is opted into by a consumer's config rather than
+			// written by the kit, so there is no stem to find.
+			if ( ! $found && ! str_contains( $class, '--inline' ) ) {
 				$orphans[] = $class;
 			}
 		}
