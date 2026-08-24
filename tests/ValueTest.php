@@ -158,6 +158,74 @@ final class ValueTest extends TestCase {
 		// An archive is not any single post.
 		$GLOBALS['fk_is_singular'] = false;
 		$this->assertFalse( Value::is_viewing( 9 ) );
+
+		unset( $GLOBALS['fk_is_singular'], $GLOBALS['fk_queried_object'] );
+	}
+
+	/**
+	 * A term field knows it is on its own term's archive.
+	 *
+	 * `is_singular()` is false there, so a taxonomy field pointing at the
+	 * very term on screen used to answer no — the one case it exists for.
+	 *
+	 * @dataProvider archiveProvider
+	 *
+	 * @param string $archive Which archive is showing.
+	 * @param string $type    The kind the field holds.
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider( 'archiveProvider' )]
+	public function test_a_term_or_user_field_knows_its_own_archive( string $archive, string $type ): void {
+		$GLOBALS['fk_archive']        = $archive;
+		$GLOBALS['fk_queried_object'] = 9;
+
+		$this->assertTrue( Value::is_viewing( 9, $type ) );
+		$this->assertFalse( Value::is_viewing( 10, $type ) );
+
+		unset( $GLOBALS['fk_archive'], $GLOBALS['fk_queried_object'] );
+	}
+
+	/**
+	 * The archives, and what a field holding that kind should say.
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public static function archiveProvider(): array {
+		return [
+			'a category' => [ 'category', 'term' ],
+			'a tag'      => [ 'tag', 'term' ],
+			'a taxonomy' => [ 'tax', 'term' ],
+			'an author'  => [ 'author', 'user' ],
+		];
+	}
+
+	/**
+	 * An id cannot say what kind of thing it is, so the kinds do not mix.
+	 *
+	 * Post 42, term 42 and user 42 are three different things. A check that
+	 * accepted whichever archive happened to be showing would answer true for
+	 * a post field on the term archive that shares its id.
+	 */
+	public function test_the_kinds_do_not_answer_for_each_other(): void {
+		$GLOBALS['fk_archive']        = 'category';
+		$GLOBALS['fk_queried_object'] = 9;
+
+		$this->assertTrue( Value::is_viewing( 9, 'term' ) );
+		$this->assertFalse( Value::is_viewing( 9, 'post' ) );
+		$this->assertFalse( Value::is_viewing( 9, 'user' ) );
+
+		unset( $GLOBALS['fk_archive'], $GLOBALS['fk_queried_object'] );
+	}
+
+	/**
+	 * Post is the default, so the callers that had one keep working.
+	 */
+	public function test_post_is_the_default_kind(): void {
+		$GLOBALS['fk_is_singular']    = true;
+		$GLOBALS['fk_queried_object'] = 9;
+
+		$this->assertSame( Value::is_viewing( 9 ), Value::is_viewing( 9, 'post' ) );
+
+		unset( $GLOBALS['fk_is_singular'], $GLOBALS['fk_queried_object'] );
 	}
 
 	/**

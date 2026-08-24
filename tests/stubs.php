@@ -342,6 +342,30 @@ if ( ! function_exists( 'home_url' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_category' ) ) {
+	function is_category( $category = '' ) {
+		return 'category' === ( $GLOBALS['fk_archive'] ?? '' );
+	}
+}
+
+if ( ! function_exists( 'is_tag' ) ) {
+	function is_tag( $tag = '' ) {
+		return 'tag' === ( $GLOBALS['fk_archive'] ?? '' );
+	}
+}
+
+if ( ! function_exists( 'is_tax' ) ) {
+	function is_tax( $taxonomy = '', $term = '' ) {
+		return 'tax' === ( $GLOBALS['fk_archive'] ?? '' );
+	}
+}
+
+if ( ! function_exists( 'is_author' ) ) {
+	function is_author( $author = '' ) {
+		return 'author' === ( $GLOBALS['fk_archive'] ?? '' );
+	}
+}
+
 if ( ! function_exists( 'is_singular' ) ) {
 	function is_singular( $post_types = '' ) {
 		return (bool) ( $GLOBALS['fk_is_singular'] ?? false );

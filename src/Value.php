@@ -130,21 +130,45 @@ final class Value {
 	}
 
 	/**
-	 * Whether the post a field points at is the one being viewed.
+	 * Whether the thing a field points at is the one being viewed.
 	 *
 	 * Deliberately not is_page(): a field can point at any post type — the
 	 * kit's `post`, `page` and `ajax` types all store an id the same way —
 	 * and is_page() answers false for every one that is not a page. Comparing
 	 * the queried object is the question actually being asked.
 	 *
-	 * @param mixed $value Stored value.
+	 * The kind has to be given, because an id cannot say what it is. Post 42,
+	 * term 42 and user 42 are three different things, and a check that
+	 * accepted whichever archive happened to be showing would answer true for
+	 * a post field on the term archive that shares its id. It defaults to
+	 * `post`, which is what a field storing a bare id usually holds.
+	 *
+	 * This used to be `is_singular()` alone, which is false on a term or an
+	 * author archive — so a `taxonomy` or `user` field pointing at the very
+	 * thing on screen answered no.
+	 *
+	 * There is no `object`: a row in a custom table has no front-end query to
+	 * compare against, so the question does not arise.
+	 *
+	 * @param mixed  $value Stored value.
+	 * @param string $type  What the id refers to: post, term or user.
 	 *
 	 * @return bool
 	 */
-	public static function is_viewing( mixed $value ): bool {
+	public static function is_viewing( mixed $value, string $type = 'post' ): bool {
 		$id = self::id( $value );
 
-		return $id > 0 && is_singular() && get_queried_object_id() === $id;
+		if ( $id < 1 ) {
+			return false;
+		}
+
+		$viewing = match ( $type ) {
+			'term'  => is_category() || is_tag() || is_tax(),
+			'user'  => is_author(),
+			default => is_singular(),
+		};
+
+		return $viewing && get_queried_object_id() === $id;
 	}
 
 	/**
