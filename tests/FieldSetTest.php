@@ -13,6 +13,7 @@ use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Context\PostMetaContext;
 use ArrayPress\FieldKit\Context\ArrayContext;
 use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Search\Sources;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -610,6 +611,62 @@ final class FieldSetTest extends TestCase {
 
 		// And a field without one is still clamped by its type.
 		$this->assertSame( 10, $context->values()['plain'] );
+	}
+
+	/**
+	 * A field with a search callback registers a source and points at it.
+	 *
+	 * Registration happens when the set is built rather than when the field
+	 * renders, because the request that searches is not the request that
+	 * rendered — the combobox asks the endpoint on its own, and a source that
+	 * only exists during a render is gone by then.
+	 */
+	public function test_a_search_callback_registers_a_source(): void {
+		[ $set ] = $this->option_set(
+			[
+				'customer' => [
+					'type'            => 'ajax',
+					'label'           => 'Customer',
+					'search_callback' => static fn( $term, $ids = null ) => [ 1 => 'Ada' ],
+				],
+			]
+		);
+
+		$name = 'fk_test_customer';
+
+		$this->assertTrue( Sources::shared()->has( $name ) );
+		$this->assertSame( $name, $set->field( 'customer' )->get( 'search_source' ) );
+	}
+
+	/**
+	 * A consumer can name the source itself.
+	 *
+	 * A set built with no input prefix names a source after the field key
+	 * alone, so two flyouts each with a `customer` field would name the same
+	 * one and the second registration would answer the first's searches. A
+	 * library that knows what distinguishes its sets supplies the name.
+	 *
+	 * Both halves, because a name honoured in one place and not the other is
+	 * worse than neither: the field would emit a name nothing registered.
+	 */
+	public function test_a_named_source_is_registered_and_emitted_under_that_name(): void {
+		$set = new FieldSet(
+			[
+				'customer' => [
+					'type'            => 'ajax',
+					'search_callback' => static fn( $term, $ids = null ) => [ 1 => 'Ada' ],
+					'search_source'   => 'shop-order-customer',
+				],
+			],
+			new ArrayContext(),
+			''
+		);
+
+		$this->assertTrue( Sources::shared()->has( 'shop-order-customer' ) );
+		$this->assertSame( 'shop-order-customer', $set->field( 'customer' )->get( 'search_source' ) );
+
+		// And not under the name it would have derived.
+		$this->assertFalse( Sources::shared()->has( 'customer' ) );
 	}
 
 }

@@ -138,7 +138,7 @@ final class FieldSet {
 
 			$sources->register(
 				new CallbackSource(
-					$this->source_name( (string) $key ),
+					$this->source_name_for( (string) $key, $config ),
 					$callback,
 					(string) ( $config['search_capability'] ?? 'edit_posts' )
 				)
@@ -211,6 +211,27 @@ final class FieldSet {
 	}
 
 	/**
+	 * The name this field's source is actually registered under.
+	 *
+	 * A consumer may name it itself, and one has to: a field set built with
+	 * no input prefix derives the name from the field key alone, so two
+	 * flyouts each with a `customer` field would name the same source and the
+	 * second registration would answer the first's searches. A library that
+	 * knows what distinguishes its field sets — which flyout, which metabox —
+	 * supplies the name, and the same name is what the field emits.
+	 *
+	 * @param string               $key    Field key.
+	 * @param array<string, mixed> $config Field configuration.
+	 *
+	 * @return string
+	 */
+	private function source_name_for( string $key, array $config ): string {
+		$named = (string) ( $config['search_source'] ?? '' );
+
+		return '' === $named ? $this->source_name( $key ) : $named;
+	}
+
+	/**
 	 * Build one field, with its stored value loaded.
 	 *
 	 * @param string     $key       Field key.
@@ -241,7 +262,7 @@ final class FieldSet {
 
 		// A callback-backed field points at the source registered for it.
 		if ( isset( $config['search_callback'] ) ) {
-			$config['search_source'] = $this->source_name( $key );
+			$config['search_source'] = $this->source_name_for( $key, $config );
 		}
 
 		// Likewise for its buttons: the field emits the registered names, so
