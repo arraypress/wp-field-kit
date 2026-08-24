@@ -1389,59 +1389,6 @@ select.field-kit__select[multiple] {
 	margin-bottom: 1.25rem;
 }
 
-.field-kit__email-tags {
-	margin: 0 0 1rem;
-	padding: .75rem;
-	border: 1px solid #dcdcde;
-	border-radius: 2px;
-	background: #f6f7f7;
-}
-
-.field-kit__email-tags-title {
-	margin: 0;
-	font-size: 13px;
-	font-weight: 600;
-}
-
-.field-kit__email-tags .description {
-	margin: .2rem 0 .6rem;
-}
-
-.field-kit__email-tag-list {
-	display: flex;
-	flex-wrap: wrap;
-	gap: .35rem .75rem;
-	margin: 0;
-	list-style: none;
-}
-
-.field-kit__email-tag-list li {
-	margin: 0;
-}
-
-/* Core underlines .wp-core-ui .button-link at 0,2,0, which a bare class
-   loses to — the tag would carry a line under its own monospace code. */
-.wp-core-ui .field-kit__email-tag {
-	padding: .1rem .35rem;
-	border: 1px solid #c3c4c7;
-	border-radius: 2px;
-	background: #fff;
-	text-decoration: none;
-	line-height: 1.6;
-}
-
-.wp-core-ui .field-kit__email-tag:hover,
-.wp-core-ui .field-kit__email-tag:focus {
-	border-color: var(--wp-admin-theme-color, #2271b1);
-	text-decoration: none;
-}
-
-.field-kit__email-tag code {
-	background: none;
-	padding: 0;
-	font-size: 12px;
-}
-
 .field-kit__email-actions {
 	display: flex;
 	align-items: center;
@@ -1455,4 +1402,114 @@ select.field-kit__select[multiple] {
 .field-kit__email-actions .spinner {
 	float: none;
 	margin: 0;
+}
+
+/* -----------------------------------------------------------------------
+ * Merge tag chooser
+ *
+ * core's .media-modal, which is what the media library and the block
+ * editor's own dialogs use, so the frame, the backdrop and the close button
+ * are already styled. Only the list inside it is the kit's.
+ * -------------------------------------------------------------------- */
+
+.field-kit__tag-modal[hidden],
+.field-kit__tag-backdrop[hidden] {
+	display: none;
+}
+
+.field-kit__tag-button .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 1.4;
+	vertical-align: text-bottom;
+}
+
+.field-kit__tag-frame {
+	top: 50px;
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.field-kit__tag-search {
+	margin: 0 0 12px;
+}
+
+.field-kit__tag-search-input {
+	width: 100%;
+	max-width: 100%;
+}
+
+.field-kit__tag-items {
+	margin: 0;
+	list-style: none;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+}
+
+.field-kit__tag-items li {
+	margin: 0;
+	border-top: 1px solid #dcdcde;
+}
+
+.field-kit__tag-items li:first-child {
+	border-top: 0;
+}
+
+.field-kit__tag-items li[hidden] {
+	display: none;
+}
+
+/* A whole row is the target, not a link inside it: a list of forty tags is
+   a lot of small targets otherwise. */
+.field-kit__tag-item {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: .25rem .75rem;
+	width: 100%;
+	padding: .6rem .75rem;
+	border: 0;
+	background: none;
+	text-align: left;
+	cursor: pointer;
+}
+
+.field-kit__tag-item:hover,
+.field-kit__tag-item:focus {
+	background: #f0f0f1;
+}
+
+.field-kit__tag-item:focus {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: -2px;
+}
+
+.field-kit__tag-name {
+	font-weight: 600;
+}
+
+.field-kit__tag-code {
+	padding: .05rem .3rem;
+	font-size: 12px;
+}
+
+.field-kit__tag-item .description {
+	flex-basis: 100%;
+	margin: 0;
+}
+
+.field-kit__tag-empty {
+	margin: .75rem 0 0;
+	color: #50575e;
+}
+
+/* core scopes the metabox heading's padding to .metabox-holder, which a
+   panel outside a metabox screen is not inside — so the title sat flush
+   against the panel's own border. */
+.field-kit__email .postbox-header .hndle {
+	padding: 8px 12px;
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.4;
 }

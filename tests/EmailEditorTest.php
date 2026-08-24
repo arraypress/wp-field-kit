@@ -213,46 +213,39 @@ final class EmailEditorTest extends TestCase {
 	}
 
 	/**
-	 * Merge tags render as buttons that insert them.
+	 * Merge tags reach the body editor rather than a list of their own.
 	 *
-	 * A list of codes to copy by hand is a list of codes to mistype.
+	 * They used to be a permanent block of codes under the editor, which is
+	 * a lot of panel for a reference nobody reads twice. They belong beside
+	 * Add Media, where someone writing the body already is.
 	 */
-	public function test_merge_tags_render_as_buttons(): void {
-		$html = ( new Renderer() )->render(
-			$this->field(
-				[
-					'tags' => [
-						'{customer_name}' => 'The buyer’s name',
-						'{order_total}'   => 'The order total',
+	public function test_merge_tags_are_handed_to_the_body(): void {
+		$field = $this->field(
+			[
+				'tags' => [
+					[
+						'name' => 'Customer name',
+						'tag'  => '{customer_name}',
 					],
-				]
-			)
+				],
+			]
 		);
 
-		// The exact class, not a prefix: field-kit__email-tags and
-		// field-kit__email-tag-list both start with the same string.
-		$this->assertSame( 2, substr_count( $html, 'field-kit__email-tag"' ) );
-		$this->assertStringContainsString( 'data-tag="{customer_name}"', $html );
-		$this->assertStringContainsString( 'The order total', $html );
+		$parts = ( new \ReflectionObject( $field->type() ) )->getMethod( 'parts' );
+
+		$resolved = $parts->invoke( $field->type(), $field );
+
+		$this->assertArrayHasKey( 'tags', $resolved['body'] );
+		$this->assertSame( $field->get( 'tags' ), $resolved['body']['tags'] );
 	}
 
 	/**
-	 * A bare list of tags works as well as a map.
+	 * The panel no longer carries a tag list of its own.
 	 */
-	public function test_a_bare_list_of_tags_works(): void {
+	public function test_the_panel_has_no_inline_tag_list(): void {
 		$html = ( new Renderer() )->render( $this->field( [ 'tags' => [ '{site_name}' ] ] ) );
 
-		$this->assertStringContainsString( 'data-tag="{site_name}"', $html );
-	}
-
-	/**
-	 * No tags means no tag panel at all.
-	 */
-	public function test_no_tags_renders_no_tag_panel(): void {
-		$this->assertStringNotContainsString(
-			'field-kit__email-tags',
-			( new Renderer() )->render( $this->field() )
-		);
+		$this->assertStringNotContainsString( 'field-kit__email-tags', $html );
 	}
 
 	/**

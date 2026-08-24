@@ -100,6 +100,10 @@ final class EmailEditorType extends AbstractNestedType {
 		$parts['body'] = [
 			'type'  => 'wysiwyg',
 			'label' => __( 'Body', 'arraypress' ),
+			// The body is where a tag is actually wanted, and the editor puts
+			// the chooser beside Add Media, where someone writing one is
+			// already looking.
+			'tags'  => $field->get( 'tags', [] ),
 		];
 
 		return $parts;
@@ -152,11 +156,10 @@ final class EmailEditorType extends AbstractNestedType {
 		$panel->set_if( '' !== $described, 'aria-describedby', $described );
 
 		return sprintf(
-			'<div%s>%s<div class="inside">%s%s%s</div></div>',
+			'<div%s>%s<div class="inside">%s%s</div></div>',
 			$panel->render(),
 			$this->render_header( $field, $title_id, $collapsed ),
 			$this->render_children( $this->with_parts( $field ), $values, $field->input_name() ),
-			$this->render_tags( $field ),
 			$this->render_actions( $field )
 		);
 	}
@@ -183,55 +186,6 @@ final class EmailEditorType extends AbstractNestedType {
 			esc_html( '' !== $field->label() ? $field->label() : __( 'Email', 'arraypress' ) ),
 			$collapsed ? 'false' : 'true',
 			esc_html__( 'Show or hide panel', 'arraypress' )
-		);
-	}
-
-	/**
-	 * The merge tags this email accepts, as buttons that insert them.
-	 *
-	 * A list of codes to copy by hand is a list of codes to mistype. These
-	 * insert at the cursor of whichever part was last focused, which is the
-	 * only thing anyone was going to do with them.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function render_tags( Field $field ): string {
-		$tags = (array) $field->get( 'tags', [] );
-
-		if ( [] === $tags ) {
-			return '';
-		}
-
-		$items = '';
-
-		foreach ( $tags as $tag => $description ) {
-			// Accepts a list of tags as well as a map of tag => description.
-			$code = is_string( $tag ) ? $tag : (string) $description;
-			$help = is_string( $tag ) ? (string) $description : '';
-
-			$button = new Attributes();
-			$button->set( 'type', 'button' );
-			$button->add_class( 'button-link', 'field-kit__email-tag' );
-			$button->set( 'data-tag', $code );
-
-			$items .= sprintf(
-				'<li><button%s><code>%s</code></button>%s</li>',
-				$button->render(),
-				esc_html( $code ),
-				'' === $help ? '' : sprintf( ' <span class="description">%s</span>', esc_html( $help ) )
-			);
-		}
-
-		return sprintf(
-			'<div class="field-kit__email-tags">' .
-			'<h3 class="field-kit__email-tags-title">%s</h3>' .
-			'<p class="description">%s</p>' .
-			'<ul class="field-kit__email-tag-list">%s</ul></div>',
-			esc_html__( 'Merge tags', 'arraypress' ),
-			esc_html__( 'Choose a tag to insert it where you were last typing.', 'arraypress' ),
-			$items
 		);
 	}
 

@@ -257,6 +257,31 @@ if ( ! function_exists( 'add_action' ) ) {
 	}
 }
 
+if ( ! function_exists( 'remove_action' ) ) {
+	function remove_action( $hook, $callback, $priority = 10 ) {
+		if ( ! isset( $GLOBALS['fk_actions'][ $hook ] ) ) {
+			return false;
+		}
+
+		$GLOBALS['fk_actions'][ $hook ] = array_values(
+			array_filter(
+				$GLOBALS['fk_actions'][ $hook ],
+				static fn( $registered ) => $registered !== $callback
+			)
+		);
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'do_action' ) ) {
+	function do_action( $hook, ...$args ) {
+		foreach ( $GLOBALS['fk_actions'][ $hook ] ?? [] as $callback ) {
+			$callback( ...$args );
+		}
+	}
+}
+
 if ( ! function_exists( 'add_filter' ) ) {
 	function add_filter( $hook, $callback, $priority = 10, $args = 1 ) {
 		$GLOBALS['fk_filters'][ $hook ][] = $callback;

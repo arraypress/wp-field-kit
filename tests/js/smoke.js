@@ -76,6 +76,7 @@ const documentStub = {
 
 const context = {
 	document: documentStub,
+	getComputedStyle: () => ( {} ),
 	console,
 	setTimeout,
 	clearTimeout,
@@ -120,7 +121,7 @@ if ( ! modules ) {
 const expected = [
 	'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder',
 	'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker',
-	'EmailPanel', 'ActionButton',
+	'TagModal', 'EmailPanel', 'ActionButton',
 ];
 
 expected.forEach( ( name ) => {

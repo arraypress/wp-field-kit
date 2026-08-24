@@ -1691,6 +1691,181 @@
 	window.ArrayPressFieldKitModules.ColorPicker = ColorPicker;
 
 	/* ====================================================================
+	 * Merge tag chooser
+	 * ================================================================= */
+
+	var TagModal = {
+
+		/**
+		 * Bind every Add Tag button within a root.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__tag-button' ).forEach( function ( button ) {
+				if ( button.dataset.fkBound ) {
+					return;
+				}
+
+				button.dataset.fkBound = '1';
+				TagModal.bind( button );
+			} );
+		},
+
+		/**
+		 * Wire one button to its dialog.
+		 *
+		 * @param {Element} button The Add Tag button.
+		 */
+		bind: function ( button ) {
+			var modal = document.getElementById( button.dataset.modal );
+
+			if ( ! modal ) {
+				return;
+			}
+
+			var backdrop = modal.nextElementSibling;
+			var search = modal.querySelector( '.field-kit__tag-search-input' );
+			var empty = modal.querySelector( '.field-kit__tag-empty' );
+			var rows = Array.prototype.slice.call( modal.querySelectorAll( '.field-kit__tag-items li' ) );
+
+			function open() {
+				modal.hidden = false;
+
+				if ( backdrop ) {
+					backdrop.hidden = false;
+				}
+
+				if ( search ) {
+					search.value = '';
+					filter( '' );
+					search.focus();
+				}
+
+				document.addEventListener( 'keydown', onKey );
+			}
+
+			function close() {
+				modal.hidden = true;
+
+				if ( backdrop ) {
+					backdrop.hidden = true;
+				}
+
+				document.removeEventListener( 'keydown', onKey );
+
+				// Focus goes back where it came from, or it lands at the top
+				// of the document and the next tab starts the page again.
+				button.focus();
+			}
+
+			function onKey( event ) {
+				if ( 'Escape' === event.key ) {
+					close();
+				}
+			}
+
+			function filter( term ) {
+				var needle = term.toLowerCase().trim();
+				var shown = 0;
+
+				rows.forEach( function ( row ) {
+					var item = row.querySelector( '.field-kit__tag-item' );
+					var match = '' === needle
+						|| ( item && item.dataset.search && item.dataset.search.indexOf( needle ) > -1 );
+
+					row.hidden = ! match;
+
+					if ( match ) {
+						shown ++;
+					}
+				} );
+
+				if ( empty ) {
+					empty.hidden = shown > 0;
+				}
+			}
+
+			button.addEventListener( 'click', open );
+
+			var closer = modal.querySelector( '.media-modal-close' );
+
+			if ( closer ) {
+				closer.addEventListener( 'click', close );
+			}
+
+			if ( backdrop ) {
+				backdrop.addEventListener( 'click', close );
+			}
+
+			if ( search ) {
+				search.addEventListener( 'input', function () {
+					filter( search.value );
+				} );
+			}
+
+			rows.forEach( function ( row ) {
+				var item = row.querySelector( '.field-kit__tag-item' );
+
+				if ( ! item ) {
+					return;
+				}
+
+				item.addEventListener( 'click', function () {
+					TagModal.insert( button.dataset.editor, item.dataset.tag || '' );
+					close();
+				} );
+			} );
+		},
+
+		/**
+		 * Put a tag into an editor.
+		 *
+		 * A visual editor is not an input at all — its content lives in an
+		 * iframe — so writing to the textarea underneath it would be
+		 * overwritten the moment the editor syncs.
+		 *
+		 * @param {string} editorId The editor's id.
+		 * @param {string} tag      The tag to insert.
+		 */
+		insert: function ( editorId, tag ) {
+			if ( '' === tag ) {
+				return;
+			}
+
+			var editor = window.tinymce ? window.tinymce.get( editorId ) : null;
+
+			if ( editor && ! editor.isHidden() ) {
+				editor.execCommand( 'mceInsertContent', false, tag );
+
+				return;
+			}
+
+			var textarea = document.getElementById( editorId );
+
+			if ( ! textarea ) {
+				return;
+			}
+
+			var start = textarea.selectionStart;
+			var end = textarea.selectionEnd;
+
+			if ( 'number' !== typeof start ) {
+				textarea.value += tag;
+			} else {
+				textarea.value = textarea.value.slice( 0, start ) + tag + textarea.value.slice( end );
+				textarea.selectionStart = start + tag.length;
+				textarea.selectionEnd = textarea.selectionStart;
+			}
+
+			textarea.focus();
+			textarea.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.TagModal = TagModal;
+
+	/* ====================================================================
 	 * Email panels
 	 * ================================================================= */
 
@@ -2003,7 +2178,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {
