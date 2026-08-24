@@ -203,15 +203,20 @@ final class Renderer {
 		// above it would announce the field twice.
 		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
 			$label = sprintf(
-				// The tooltip is outside the <label>: its button would
+				// The tooltip is outside the <label> — its button would
 				// otherwise be a control inside a label, and clicking it
-				// would move focus to the field instead of opening the panel.
-				'<label for="%s">%s%s%s</label>%s',
+				// would move focus to the field rather than open the panel —
+				// but on the same line as it. Without the wrapper the label
+				// is a block and the icon falls onto the next line, beside
+				// the control, which is where it looked like a stray button.
+				'%s<label for="%s">%s%s%s</label>%s%s',
+				'' === $tooltip ? '' : '<span class="field-kit__label-row">',
 				esc_attr( $field->input_id() ),
 				esc_html( $field->label() ),
 				$this->required_marker( $field ),
 				$badge,
-				$tooltip
+				$tooltip,
+				'' === $tooltip ? '' : '</span>'
 			);
 
 			$badge   = '';

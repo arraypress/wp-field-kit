@@ -683,6 +683,24 @@ li.field-kit__repeater-row {
  * rather than a colour invented here.
  * -------------------------------------------------------------------- */
 
+/* The label and its help icon on one line.
+
+   Only rendered when there is a tooltip, so nothing else changes shape. A
+   label is a block in most of these layouts, so without this the icon fell
+   onto the next line and sat beside the control looking like a stray button. */
+.field-kit__label-row {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+}
+
+/* The label inside it keeps its own margin rather than the block one, which
+   would push the icon away from the text it belongs to. */
+.field-kit__label-row > label {
+	display: inline;
+	margin: 0;
+}
+
 .field-kit__tooltip {
 	position: relative;
 	display: inline-block;
