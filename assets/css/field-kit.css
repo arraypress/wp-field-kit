@@ -1242,7 +1242,7 @@ select.field-kit__select[multiple] {
 
 .field-kit__group .field-kit__field > label,
 .field-kit__repeater-fields .field-kit__field > label,
-.field-kit__email-editor .field-kit__field > label {
+.field-kit__email .field-kit__field > label {
 	display: block;
 	margin: 0 0 .25rem;
 	font-weight: 600;
@@ -1258,10 +1258,11 @@ select.field-kit__select[multiple] {
 }
 
 /* Inputs inside a nested field should not stretch to the row's full width
-   just because they can. */
-.field-kit__group .field-kit__field input[type="text"],
-.field-kit__repeater-fields .field-kit__field input[type="text"],
-.field-kit__email-editor .field-kit__field input[type="text"] {
+   just because they can — except where the field asked for core's own
+   large-text or regular-text, which already say how wide they want to be. */
+.field-kit__group .field-kit__field input[type="text"]:not(.large-text):not(.regular-text),
+.field-kit__repeater-fields .field-kit__field input[type="text"]:not(.large-text):not(.regular-text),
+.field-kit__email .field-kit__field input[type="text"]:not(.large-text):not(.regular-text) {
 	width: 100%;
 	max-width: 25rem;
 }
@@ -1346,4 +1347,108 @@ select.field-kit__select[multiple] {
 	.field-kit__gallery-item .field-kit__drag-handle {
 		opacity: 1;
 	}
+}
+
+/* -----------------------------------------------------------------------
+ * Email panel
+ *
+ * core's .postbox, so the panel matches every metabox on every edit screen
+ * and follows the admin colour scheme. What is added here is only what core
+ * does not supply for a postbox living outside a metabox screen: the
+ * collapse (postboxes.js only runs where metaboxes do) and the tag list.
+ * -------------------------------------------------------------------- */
+
+.field-kit__email {
+	margin: 0;
+	max-width: 60rem;
+}
+
+/* core's postbox-header is not clickable on its own; on a metabox screen the
+   whole thing is a drag handle. Here it collapses the panel, so it should
+   look like it does something. */
+.field-kit__email .postbox-header .hndle {
+	cursor: pointer;
+}
+
+/* core hides .inside on .closed through .postbox.closed .inside, which is
+   part of the metabox stylesheet rather than the common one. */
+.field-kit__email.closed .inside {
+	display: none;
+}
+
+.field-kit__email .inside {
+	padding: 0 12px 12px;
+	margin: 0;
+}
+
+.field-kit__email .field-kit__field {
+	margin-bottom: 1.25rem;
+}
+
+.field-kit__email-tags {
+	margin: 0 0 1rem;
+	padding: .75rem;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #f6f7f7;
+}
+
+.field-kit__email-tags-title {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.field-kit__email-tags .description {
+	margin: .2rem 0 .6rem;
+}
+
+.field-kit__email-tag-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .35rem .75rem;
+	margin: 0;
+	list-style: none;
+}
+
+.field-kit__email-tag-list li {
+	margin: 0;
+}
+
+/* Core underlines .wp-core-ui .button-link at 0,2,0, which a bare class
+   loses to — the tag would carry a line under its own monospace code. */
+.wp-core-ui .field-kit__email-tag {
+	padding: .1rem .35rem;
+	border: 1px solid #c3c4c7;
+	border-radius: 2px;
+	background: #fff;
+	text-decoration: none;
+	line-height: 1.6;
+}
+
+.wp-core-ui .field-kit__email-tag:hover,
+.wp-core-ui .field-kit__email-tag:focus {
+	border-color: var(--wp-admin-theme-color, #2271b1);
+	text-decoration: none;
+}
+
+.field-kit__email-tag code {
+	background: none;
+	padding: 0;
+	font-size: 12px;
+}
+
+.field-kit__email-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: .5rem;
+	margin: 0;
+}
+
+/* core's spinner is visibility:hidden with a fixed size, so a hidden one
+   still holds its place and the buttons do not jump when it appears. */
+.field-kit__email-actions .spinner {
+	float: none;
+	margin: 0;
 }

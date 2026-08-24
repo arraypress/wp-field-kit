@@ -87,6 +87,27 @@ final class AccessibilityTest extends TestCase {
 			return;
 		}
 
+		// A panel is named by its own heading rather than by a label: there
+		// is no single control in it to point a <label for> at, and a label
+		// naming the whole panel would be read before every control inside.
+		if ( $type->is_self_labelling() && $type->spans_row() ) {
+			$this->assertMatchesRegularExpression(
+				'/aria-labelledby="([^"]+)"/',
+				$markup,
+				"$id: a panel needs an accessible name."
+			);
+
+			preg_match( '/aria-labelledby="([^"]+)"/', $markup, $named );
+
+			$this->assertStringContainsString(
+				'id="' . $named[1] . '"',
+				$markup,
+				"$id: aria-labelledby points at an element that is not there."
+			);
+
+			return;
+		}
+
 		$this->assertMatchesRegularExpression(
 			'/<label[^>]*\bfor="' . preg_quote( $field->input_id(), '/' ) . '"/',
 			$markup,
@@ -133,7 +154,10 @@ final class AccessibilityTest extends TestCase {
 	public function test_required_is_announced( string $id ): void {
 		$field = $this->field( $id, [ 'required' => true ] );
 
-		if ( ! $field->type()->stores_value() ) {
+		// A panel of several controls is not itself required — its parts are,
+		// and each announces its own. Marking the region required would say
+		// something no assistive technology can act on.
+		if ( ! $field->type()->stores_value() || $field->type()->spans_row() ) {
 			$this->addToAssertionCount( 1 );
 
 			return;

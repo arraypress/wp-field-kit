@@ -99,6 +99,18 @@ interface FieldType {
 	public function is_grouped(): bool;
 
 	/**
+	 * Whether the field wants the whole row rather than a cell beside a label.
+	 *
+	 * A caller laying fields out in a table asks this rather than inferring
+	 * it from `stores_value()`. The two coincided for a while — only layout
+	 * types spanned — and then the email editor became a panel, which stores
+	 * a value and still cannot sit in a cell built for one control.
+	 *
+	 * @return bool
+	 */
+	public function spans_row(): bool;
+
+	/**
 	 * Script and style handles this type needs.
 	 *
 	 * @return array{scripts: string[], styles: string[]}

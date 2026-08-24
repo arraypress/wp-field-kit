@@ -133,6 +133,18 @@ abstract class AbstractType implements FieldType {
 	}
 
 	/**
+	 * Whether the field wants the whole row.
+	 *
+	 * A layout type has no label to sit beside, so it spans by default.
+	 * Anything that stores a value is a control until it says otherwise.
+	 *
+	 * @return bool
+	 */
+	public function spans_row(): bool {
+		return ! $this->stores_value();
+	}
+
+	/**
 	 * Script and style handles this type needs.
 	 *
 	 * @return array{scripts: string[], styles: string[]}

@@ -116,7 +116,7 @@ if ( ! modules ) {
 const expected = [
 	'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder',
 	'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker',
-	'ActionButton',
+	'EmailPanel', 'ActionButton',
 ];
 
 expected.forEach( ( name ) => {

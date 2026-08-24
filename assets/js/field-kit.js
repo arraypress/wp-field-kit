@@ -1688,6 +1688,148 @@
 	window.ArrayPressFieldKitModules.ColorPicker = ColorPicker;
 
 	/* ====================================================================
+	 * Email panels
+	 * ================================================================= */
+
+	var EmailPanel = {
+
+		/**
+		 * Bind every email panel within a root.
+		 *
+		 * Two behaviours, both of which the markup promises and neither of
+		 * which core supplies here: the postbox header collapses the panel
+		 * (core's postboxes.js only runs on metabox screens), and a merge tag
+		 * inserts itself where the author was last typing.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__email' ).forEach( function ( panel ) {
+				if ( panel.dataset.fkBound ) {
+					return;
+				}
+
+				panel.dataset.fkBound = '1';
+				EmailPanel.bindToggle( panel );
+				EmailPanel.bindTags( panel );
+			} );
+		},
+
+		/**
+		 * Collapse and expand from the header.
+		 *
+		 * @param {Element} panel The panel.
+		 */
+		bindToggle: function ( panel ) {
+			var button = panel.querySelector( '.field-kit__email-toggle' );
+			var header = panel.querySelector( '.postbox-header .hndle' );
+
+			if ( ! button ) {
+				return;
+			}
+
+			function toggle() {
+				var open = 'true' === button.getAttribute( 'aria-expanded' );
+
+				button.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
+				panel.classList.toggle( 'closed', open );
+			}
+
+			button.addEventListener( 'click', toggle );
+
+			// Core makes the whole header clickable, and so does this — but
+			// only the button carries the state, so there is one control to
+			// find from a keyboard rather than two that disagree.
+			if ( header ) {
+				header.addEventListener( 'click', toggle );
+			}
+		},
+
+		/**
+		 * Insert a merge tag where the author was last typing.
+		 *
+		 * @param {Element} panel The panel.
+		 */
+		bindTags: function ( panel ) {
+			var target = null;
+
+			panel.querySelectorAll( 'input[type="text"], textarea' ).forEach( function ( input ) {
+				input.addEventListener( 'focus', function () {
+					target = input;
+				} );
+			} );
+
+			panel.querySelectorAll( '.field-kit__email-tag' ).forEach( function ( button ) {
+				button.addEventListener( 'click', function () {
+					EmailPanel.insert( panel, target, button.dataset.tag || '' );
+				} );
+			} );
+		},
+
+		/**
+		 * Put a tag into whichever editor is in play.
+		 *
+		 * @param {Element}      panel The panel.
+		 * @param {Element|null} input The last focused input, if any.
+		 * @param {string}       tag   The tag to insert.
+		 */
+		insert: function ( panel, input, tag ) {
+			if ( '' === tag ) {
+				return;
+			}
+
+			// A visual editor is not an input at all — its content lives in an
+			// iframe — so writing to the textarea underneath it would be
+			// overwritten the moment the editor syncs.
+			var editor = EmailPanel.activeEditor( panel );
+
+			if ( editor && ! editor.isHidden() ) {
+				editor.execCommand( 'mceInsertContent', false, tag );
+
+				return;
+			}
+
+			var field = input || panel.querySelector( 'textarea, input[type="text"]' );
+
+			if ( ! field ) {
+				return;
+			}
+
+			var start = field.selectionStart;
+			var end = field.selectionEnd;
+
+			if ( 'number' !== typeof start ) {
+				field.value += tag;
+			} else {
+				field.value = field.value.slice( 0, start ) + tag + field.value.slice( end );
+				field.selectionStart = start + tag.length;
+				field.selectionEnd = field.selectionStart;
+			}
+
+			field.focus();
+			field.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		},
+
+		/**
+		 * The TinyMCE instance for this panel's body, if there is one.
+		 *
+		 * @param {Element} panel The panel.
+		 * @return {Object|null} The editor.
+		 */
+		activeEditor: function ( panel ) {
+			var textarea = panel.querySelector( 'textarea.wp-editor-area' );
+
+			if ( ! textarea || ! window.tinymce ) {
+				return null;
+			}
+
+			return window.tinymce.get( textarea.id ) || null;
+		}
+	};
+
+	window.ArrayPressFieldKitModules.EmailPanel = EmailPanel;
+
+	/* ====================================================================
 	 * Buttons that run an action
 	 * ================================================================= */
 
@@ -1858,7 +2000,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'ActionButton' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {
