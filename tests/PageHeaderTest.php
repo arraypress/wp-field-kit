@@ -326,4 +326,29 @@ final class PageHeaderTest extends TestCase {
 		$this->assertMatchesRegularExpression( '/<img[^>]*alt=""/', $html );
 	}
 
+
+	/**
+	 * A tab can carry an icon, and the icon is decorative.
+	 *
+	 * Reports tabs have them. The label beside it is the tab's name; a
+	 * dashicon announced as well reads as a second one.
+	 */
+	public function test_a_tab_can_carry_a_decorative_icon(): void {
+		$html = PageHeader::render(
+			[
+				'title' => 'Reports',
+				'tabs'  => [
+					'tiles'  => [ 'label' => 'Tiles', 'url' => '#', 'icon' => 'chart-bar' ],
+					'charts' => [ 'label' => 'Charts', 'url' => '#' ],
+				],
+			]
+		);
+
+		$this->assertStringContainsString( 'dashicons-chart-bar', $html );
+		$this->assertMatchesRegularExpression( '/dashicons-chart-bar[^>]*aria-hidden="true"/', $html );
+
+		// One icon, for the one tab that asked for it.
+		$this->assertSame( 1, substr_count( $html, 'dashicons dashicons-' ) );
+	}
+
 }

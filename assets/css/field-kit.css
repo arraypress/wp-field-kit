@@ -1003,6 +1003,17 @@ li.field-kit__repeater-row {
 	justify-content: center;
 }
 
+/* A tab may carry an icon — reports uses them — and it needs to sit on the
+   text's line rather than on the dashicon font's own. */
+.field-kit__page-tab .dashicons {
+	width: 18px;
+	height: 18px;
+	margin-right: .2rem;
+	font-size: 18px;
+	line-height: inherit;
+	vertical-align: text-bottom;
+}
+
 /* .privacy-settings-tab supplies the padding, colour and transition; the
    active state is core's own box-shadow, restated because the core rule is
    scoped to .privacy-settings-tab.active inside its own wrapper. */
