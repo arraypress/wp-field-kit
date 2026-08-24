@@ -419,6 +419,25 @@ final class FieldSet {
 	}
 
 	/**
+	 * Declare this set's keys to WordPress.
+	 *
+	 * One line for a consuming library, and the object type is not one of the
+	 * arguments: the context already knows what kind of store it is, being
+	 * the thing that calls `update_metadata()` with that same string.
+	 *
+	 * A set backed by an option registers nothing. A settings page declares
+	 * itself once with `register_setting()`, which is a different call with a
+	 * different shape — not something to approximate per field.
+	 *
+	 * @param string $subtype Post type or taxonomy, where the object has one.
+	 *
+	 * @return string[] The keys that were registered.
+	 */
+	public function register_meta( string $subtype = '' ): array {
+		return ( new MetaRegistrar( $this->context, $subtype, $this->registry ) )->register( $this->configs );
+	}
+
+	/**
 	 * Script and style handles every field in the set needs.
 	 *
 	 * @return array{scripts: string[], styles: string[]}

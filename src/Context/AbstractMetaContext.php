@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Registrable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -21,14 +22,14 @@ use ArrayPress\FieldKit\Field;
  * happens; getting it wrong in five libraries independently is what this
  * class exists to prevent.
  */
-abstract class AbstractMetaContext implements Context {
+abstract class AbstractMetaContext implements Context, Registrable {
 
 	/**
 	 * The metadata type: post, term, user or comment.
 	 *
 	 * @return string
 	 */
-	abstract protected function meta_type(): string;
+	abstract public function meta_type(): string;
 
 	/**
 	 * Prefix applied to every key.

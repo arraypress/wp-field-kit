@@ -14,6 +14,7 @@ namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Contracts\Flushable;
+use ArrayPress\FieldKit\Contracts\Registrable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -28,7 +29,7 @@ use ArrayPress\FieldKit\Field;
  * that reappears the day the constant is removed, with no indication of where
  * it came from.
  */
-final class ConstantContext implements Context, Flushable {
+final class ConstantContext implements Context, Flushable, Registrable {
 
 	/**
 	 * The context being decorated.
@@ -155,5 +156,18 @@ final class ConstantContext implements Context, Flushable {
 		if ( $this->inner instanceof Flushable ) {
 			$this->inner->save();
 		}
+	}
+
+	/**
+	 * The kind of meta the wrapped store holds.
+	 *
+	 * A decorated store is still the store it decorates. Without this a
+	 * settings page's encrypted field set would look unregistrable, which is
+	 * true, and a term screen's would too, which is not.
+	 *
+	 * @return string
+	 */
+	public function meta_type(): string {
+		return $this->inner instanceof Registrable ? $this->inner->meta_type() : '';
 	}
 }

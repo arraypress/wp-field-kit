@@ -9,6 +9,13 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit\Tests;
 
+use ArrayPress\FieldKit\Context\CommentMetaContext;
+use ArrayPress\FieldKit\Context\OptionContext;
+use ArrayPress\FieldKit\Context\PostMetaContext;
+use ArrayPress\FieldKit\Context\TermMetaContext;
+use ArrayPress\FieldKit\Context\UserMetaContext;
+use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\FieldSet;
 use ArrayPress\FieldKit\MetaRegistrar;
 use ArrayPress\FieldKit\Registry;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +60,81 @@ final class MetaRegistrarTest extends TestCase {
 	 * @return string[]
 	 */
 	private function register( array $configs, string $type = 'term', string $subtype = '' ): array {
-		return ( new MetaRegistrar( $type, $subtype, new Registry() ) )->register( $configs );
+		return ( new MetaRegistrar( $this->context( $type ), $subtype, new Registry() ) )->register( $configs );
+	}
+
+	/**
+	 * A store of the given kind.
+	 *
+	 * @param string $type Meta type.
+	 *
+	 * @return Context
+	 */
+	private function context( string $type ): Context {
+		return match ( $type ) {
+			'post'    => new PostMetaContext(),
+			'user'    => new UserMetaContext(),
+			'comment' => new CommentMetaContext(),
+			default   => new TermMetaContext(),
+		};
+	}
+
+	/**
+	 * A field set registers itself, which is the entry point a library uses.
+	 *
+	 * The object type is not an argument: the context already knows what kind
+	 * of store it is, being the thing that calls update_metadata() with that
+	 * same string. Asserted through FieldSet rather than the registrar
+	 * because that is the call a consuming library makes, and a signature
+	 * change that compiles against the registrar and not against the caller
+	 * is a fatal on a live page.
+	 */
+	public function test_a_field_set_registers_itself(): void {
+		$set = new FieldSet(
+			[ 'colour' => [ 'type' => 'text' ] ],
+			new TermMetaContext(),
+			''
+		);
+
+		$this->assertSame( [ 'colour' ], $set->register_meta( 'category' ) );
+		$this->assertSame( 'category', $this->registered( 'colour' )['object_subtype'] );
+	}
+
+	/**
+	 * An option-backed set registers nothing.
+	 *
+	 * A settings page declares itself once with register_setting(), which is a
+	 * different call with a different shape — not something to approximate
+	 * per field.
+	 */
+	public function test_an_option_backed_set_registers_nothing(): void {
+		$set = new FieldSet(
+			[ 'colour' => [ 'type' => 'text' ] ],
+			new OptionContext( 'fk_test' ),
+			'fk_test'
+		);
+
+		$this->assertSame( [], $set->register_meta() );
+		$this->assertSame( [], $GLOBALS['fk_meta_registry'] );
+	}
+
+	/**
+	 * A decorated store is still the store it decorates.
+	 *
+	 * Encryption and a constant override both wrap the context, and a term
+	 * screen using either must still register.
+	 */
+	public function test_a_decorated_meta_store_still_registers(): void {
+		$set = new FieldSet(
+			[ 'colour' => [ 'type' => 'text' ] ],
+			new \ArrayPress\FieldKit\Context\ConstantContext(
+				new \ArrayPress\FieldKit\Context\EncryptedContext( new PostMetaContext() )
+			),
+			''
+		);
+
+		$this->assertSame( [ 'colour' ], $set->register_meta( 'product' ) );
+		$this->assertSame( 'product', $this->registered( 'colour', 'post' )['object_subtype'] );
 	}
 
 	/**

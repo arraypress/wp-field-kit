@@ -14,6 +14,7 @@ namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Contracts\Flushable;
+use ArrayPress\FieldKit\Contracts\Registrable;
 use ArrayPress\FieldKit\Field;
 
 /**
@@ -31,7 +32,7 @@ use ArrayPress\FieldKit\Field;
  * use one — but it means an encrypted field is not something to put in a
  * migration and expect to survive.
  */
-final class EncryptedContext implements Context, Flushable {
+final class EncryptedContext implements Context, Flushable, Registrable {
 
 	/**
 	 * Marker identifying a value this class wrote, before it encoded types.
@@ -291,5 +292,18 @@ final class EncryptedContext implements Context, Flushable {
 		if ( $this->inner instanceof Flushable ) {
 			$this->inner->save();
 		}
+	}
+
+	/**
+	 * The kind of meta the wrapped store holds.
+	 *
+	 * A decorated store is still the store it decorates. Without this a
+	 * settings page's encrypted field set would look unregistrable, which is
+	 * true, and a term screen's would too, which is not.
+	 *
+	 * @return string
+	 */
+	public function meta_type(): string {
+		return $this->inner instanceof Registrable ? $this->inner->meta_type() : '';
 	}
 }

@@ -12,7 +12,8 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit;
 
-use ArrayPress\FieldKit\Context\EncryptedContext;
+use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\Registrable;
 
 /**
  * Declares a field set's meta keys to WordPress.
@@ -45,11 +46,11 @@ use ArrayPress\FieldKit\Context\EncryptedContext;
 final class MetaRegistrar {
 
 	/**
-	 * The object type, as the meta API names it.
+	 * The store whose keys are being declared.
 	 *
-	 * @var string
+	 * @var Context
 	 */
-	private string $meta_type;
+	private Context $context;
 
 	/**
 	 * The subtype, where the object has one.
@@ -68,14 +69,19 @@ final class MetaRegistrar {
 	/**
 	 * Construct.
 	 *
-	 * @param string        $meta_type Meta type: post, term, user or comment.
-	 * @param string        $subtype   Post type or taxonomy, where there is one.
-	 * @param Registry|null $registry  Type registry.
+	 * The meta type comes from the store rather than from the caller. The
+	 * context is already the thing calling `update_metadata()` with that
+	 * string; being told it a second time is one more place for "term" to be
+	 * written, and the one that drifts is never the one being read.
+	 *
+	 * @param Context       $context  The store whose keys are being declared.
+	 * @param string        $subtype  Post type or taxonomy, where there is one.
+	 * @param Registry|null $registry Type registry.
 	 */
-	public function __construct( string $meta_type, string $subtype = '', ?Registry $registry = null ) {
-		$this->meta_type = $meta_type;
-		$this->subtype   = $subtype;
-		$this->registry  = $registry ?? new Registry();
+	public function __construct( Context $context, string $subtype = '', ?Registry $registry = null ) {
+		$this->context  = $context;
+		$this->subtype  = $subtype;
+		$this->registry = $registry ?? new Registry();
 	}
 
 	/**
@@ -86,6 +92,14 @@ final class MetaRegistrar {
 	 * @return string[] The keys that were registered.
 	 */
 	public function register( array $configs ): array {
+		// An option is not meta. A settings page declares itself once with
+		// register_setting(), which is a different call with a different
+		// shape — so there is nothing to do here rather than something to
+		// approximate.
+		if ( '' === $this->meta_type() ) {
+			return [];
+		}
+
 		$registered = [];
 
 		foreach ( $configs as $key => $config ) {
@@ -146,7 +160,7 @@ final class MetaRegistrar {
 			$args['auth_callback'] = static fn() => current_user_can( $capability );
 		}
 
-		register_meta( $this->meta_type, $key, $args );
+		register_meta( $this->meta_type(), $key, $args );
 
 		$keys = [ $key ];
 
@@ -156,7 +170,7 @@ final class MetaRegistrar {
 
 		if ( '' !== $companion ) {
 			register_meta(
-				$this->meta_type,
+				$this->meta_type(),
 				$companion,
 				array_merge(
 					$args,
@@ -228,13 +242,11 @@ final class MetaRegistrar {
 	}
 
 	/**
-	 * Whether encryption is in play for a field set.
+	 * The kind of meta the store holds, or nothing when it is not meta.
 	 *
-	 * Exposed so a consumer can decide before registering rather than after.
-	 *
-	 * @return bool
+	 * @return string
 	 */
-	public static function encryption_available(): bool {
-		return EncryptedContext::available();
+	private function meta_type(): string {
+		return $this->context instanceof Registrable ? $this->context->meta_type() : '';
 	}
 }

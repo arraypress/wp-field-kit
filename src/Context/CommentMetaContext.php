@@ -19,7 +19,7 @@ final class CommentMetaContext extends AbstractMetaContext {
 	 *
 	 * @return string
 	 */
-	protected function meta_type(): string {
+	public function meta_type(): string {
 		return 'comment';
 	}
 }
