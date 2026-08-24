@@ -82,6 +82,14 @@ final class StylesheetTest extends TestCase {
 		// rule that hides it has to live here, with the stylesheet.
 		'column-field-kit-inline',
 
+		// wp-register-setting-fields, wp-register-term-fields and
+		// wp-register-user-fields all build the row a heading, separator or
+		// notice spans, and each had its own wrapper class. They share this
+		// one so a single rule can pull the cell back to the table's edge —
+		// core pads it ten pixels in while padding the label cell to nothing,
+		// which left every divider indented relative to what it divided.
+		'field-kit__spans-row',
+
 		// wp-register-setting-fields: a settings page's export, import and
 		// reset controls, which live in the Screen Options panel.
 		'field-kit__screen-tools',
