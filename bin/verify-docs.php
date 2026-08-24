@@ -16,6 +16,10 @@
  *
  *   php vendor/arraypress/wp-field-kit/bin/verify-docs.php README.md EXAMPLES.md
  *
+ * A library with a vocabulary of its own declares it:
+ *
+ *   ... --types=header,info_grid --keys=tab docs/*.md
+ *
  * @package ArrayPress\FieldKit
  */
 
@@ -40,7 +44,36 @@ if ( ! class_exists( Registry::class ) ) {
 // Stubs, so a config array containing __() can be evaluated at all.
 require_once __DIR__ . '/../tests/stubs.php';
 
-$files = array_slice( $argv, 1 );
+/*
+ * A consuming library has a vocabulary of its own. Flyouts documents `header`
+ * and `info_grid`, which are components it draws rather than field types the
+ * kit registers, and a `tab` key naming which tab a field belongs to, which
+ * the flyout reads and the kit never sees. Reporting those as errors would
+ * mean the tool cannot be used in the library that most needs it — and a
+ * check that always reports something is a check nobody runs.
+ *
+ * So both are declarable:
+ *
+ *   --types=header,info_grid  types this library draws itself
+ *   --keys=tab,wrapper_class  keys this library reads itself
+ */
+$extra_types = [];
+$extra_keys  = [];
+$files       = [];
+
+foreach ( array_slice( $argv, 1 ) as $argument ) {
+	if ( str_starts_with( $argument, '--types=' ) ) {
+		$extra_types = array_filter( array_map( 'trim', explode( ',', substr( $argument, 8 ) ) ) );
+		continue;
+	}
+
+	if ( str_starts_with( $argument, '--keys=' ) ) {
+		$extra_keys = array_filter( array_map( 'trim', explode( ',', substr( $argument, 7 ) ) ) );
+		continue;
+	}
+
+	$files[] = $argument;
+}
 
 if ( [] === $files ) {
 	$files = array_values( array_filter( [ 'README.md', 'EXAMPLES.md' ], 'file_exists' ) );
@@ -200,6 +233,8 @@ function is_field_map( mixed $value ): bool {
  * @return string[] Problems found.
  */
 function check_fields( array $fields, Registry $registry, string $where ): array {
+	global $extra_types, $extra_keys;
+
 	$problems = [];
 
 	foreach ( $fields as $key => $config ) {
@@ -209,13 +244,19 @@ function check_fields( array $fields, Registry $registry, string $where ): array
 
 		$type = (string) ( $config['type'] ?? 'text' );
 
+		// A type the consuming library draws itself. Its keys are its own, so
+		// there is nothing here to check them against.
+		if ( in_array( $type, $extra_types, true ) ) {
+			continue;
+		}
+
 		if ( ! $registry->has( $type ) ) {
 			$problems[] = sprintf( '%s: "%s" has type "%s", which is not registered.', $where, $key, $type );
 			continue;
 		}
 
 		$field   = new Field( (string) $key, $registry->get( $type ), $config, null );
-		$unknown = $field->unknown_keys();
+		$unknown = array_values( array_diff( $field->unknown_keys(), $extra_keys ) );
 
 		if ( [] !== $unknown ) {
 			$problems[] = sprintf(
