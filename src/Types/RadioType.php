@@ -126,4 +126,15 @@ class RadioType extends AbstractType {
 	public function is_grouped(): bool {
 		return true;
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A short list of options, which a row can take.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }

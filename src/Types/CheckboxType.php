@@ -127,4 +127,15 @@ class CheckboxType extends AbstractType {
 			'enum' => [ 0, 1 ],
 		];
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A box and its label, which is one line.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }

@@ -251,4 +251,15 @@ class SelectType extends AbstractType {
 			]
 			: $one;
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A dropdown fits a row, searchable or not — and assigning something from a list is most of what quick edit is for.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }

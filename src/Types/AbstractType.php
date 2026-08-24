@@ -228,4 +228,16 @@ abstract class AbstractType implements FieldType {
 
 		return $attributes;
 	}
+
+	/**
+	 * Whether the control can live in a quick edit or a bulk edit row.
+	 *
+	 * No, unless a type says otherwise. A new type appearing in quick edit
+	 * and breaking is worse than one not appearing until someone asks for it.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
 }

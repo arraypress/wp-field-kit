@@ -259,6 +259,109 @@ final class CoverageTest extends TestCase {
 	}
 
 	/**
+	 * The types a quick edit or bulk edit row can take.
+	 *
+	 * Pinned rather than derived, because the list is a set of judgements and
+	 * a judgement that changes silently is not one. A new type is not inline
+	 * by default, so adding one fails this and has to be argued for.
+	 *
+	 * @var string[]
+	 */
+	private const INLINE = [
+		'ajax',
+		'amount_type',
+		'button_group',
+		'checkbox',
+		'color',
+		'date',
+		'datetime',
+		'email',
+		'number',
+		'page',
+		'password',
+		'post',
+		'radio',
+		'range',
+		'select',
+		'select2',
+		'select_multiple',
+		'tags',
+		'taxonomy',
+		'tel',
+		'text',
+		'textarea',
+		'time',
+		'toggle',
+		'url',
+		'user',
+	];
+
+	/**
+	 * Exactly these types fit an inline row.
+	 *
+	 * Quick edit and bulk edit are not smaller edit screens. Quick edit
+	 * clones its panel from a hidden template before the values are in it, so
+	 * anything started in JavaScript comes up dead in the clone; and both are
+	 * one row of a list table, so a panel or a gallery does not fit however
+	 * well it works.
+	 *
+	 * Both libraries used to keep their own whitelist, and they drifted —
+	 * which is why the same field worked in one and not the other.
+	 */
+	public function test_the_inline_types_are_exactly_these(): void {
+		$registry = new Registry();
+		$inline   = [];
+
+		foreach ( $registry->ids() as $id ) {
+			if ( $registry->get( $id )->supports_inline() ) {
+				$inline[] = $id;
+			}
+		}
+
+		sort( $inline );
+
+		$expected = self::INLINE;
+		sort( $expected );
+
+		$this->assertSame( $expected, $inline );
+	}
+
+	/**
+	 * The ones that cannot be inline, and why, one case each.
+	 */
+	public function test_the_reasons_a_type_is_not_inline(): void {
+		$registry = new Registry();
+
+		foreach (
+			[
+				// Started in JavaScript, and quick edit clones before anything runs.
+				'wysiwyg'      => 'needs an editor started in JS',
+				'code'         => 'needs an editor started in JS',
+
+				// A panel, a stack of rows or a grid: not one row of a table.
+				'email_editor' => 'is a panel',
+				'repeater'     => 'is a stack of rows',
+				'group'        => 'is a stack of fields',
+				'gallery'      => 'is a grid',
+				'sortable'     => 'is a reorderable list',
+
+				// Nothing to edit, or nothing that means anything per row.
+				'heading'      => 'stores nothing',
+				'separator'    => 'stores nothing',
+				'clipboard'    => 'is read-only',
+				'action_button' => 'runs an action, which a row is not the place for',
+				'license'      => 'activates a licence, which a row is not the place for',
+				'hidden'       => 'would write the same value to everything selected',
+			] as $id => $why
+		) {
+			$this->assertFalse(
+				$registry->get( $id )->supports_inline(),
+				sprintf( '%s %s, so it cannot be inline.', $id, $why )
+			);
+		}
+	}
+
+	/**
 	 * Every registered type is instantiable and reports the id it is keyed by.
 	 */
 	public function test_every_registered_type_resolves_to_its_own_id(): void {

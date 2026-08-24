@@ -79,4 +79,15 @@ final class OembedType extends AbstractInputType {
 	public function sanitize( mixed $value, Field $field ): string {
 		return esc_url_raw( (string) $value );
 	}
+
+	/**
+	 * Does not fit an inline row.
+	 *
+	 * The preview fetches on change, which is a request per row of a list table.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
 }

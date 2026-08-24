@@ -92,4 +92,15 @@ final class CodeType extends TextareaType {
 	public function editor_types( $field ): array {
 		return [ (string) $field->get( 'language', 'text/html' ) ];
 	}
+
+	/**
+	 * Does not fit an inline row.
+	 *
+	 * CodeMirror has to be started in JavaScript, and quick edit clones its panel before anything runs in it — so the editor comes up as a bare textarea, or not at all.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
 }

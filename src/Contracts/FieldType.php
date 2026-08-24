@@ -69,6 +69,25 @@ interface FieldType {
 	public function supports_placeholder(): bool;
 
 	/**
+	 * Whether the control can live in a quick edit or a bulk edit row.
+	 *
+	 * Those two screens are not simply smaller versions of an edit screen.
+	 * Quick edit clones its panel from a hidden template *before* the values
+	 * are in it, so anything that has to be started in JavaScript — TinyMCE,
+	 * CodeMirror — comes up dead in the clone. Both are one row of a list
+	 * table, so anything that is a panel, a gallery or a stack of rows does
+	 * not fit however well it works.
+	 *
+	 * The default is no. A type says it can, rather than every list-table
+	 * library keeping its own whitelist and each one drifting differently —
+	 * which is what they did, and why the same field worked in one and not
+	 * the other.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool;
+
+	/**
 	 * Whether this type stores a value at all.
 	 *
 	 * Layout types — heading, separator, message, html — render and store

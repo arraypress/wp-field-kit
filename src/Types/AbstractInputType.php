@@ -108,4 +108,15 @@ abstract class AbstractInputType extends AbstractType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A plain input needs nothing started in JavaScript and fits a row.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }

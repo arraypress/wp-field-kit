@@ -160,4 +160,15 @@ final class AmountType extends AbstractType {
 	public function schema( Field $field ): array {
 		return [ 'type' => [ 'number', 'string' ] ];
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A number and a unit: two controls on one line.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }

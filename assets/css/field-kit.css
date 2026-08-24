@@ -616,6 +616,12 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
    background it is part of the input and cannot come away from it. */
 .field-kit__combobox-input {
 	width: 100%;
+	/* Core caps its own <select> at the same figure. The cap is on the input
+	   rather than on the wrapper, because the wrapper deliberately has no
+	   width and everything else — the arrow, the list — is measured from the
+	   input. Without it the control ran the full width of the row while the
+	   plain select beside it did not. */
+	max-width: 25rem;
 	padding-right: 2rem;
 	cursor: pointer;
 	/* The SVG is arrow-down-alt2 from Dashicons. */

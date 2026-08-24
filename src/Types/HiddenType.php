@@ -36,4 +36,15 @@ final class HiddenType extends AbstractInputType {
 	public function sanitize( mixed $value, Field $field ): mixed {
 		return sanitize_text_field( (string) $value );
 	}
+
+	/**
+	 * Does not fit an inline row.
+	 *
+	 * Nothing to edit, and a hidden input in a bulk edit would write the same value to every selected object.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
 }

@@ -104,4 +104,15 @@ final class LicenseType extends AbstractInputType {
 
 		return str_contains( $value, '****' ) ? (string) $field->raw_value() : $value;
 	}
+
+	/**
+	 * Does not fit an inline row.
+	 *
+	 * Activating a licence from a list-table row, against whichever posts happen to be selected, is not a thing anyone means to do.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return false;
+	}
 }

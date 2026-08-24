@@ -70,4 +70,15 @@ class TextareaType extends AbstractType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
+
+	/**
+	 * Fits an inline row.
+	 *
+	 * A plain textarea, which needs nothing started.
+	 *
+	 * @return bool
+	 */
+	public function supports_inline(): bool {
+		return true;
+	}
 }
