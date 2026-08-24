@@ -195,7 +195,10 @@ function configs_in( string $code ): array {
 
 	$found = [];
 
-	if ( ! preg_match_all( '/register_[a-z_]+\(/', $code, $calls, PREG_OFFSET_CAPTURE ) ) {
+	// A registration call, or a constructor. The kit's own examples build a
+	// FieldSet directly — it is the layer underneath the register_*()
+	// functions, so it has none of its own.
+	if ( ! preg_match_all( '/(?:register_[a-z_]+|new\s+[A-Z][A-Za-z]*)\s*\(/', $code, $calls, PREG_OFFSET_CAPTURE ) ) {
 		return $found;
 	}
 
@@ -211,7 +214,12 @@ function configs_in( string $code ): array {
 		$calls[0] = array_values(
 			array_filter(
 				$calls[0],
-				static fn( $call ) => in_array( rtrim( (string) $call[0], '(' ), $only_calls, true )
+				static fn( $call ) => in_array(
+					// `new FieldSet(` is named `FieldSet` on the command line.
+					preg_replace( '/^new\s+|\s*\($/', '', (string) $call[0] ),
+					$only_calls,
+					true
+				)
 			)
 		);
 	}

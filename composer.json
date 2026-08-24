@@ -37,6 +37,7 @@
     "lint": "phpcs",
     "format": "phpcbf --standard=phpcs-format.xml.dist",
     "format:check": "phpcs --standard=phpcs-format.xml.dist",
+    "docs:verify": "php bin/verify-docs.php --calls=FieldSet README.md",
     "test:js": "node tests/js/smoke.js",
     "test:all": [
       "@test",
