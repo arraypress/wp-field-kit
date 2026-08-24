@@ -14,6 +14,7 @@ namespace ArrayPress\FieldKit\Context;
 
 use ArrayPress\FieldKit\Contracts\Context;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Support\Resolve;
 
 /**
  * A set of fields read straight off an object.
@@ -25,10 +26,7 @@ use ArrayPress\FieldKit\Field;
  *
  * "Somewhere" is the point. The same value might be a public property, a
  * getter, or a magic one, and which of those it is depends on whose object it
- * is. So all three are tried, in the order that lets an object override the
- * default: an explicit `{key}_data()` first, then a `get_{key}()` getter,
- * then a property. A getter is a deliberate statement about what the value
- * means; a property is just where it happens to be stored.
+ * is. Resolve does the looking; see it for the order and why.
  *
  * Writes collect rather than persist. An object of someone else's is not
  * something to set properties on — the setter might be a getter's opposite,
@@ -80,25 +78,7 @@ final class ObjectContext implements Context {
 			return $this->written[ $key ];
 		}
 
-		if ( null === $this->subject ) {
-			return null;
-		}
-
-		$data = $key . '_data';
-
-		if ( method_exists( $this->subject, $data ) ) {
-			return $this->subject->$data();
-		}
-
-		$getter = 'get_' . $key;
-
-		if ( method_exists( $this->subject, $getter ) ) {
-			return $this->subject->$getter();
-		}
-
-		// isset() rather than property_exists(), so an object with a magic
-		// __isset/__get pair — WP_Post has both — answers for itself.
-		return isset( $this->subject->$key ) ? $this->subject->$key : null;
+		return Resolve::value( $this->subject, $key );
 	}
 
 	/**
