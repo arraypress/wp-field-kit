@@ -86,11 +86,11 @@ final class PlaceholderTest extends TestCase {
 	 * two drift apart.
 	 */
 	public function test_a_single_local_select_leaves_the_empty_option_to_speak(): void {
-		$this->assertNull( $this->placeholder( 'select2' ) );
+		$this->assertNull( $this->placeholder( 'enhanced_select' ) );
 
 		$this->assertStringContainsString(
 			'<option value="">',
-			$this->render( 'select2' ),
+			$this->render( 'enhanced_select' ),
 			'There is no empty option for the combobox to fall back to.'
 		);
 	}
@@ -99,7 +99,7 @@ final class PlaceholderTest extends TestCase {
 	 * A multiple select has no empty option, so it needs a placeholder.
 	 */
 	public function test_a_multiple_select_says_it_takes_more_than_one(): void {
-		$html = $this->render( 'select2', [ 'multiple' => true ] );
+		$html = $this->render( 'enhanced_select', [ 'multiple' => true ] );
 
 		$this->assertStringNotContainsString(
 			'<option value="">',
@@ -107,7 +107,7 @@ final class PlaceholderTest extends TestCase {
 			'A multiple select should have no empty option.'
 		);
 
-		$this->assertSame( 'Choose one or more', $this->placeholder( 'select2', [ 'multiple' => true ] ) );
+		$this->assertSame( 'Choose one or more', $this->placeholder( 'enhanced_select', [ 'multiple' => true ] ) );
 	}
 
 	/**
@@ -116,7 +116,7 @@ final class PlaceholderTest extends TestCase {
 	public function test_a_creatable_select_says_a_new_value_can_be_typed(): void {
 		$this->assertSame(
 			'Choose, or type to add',
-			$this->placeholder( 'select2', [ 'creatable' => true ] )
+			$this->placeholder( 'enhanced_select', [ 'creatable' => true ] )
 		);
 	}
 

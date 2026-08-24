@@ -53,7 +53,7 @@ final class Registry {
 
 		// Choice.
 		'select'          => Types\SelectType::class,
-		'select2'         => Types\EnhancedSelectType::class,
+		'enhanced_select' => Types\EnhancedSelectType::class,
 		'select_multiple' => Types\SelectMultipleType::class,
 		'checkbox'        => Types\CheckboxType::class,
 		'toggle'          => Types\ToggleType::class,
@@ -126,6 +126,12 @@ final class Registry {
 		'ajax_select'   => 'ajax',     // flyouts' name for a callback search.
 		'hr'            => 'separator',
 		'notice'        => 'message',
+
+		// What the settings library called an enhanced select, back when one
+		// was built on select2. Not a line of select2 remains anywhere in these
+		// libraries, and a type named after it was the last thing in the
+		// codebase whose name meant something it no longer is.
+		'select2'       => 'enhanced_select',
 	];
 
 	/**
