@@ -1349,6 +1349,30 @@
 		},
 
 		/**
+		 * Whether the item's neighbours sit beside it rather than under it.
+		 *
+		 * Measured rather than configured, so a grid that wraps to a single
+		 * column on a narrow screen answers vertically without being told —
+		 * and a repeater whose `direction` was changed does too.
+		 *
+		 * @param {Element} item An item in the list.
+		 * @return {boolean} Whether the list runs across at this point.
+		 */
+		isHorizontal: function ( item ) {
+			var neighbour = item.nextElementSibling || item.previousElementSibling;
+
+			if ( ! neighbour ) {
+				return false;
+			}
+
+			// Four pixels of slack: two elements in a row rarely share a top
+			// to the pixel once borders and margins are involved.
+			return Math.abs(
+				neighbour.getBoundingClientRect().top - item.getBoundingClientRect().top
+			) < 4;
+		},
+
+		/**
 		 * Wire the move buttons.
 		 *
 		 * @param {Element} list The list.
@@ -1533,9 +1557,20 @@
 				}
 
 				// Past the halfway line of the item under the pointer, the
-				// dragged one belongs after it rather than before.
+				// dragged one belongs after it rather than before — but which
+				// halfway line depends on how the list is actually laid out.
+				//
+				// A gallery is a grid, so its tiles sit side by side and the
+				// question is left-or-right. Asking top-or-bottom there means
+				// two tiles in the same row give the same answer over most of
+				// their area, which is why a tile could not be dropped into
+				// the first position at all.
 				var box = over.getBoundingClientRect();
-				var past = ( event.clientY - box.top ) / box.height > 0.5;
+
+				var past = Reorder.isHorizontal( over )
+					? ( event.clientX - box.left ) / box.width > 0.5
+					: ( event.clientY - box.top ) / box.height > 0.5;
+
 				var reference = past ? over.nextElementSibling : over;
 
 				// Already exactly there. dragover fires continuously — many

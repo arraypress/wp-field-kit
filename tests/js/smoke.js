@@ -513,6 +513,80 @@ try {
 		console.error( '  Reorder: dragover no longer bails when there is nothing under the pointer' );
 		failures ++;
 	}
+
+	/*
+	 * Which halfway line a drop is measured against.
+	 *
+	 * A gallery is a grid, so its tiles sit side by side and the question is
+	 * left-or-right. Asking top-or-bottom there gives two tiles in the same
+	 * row the same answer over most of their area, and a tile could not be
+	 * dropped into the first position at all.
+	 *
+	 * The helper is pulled out of the source rather than restated, so this
+	 * cannot pass against a copy that has drifted.
+	 */
+	// That it exists is half of it; the other half is that dragover asks it.
+	// Testing the helper alone passes against a call site that has gone back
+	// to measuring vertically, which is exactly the bug.
+	if ( ! /past = Reorder\.isHorizontal\( over \)/.test( source ) ) {
+		console.error( '  Reorder: dragover no longer asks which way the list runs, so a grid is measured vertically' );
+		failures ++;
+	}
+
+	const helper = source.match( /isHorizontal: function \( item \) \{[\s\S]*?\n\t\t\},/ );
+
+	if ( ! helper ) {
+		console.error( '  Reorder: isHorizontal is gone, so a grid is measured vertically again' );
+		failures ++;
+	} else {
+		const Reorder = eval( '({ ' + helper[ 0 ] + ' })' );
+
+		const at = ( left, top ) => ( {
+			getBoundingClientRect: () => ( { left, top, width: 150, height: 150 } ),
+			nextElementSibling: null,
+			previousElementSibling: null,
+		} );
+
+		const link = ( items ) => {
+			items.forEach( ( one, index ) => {
+				one.nextElementSibling = items[ index + 1 ] || null;
+				one.previousElementSibling = items[ index - 1 ] || null;
+			} );
+
+			return items;
+		};
+
+		const side = ( over, x, y ) => {
+			const box = over.getBoundingClientRect();
+
+			const past = Reorder.isHorizontal( over )
+				? ( x - box.left ) / box.width > 0.5
+				: ( y - box.top ) / box.height > 0.5;
+
+			return past ? 'after' : 'before';
+		};
+
+		// Two columns, so the first two tiles share a row.
+		const grid = link( [ at( 0, 0 ), at( 160, 0 ), at( 0, 160 ) ] );
+
+		if ( 'before' !== side( grid[ 0 ], 20, 75 ) ) {
+			console.error( '  Reorder: a tile cannot be dropped into the first position of a grid' );
+			failures ++;
+		}
+
+		if ( 'after' !== side( grid[ 0 ], 130, 75 ) ) {
+			console.error( '  Reorder: the right half of a grid tile does not drop after it' );
+			failures ++;
+		}
+
+		// Rows under each other, where the question really is top-or-bottom.
+		const rows = link( [ at( 0, 0 ), at( 0, 160 ) ] );
+
+		if ( 'before' !== side( rows[ 0 ], 75, 10 ) || 'after' !== side( rows[ 0 ], 75, 140 ) ) {
+			console.error( '  Reorder: a stacked list is no longer measured vertically' );
+			failures ++;
+		}
+	}
 } )();
 
 if ( failures ) {
