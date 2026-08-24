@@ -660,6 +660,21 @@ li.field-kit__repeater-row {
 }
 
 /* -----------------------------------------------------------------------
+ * The inline-edit anchor column
+ *
+ * core fires quick_edit_custom_box and bulk_edit_custom_box once per column,
+ * and only for columns that are not its own — so a post type whose list table
+ * has no custom column never fires either, and the inline panels come out
+ * empty with nothing to say why. The quick-edit and bulk-edit libraries add
+ * one when there is none; it is titled '' so core leaves it out of Screen
+ * Options, and hidden here so the table looks as it did.
+ * -------------------------------------------------------------------- */
+
+.column-field-kit-inline {
+	display: none;
+}
+
+/* -----------------------------------------------------------------------
  * Tooltips
  *
  * A help icon beside a label, with a panel behind it. EDD's shape, drawn with

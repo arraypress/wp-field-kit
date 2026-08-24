@@ -76,6 +76,12 @@ final class StylesheetTest extends TestCase {
 		// wp-register-term-fields: a term screen's own row heading.
 		'field-kit__row-label',
 
+		// wp-register-quick-edit-fields and wp-register-bulk-edit-fields add
+		// this column so core has something to fire their hook against, on a
+		// post type whose list table has no custom column of its own. The
+		// rule that hides it has to live here, with the stylesheet.
+		'column-field-kit-inline',
+
 		// wp-register-setting-fields: a settings page's export, import and
 		// reset controls, which live in the Screen Options panel.
 		'field-kit__screen-tools',
