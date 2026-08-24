@@ -78,4 +78,18 @@ final class TagsType extends AbstractInputType {
 
 		return array_values( array_unique( array_filter( $parts, static fn( $p ) => '' !== $p ) ) );
 	}
+
+	/**
+	 * A list of strings, not the comma-separated string it is typed as.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'  => 'array',
+			'items' => [ 'type' => 'string' ],
+		];
+	}
 }

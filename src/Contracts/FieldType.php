@@ -111,6 +111,21 @@ interface FieldType {
 	public function spans_row(): bool;
 
 	/**
+	 * The shape this type stores, as a JSON Schema fragment.
+	 *
+	 * Asked of the type rather than mapped in a table somewhere, because the
+	 * type is the only thing that knows what its own `sanitize()` returns —
+	 * and a schema that disagrees with what is stored is worse than none:
+	 * WordPress rejects valid values against it, and only over REST, so it
+	 * works in the admin and fails everywhere else.
+	 *
+	 * @param Field $field The field, since the shape can depend on its config.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array;
+
+	/**
 	 * Script and style handles this type needs.
 	 *
 	 * @return array{scripts: string[], styles: string[]}

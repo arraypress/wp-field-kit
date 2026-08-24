@@ -185,4 +185,18 @@ final class SortableType extends AbstractType {
 			'styles'  => [ 'dashicons' ],
 		];
 	}
+
+	/**
+	 * The chosen keys, in the order they were arranged.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'  => 'array',
+			'items' => [ 'type' => 'string' ],
+		];
+	}
 }

@@ -178,4 +178,15 @@ abstract class AbstractMediaType extends AbstractType {
 			'styles'  => [],
 		];
 	}
+
+	/**
+	 * An attachment id, or the empty string when nothing is chosen.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [ 'type' => [ 'integer', 'string' ] ];
+	}
 }

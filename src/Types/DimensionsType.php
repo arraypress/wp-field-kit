@@ -124,4 +124,26 @@ final class DimensionsType extends AbstractType {
 	public function is_grouped(): bool {
 		return true;
 	}
+
+	/**
+	 * One object holding each part and the unit.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		$properties = [];
+
+		foreach ( (array) $field->get( 'parts', [ 'width', 'height' ] ) as $part ) {
+			$properties[ (string) $part ] = [ 'type' => [ 'number', 'string' ] ];
+		}
+
+		$properties['unit'] = [ 'type' => 'string' ];
+
+		return [
+			'type'       => 'object',
+			'properties' => $properties,
+		];
+	}
 }

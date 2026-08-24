@@ -221,4 +221,34 @@ class SelectType extends AbstractType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
+
+	/**
+	 * A chosen value, or a list of them when the control takes several.
+	 *
+	 * The options are the allow-list, so they become the schema's enum —
+	 * except where the field may invent values, which is the one case where
+	 * the options are not the whole story.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		$one = [ 'type' => 'string' ];
+
+		$allowed = $this->allowed_values( $field );
+
+		if ( [] !== $allowed ) {
+			// The empty option is a real choice: it is how a non-required
+			// select says nothing was picked.
+			$one['enum'] = $field->is_required() ? $allowed : array_merge( [ '' ], $allowed );
+		}
+
+		return $this->is_multiple( $field )
+			? [
+				'type'  => 'array',
+				'items' => $one,
+			]
+			: $one;
+	}
 }

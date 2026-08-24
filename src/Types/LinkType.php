@@ -121,4 +121,28 @@ final class LinkType extends AbstractType {
 	public function is_grouped(): bool {
 		return true;
 	}
+
+	/**
+	 * A url, its text and its target, under one key.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'       => 'object',
+			'properties' => [
+				'url'    => [
+					'type'   => 'string',
+					'format' => 'uri',
+				],
+				'text'   => [ 'type' => 'string' ],
+				'target' => [
+					'type' => 'string',
+					'enum' => [ '', '_blank' ],
+				],
+			],
+		];
+	}
 }

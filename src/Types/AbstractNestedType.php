@@ -126,4 +126,42 @@ abstract class AbstractNestedType extends AbstractType {
 
 		return $clean;
 	}
+
+	/**
+	 * An object built from the type's own children.
+	 *
+	 * Derived rather than declared, so a group's schema cannot drift from the
+	 * fields it actually renders.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		$registry   = $this->registry ?? new Registry();
+		$properties = [];
+
+		foreach ( $field->sub_fields() as $key => $config ) {
+			$type = (string) ( $config['type'] ?? 'text' );
+
+			if ( ! $registry->has( $type ) ) {
+				continue;
+			}
+
+			$child = $registry->get( $type );
+
+			if ( ! $child->stores_value() ) {
+				continue;
+			}
+
+			$properties[ (string) $key ] = $child->schema(
+				new Field( (string) $key, $child, array_merge( $child->defaults(), (array) $config ), null )
+			);
+		}
+
+		return [
+			'type'       => 'object',
+			'properties' => $properties,
+		];
+	}
 }

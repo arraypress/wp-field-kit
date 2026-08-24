@@ -313,3 +313,11 @@ if ( ! function_exists( 'wpautop' ) ) {
 		return '<p>' . (string) $text . '</p>';
 	}
 }
+
+if ( ! function_exists( 'register_meta' ) ) {
+	function register_meta( $object_type, $meta_key, $args = [] ) {
+		$GLOBALS['fk_meta_registry'][ $object_type ][ $meta_key ] = $args;
+
+		return true;
+	}
+}

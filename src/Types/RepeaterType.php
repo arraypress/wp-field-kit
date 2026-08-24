@@ -292,4 +292,18 @@ final class RepeaterType extends AbstractNestedType {
 			'styles'  => [ 'dashicons' ],
 		];
 	}
+
+	/**
+	 * A list of rows, each the shape of the row's own fields.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'  => 'array',
+			'items' => parent::schema( $field ),
+		];
+	}
 }

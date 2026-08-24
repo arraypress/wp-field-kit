@@ -86,4 +86,21 @@ abstract class AbstractRangePairType extends AbstractType {
 	public function is_grouped(): bool {
 		return true;
 	}
+
+	/**
+	 * Two values under one key.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'       => 'object',
+			'properties' => [
+				'start' => [ 'type' => 'string' ],
+				'end'   => [ 'type' => 'string' ],
+			],
+		];
+	}
 }

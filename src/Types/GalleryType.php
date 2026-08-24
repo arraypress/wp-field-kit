@@ -249,4 +249,18 @@ final class GalleryType extends AbstractMediaType {
 			'styles'  => [ 'dashicons' ],
 		];
 	}
+
+	/**
+	 * A list of attachment ids.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'  => 'array',
+			'items' => [ 'type' => 'integer' ],
+		];
+	}
 }

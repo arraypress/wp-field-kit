@@ -82,4 +82,18 @@ final class FileUrlType extends FileType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
+
+	/**
+	 * A URL rather than an attachment id.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'   => 'string',
+			'format' => 'uri',
+		];
+	}
 }

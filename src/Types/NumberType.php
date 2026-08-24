@@ -95,4 +95,25 @@ class NumberType extends AbstractInputType {
 
 		return abs( (float) $step - floor( (float) $step ) ) > PHP_FLOAT_EPSILON;
 	}
+
+	/**
+	 * An integer, or a number when the step is fractional.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		$schema = [ 'type' => $this->is_fractional( $field ) ? 'number' : 'integer' ];
+
+		if ( null !== $field->get( 'min' ) ) {
+			$schema['minimum'] = $this->is_fractional( $field ) ? (float) $field->get( 'min' ) : (int) $field->get( 'min' );
+		}
+
+		if ( null !== $field->get( 'max' ) ) {
+			$schema['maximum'] = $this->is_fractional( $field ) ? (float) $field->get( 'max' ) : (int) $field->get( 'max' );
+		}
+
+		return $schema;
+	}
 }

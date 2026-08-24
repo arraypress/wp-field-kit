@@ -148,6 +148,20 @@ abstract class AbstractType implements FieldType {
 	}
 
 	/**
+	 * The shape this type stores.
+	 *
+	 * A string, which is what most controls sanitize to. Anything else says
+	 * so for itself.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [ 'type' => 'string' ];
+	}
+
+	/**
 	 * Script and style handles this type needs.
 	 *
 	 * @return array{scripts: string[], styles: string[]}

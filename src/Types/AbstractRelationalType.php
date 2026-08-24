@@ -189,4 +189,27 @@ abstract class AbstractRelationalType extends SelectType {
 		// nobody touched, and get_the_title( 0 ) is not a post that exists.
 		return 0 === $id ? '' : $id;
 	}
+
+	/**
+	 * An object id, or a list of them.
+	 *
+	 * A creatable field stores text as well as ids — a value someone typed
+	 * has no id yet — so its schema cannot promise integers.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		$one = (bool) $field->get( 'creatable', false )
+			? [ 'type' => 'string' ]
+			: [ 'type' => 'integer' ];
+
+		return $this->is_multiple( $field )
+			? [
+				'type'  => 'array',
+				'items' => $one,
+			]
+			: $one;
+	}
 }

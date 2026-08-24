@@ -110,4 +110,21 @@ class CheckboxType extends AbstractType {
 	public function is_self_labelling(): bool {
 		return true;
 	}
+
+	/**
+	 * Stored as 0 or 1, not as a boolean.
+	 *
+	 * sanitize() returns an int, and a schema saying `boolean` would make
+	 * REST refuse the very value the admin writes.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type' => 'integer',
+			'enum' => [ 0, 1 ],
+		];
+	}
 }

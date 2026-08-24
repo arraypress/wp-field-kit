@@ -149,4 +149,15 @@ final class AmountType extends AbstractType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
+
+	/**
+	 * A number, or the empty string when nothing was entered.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [ 'type' => [ 'number', 'string' ] ];
+	}
 }

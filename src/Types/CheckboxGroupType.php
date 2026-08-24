@@ -82,4 +82,18 @@ final class CheckboxGroupType extends AbstractType {
 	public function is_grouped(): bool {
 		return true;
 	}
+
+	/**
+	 * The ticked values.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function schema( Field $field ): array {
+		return [
+			'type'  => 'array',
+			'items' => [ 'type' => 'string' ],
+		];
+	}
 }
