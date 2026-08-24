@@ -362,6 +362,79 @@ try {
 	}
 } )();
 
+/*
+ * The email panel stands aside where core already toggles postboxes.
+ *
+ * core's postboxes.js binds '.postbox .hndle, .postbox .handlediv' across the
+ * whole document on any screen that calls add_postbox_toggles(). The email
+ * editor renders as a postbox with a .handlediv, so inside a metabox both
+ * handlers fired, the panel toggled twice, and the collapse appeared to do
+ * nothing at all.
+ */
+( function () {
+	const panel = makeElement();
+	const button = makeElement();
+	const header = makeElement();
+
+	let expanded = 'true';
+	button.getAttribute = () => expanded;
+	button.setAttribute = ( name, value ) => {
+		if ( 'aria-expanded' === name ) {
+			expanded = value;
+		}
+	};
+
+	const clicks = [];
+	button.addEventListener = ( type, handler ) => clicks.push( handler );
+	header.addEventListener = () => {};
+
+	panel.querySelector = ( selector ) => {
+		if ( selector.includes( 'email-toggle' ) ) {
+			return button;
+		}
+
+		if ( selector.includes( 'hndle' ) ) {
+			return header;
+		}
+
+		return null;
+	};
+
+	const root = Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) =>
+			( selector.includes( 'field-kit__email' ) ? [ panel ] : [] ),
+	} );
+
+	modules.EmailPanel.init( root );
+
+	if ( ! clicks.length ) {
+		console.error( '  EmailPanel: nothing was bound to the toggle' );
+		failures ++;
+	} else {
+		// On its own, it toggles.
+		delete context.window.postboxes;
+		clicks[ 0 ]();
+
+		if ( 'false' !== expanded ) {
+			console.error( '  EmailPanel: the toggle does not collapse the panel' );
+			failures ++;
+		}
+
+		// With core handling postboxes, it must not — core's handler is
+		// already doing it, and doing it twice is doing nothing.
+		expanded = 'true';
+		context.window.postboxes = { page: 'post' };
+		clicks[ 0 ]();
+
+		if ( 'true' !== expanded ) {
+			console.error( '  EmailPanel: toggles as well as core, so the panel never moves' );
+			failures ++;
+		}
+
+		delete context.window.postboxes;
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );

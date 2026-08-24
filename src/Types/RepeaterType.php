@@ -78,13 +78,17 @@ final class RepeaterType extends AbstractNestedType {
 			// the row to clone would simply not be there.
 			return sprintf(
 				'<div%s><table class="wp-list-table widefat striped field-kit__repeater-table">%s' .
-				'<tbody class="field-kit__repeater-rows" data-empty="%s">%s</tbody>%s</table>%s%s</div>',
+				'<tbody class="field-kit__repeater-rows" data-empty="%s">%s</tbody>%s%s</table>%s</div>',
 				$wrapper->render(),
 				$this->render_head( $field ),
 				$total > 0 ? 'false' : 'true',
 				$markup,
+				// Inside the table, as core's own list tables put it: a
+				// message below an empty frame reads as a table that failed
+				// to load, and leaves a bare row of headers sitting over
+				// nothing.
+				$this->render_empty_row( $field, $total ),
 				$this->render_template( $field ),
-				$this->render_empty_message( $total ),
 				$this->render_add_button( $field )
 			);
 		}
@@ -270,6 +274,33 @@ final class RepeaterType extends AbstractNestedType {
 	}
 
 	/**
+	 * The empty state, as a row of the table itself.
+	 *
+	 * core writes `<tr class="no-items"><td class="colspanchange" colspan="N">`
+	 * and so does this. A message printed under the table instead leaves a
+	 * row of column headings sitting over nothing at all, which reads as a
+	 * table that failed to load rather than one with nothing in it yet.
+	 *
+	 * It stays in the markup and is hidden once there is a row, so the script
+	 * has something to show again when the last row is removed.
+	 *
+	 * @param Field $field The field.
+	 * @param int   $total How many rows there are.
+	 *
+	 * @return string
+	 */
+	private function render_empty_row( Field $field, int $total ): string {
+		return sprintf(
+			'<tbody class="field-kit__repeater-empty"%s><tr class="no-items">' .
+			'<td class="colspanchange" colspan="%d">%s</td></tr></tbody>',
+			$total > 0 ? ' hidden' : '',
+			// One per sub-field, plus the actions column.
+			count( $field->sub_fields() ) + 1,
+			esc_html( (string) $field->get( 'empty_label', __( 'No rows yet.', 'arraypress' ) ) )
+		);
+	}
+
+	/**
 	 * The message shown when there are no rows.
 	 *
 	 * Announced politely so adding and removing the last row is not silent
@@ -437,7 +468,7 @@ final class RepeaterType extends AbstractNestedType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'add_label', 'layout', 'max_rows', 'min_rows' ]
+			[ 'add_label', 'empty_label', 'layout', 'max_rows', 'min_rows' ]
 		);
 	}
 }

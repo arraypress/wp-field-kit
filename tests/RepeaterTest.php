@@ -142,12 +142,17 @@ final class RepeaterTest extends TestCase {
 
 		$rows = $this->rows( $html );
 
-		// Header, two stored rows, and the template's row.
-		$this->assertCount( 4, $rows );
+		// Header, two stored rows, the empty state and the template's row.
+		$this->assertCount( 5, $rows );
 
 		$expected = $this->cells( $rows[0] );
 
 		foreach ( array_slice( $rows, 1 ) as $index => $row ) {
+			// The empty state is deliberately one cell spanning the lot.
+			if ( str_contains( $row, 'no-items' ) ) {
+				continue;
+			}
+
 			$this->assertSame(
 				$expected,
 				$this->cells( $row ),
@@ -174,6 +179,57 @@ final class RepeaterTest extends TestCase {
 		$rows = $this->rows( $html );
 
 		$this->assertSame( $this->cells( $rows[0] ), $this->cells( end( $rows ) ) );
+	}
+
+	/**
+	 * An empty table says so inside itself.
+	 *
+	 * A message printed under the table leaves a row of column headings
+	 * sitting over nothing, which reads as a table that failed to load rather
+	 * than one with nothing in it yet. core writes `<tr class="no-items">`
+	 * with a cell spanning every column, and so does this.
+	 */
+	public function test_an_empty_table_says_so_in_a_row_of_its_own(): void {
+		$html = $this->render( 'table' );
+
+		$this->assertMatchesRegularExpression(
+			'/<table[^>]*>[\s\S]*<tr class="no-items">[\s\S]*<\/table>/',
+			$html,
+			'The empty state is outside the table.'
+		);
+
+		$this->assertStringContainsString(
+			sprintf( 'colspan="%d"', count( self::SUB_FIELDS ) + 1 ),
+			$html,
+			'The empty state does not span every column.'
+		);
+
+		// Present but hidden once there are rows, so the script has something
+		// to show again when the last one is removed.
+		$this->assertStringContainsString(
+			'field-kit__repeater-empty" hidden',
+			$this->render( 'table', [ [ 'country' => 'IE' ] ] )
+		);
+	}
+
+	/**
+	 * The empty state can be worded by the caller.
+	 */
+	public function test_the_empty_state_can_be_worded(): void {
+		$field = new Field(
+			'rates',
+			( new Registry() )->get( 'repeater' ),
+			[
+				'label'       => 'Rates',
+				'input_name'  => 'rates',
+				'layout'      => 'table',
+				'empty_label' => 'No tax rates yet.',
+				'fields'      => self::SUB_FIELDS,
+			],
+			null
+		);
+
+		$this->assertStringContainsString( 'No tax rates yet.', ( new Renderer() )->render( $field ) );
 	}
 
 	/**

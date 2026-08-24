@@ -2210,6 +2210,20 @@
 			}
 
 			function toggle() {
+				// Core's postboxes.js binds '.postbox .hndle, .postbox
+				// .handlediv' across the whole document on any screen that
+				// calls add_postbox_toggles() — a post editor, the dashboard
+				// — and its handler does everything this one does. Two
+				// handlers on the same button is a panel that toggles twice
+				// and so never appears to move at all, which is exactly what
+				// happened to the email editor inside a metabox.
+				//
+				// Checked here rather than at bind time because core sets
+				// this on DOM ready and the order of the two is not fixed.
+				if ( window.postboxes && window.postboxes.page ) {
+					return;
+				}
+
 				var open = 'true' === button.getAttribute( 'aria-expanded' );
 
 				button.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
