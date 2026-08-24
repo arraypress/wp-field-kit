@@ -20,6 +20,11 @@
  *
  *   ... --types=header,info_grid --keys=tab docs/*.md
  *
+ * And which calls in its documentation register fields, so a README
+ * demonstrating another library is not read as this one's configuration:
+ *
+ *   ... --calls=register_user_fields README.md
+ *
  * @package ArrayPress\FieldKit
  */
 
@@ -59,6 +64,7 @@ require_once __DIR__ . '/../tests/stubs.php';
  */
 $extra_types = [];
 $extra_keys  = [];
+$only_calls  = [];
 $files       = [];
 
 foreach ( array_slice( $argv, 1 ) as $argument ) {
@@ -72,11 +78,70 @@ foreach ( array_slice( $argv, 1 ) as $argument ) {
 		continue;
 	}
 
+	if ( str_starts_with( $argument, '--calls=' ) ) {
+		$only_calls = array_filter( array_map( 'trim', explode( ',', substr( $argument, 8 ) ) ) );
+		continue;
+	}
+
 	$files[] = $argument;
 }
 
 if ( [] === $files ) {
 	$files = array_values( array_filter( [ 'README.md', 'EXAMPLES.md' ], 'file_exists' ) );
+}
+
+/*
+ * A library that adds keys of its own already says so, in code:
+ *
+ *   Field::allow_config_keys( [ 'own_capability', 'show_on_add' ] );
+ *
+ * It runs when the library boots, which is not something this tool can make
+ * happen — it reads markdown, not a WordPress request. So the declarations are
+ * read out of the source instead, and a library that has already declared a
+ * key does not have to declare it again on a command line. Two places to keep
+ * in step is how a key ends up allowed in one and reported in the other.
+ */
+$extra_keys = array_merge( $extra_keys, declared_config_keys( getcwd() . '/src' ) );
+
+/**
+ * The extra configuration keys a library declares in its own source.
+ *
+ * @param string $directory The library's `src`.
+ *
+ * @return string[]
+ */
+function declared_config_keys( string $directory ): array {
+	if ( ! is_dir( $directory ) ) {
+		return [];
+	}
+
+	$keys  = [];
+	$files = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $directory ) );
+
+	foreach ( $files as $file ) {
+		if ( ! $file->isFile() || 'php' !== $file->getExtension() ) {
+			continue;
+		}
+
+		if ( ! preg_match_all(
+			'/allow_config_keys\(\s*\[(.*?)\]/s',
+			(string) file_get_contents( $file->getPathname() ),
+			$calls
+		) ) {
+			continue;
+		}
+
+		foreach ( $calls[1] as $literal ) {
+			// Quoted strings only. A variable or a constant is not something
+			// that can be read out of the source, and a key this misses is
+			// reported rather than silently allowed.
+			preg_match_all( '/[\'"]([a-z0-9_]+)[\'"]/i', $literal, $quoted );
+
+			$keys = array_merge( $keys, $quoted[1] );
+		}
+	}
+
+	return array_values( array_unique( $keys ) );
 }
 
 /**
@@ -126,10 +191,29 @@ function fenced_php( string $markdown ): array {
  * @return array<int, array<string, mixed>>
  */
 function configs_in( string $code ): array {
+	global $only_calls;
+
 	$found = [];
 
 	if ( ! preg_match_all( '/register_[a-z_]+\(/', $code, $calls, PREG_OFFSET_CAPTURE ) ) {
 		return $found;
+	}
+
+	// A README shows more than its own library. The term-fields and
+	// user-fields ones both demonstrate pairing with wp-register-columns, in
+	// the same fenced block, and a columns configuration is a map of names to
+	// arrays carrying a `label` — indistinguishable from a field map by shape
+	// alone. Read as fields, its `display_callback` and `sortable` came back
+	// as keys nothing reads, when what nothing reads them is *this* library.
+	//
+	// So a library can say which calls register its fields.
+	if ( [] !== $only_calls ) {
+		$calls[0] = array_values(
+			array_filter(
+				$calls[0],
+				static fn( $call ) => in_array( rtrim( (string) $call[0], '(' ), $only_calls, true )
+			)
+		);
 	}
 
 	$length = strlen( $code );
