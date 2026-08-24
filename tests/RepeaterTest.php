@@ -9,7 +9,9 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit\Tests;
 
+use ArrayPress\FieldKit\Context\ArrayContext;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\FieldSet;
 use ArrayPress\FieldKit\Registry;
 use ArrayPress\FieldKit\Renderer;
 use PHPUnit\Framework\TestCase;
@@ -272,4 +274,72 @@ final class RepeaterTest extends TestCase {
 			);
 		}
 	}
+
+	/**
+	 * The files type is a repeater with its columns already decided.
+	 *
+	 * Every consumer that wanted a list of downloadable files wrote the same
+	 * two columns, so they are the defaults. The file column is `file_url`
+	 * rather than `file`: the URL stays visible and editable beside the media
+	 * button, which is the only way to express a file hosted somewhere the
+	 * media library does not know about.
+	 */
+	public function test_the_files_type_brings_its_own_columns(): void {
+		$html = $this->through_a_set( [ 'downloads' => [ 'type' => 'files', 'label' => 'Files' ] ] );
+
+		$this->assertStringContainsString( 'field-kit__repeater--table', $html, 'A files field is not a table.' );
+		$this->assertStringContainsString( '>Name</th>', $html );
+		$this->assertStringContainsString( '>File</th>', $html );
+
+		// The URL is a control, not just a picker result.
+		$this->assertStringContainsString( 'field-kit__media--file_url', $html );
+		$this->assertStringContainsString( 'field-kit__media-choose', $html );
+
+		$this->assertStringContainsString( 'Add file', $html );
+		$this->assertStringContainsString( 'No files yet.', $html );
+	}
+
+	/**
+	 * Its columns are defaults, not fixtures.
+	 *
+	 * A caller wanting a third column — a download limit, an expiry — should
+	 * not have to give up the layout and the wording to get it.
+	 */
+	public function test_the_files_columns_can_be_replaced(): void {
+		$html = $this->through_a_set(
+			[
+				'downloads' => [
+					'type'   => 'files',
+					'label'  => 'Files',
+					'fields' => [
+						'file'  => [ 'type' => 'file_url', 'label' => 'File' ],
+						'limit' => [ 'type' => 'number', 'label' => 'Downloads' ],
+					],
+				],
+			]
+		);
+
+		$this->assertStringContainsString( '>Downloads</th>', $html );
+		$this->assertStringNotContainsString( '>Name</th>', $html );
+
+		// Still a table, still worded for files.
+		$this->assertStringContainsString( 'field-kit__repeater--table', $html );
+		$this->assertStringContainsString( 'Add file', $html );
+	}
+
+	/**
+	 * Render a field through a set, which is where type defaults are applied.
+	 *
+	 * Building a Field directly skips them — the merge happens in FieldSet —
+	 * so a test that did that would assert on a files field with no columns
+	 * and pass for the wrong reason.
+	 *
+	 * @param array<string, array<string, mixed>> $fields Field configuration.
+	 *
+	 * @return string
+	 */
+	private function through_a_set( array $fields ): string {
+		return ( new FieldSet( $fields, new ArrayContext( [] ), '' ) )->render();
+	}
+
 }

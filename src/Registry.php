@@ -77,6 +77,7 @@ final class Registry {
 		// Nested — children go through this same registry and renderer.
 		'group'           => Types\GroupType::class,
 		'repeater'        => Types\RepeaterType::class,
+		'files'           => Types\FilesType::class,
 
 		// Composite — several controls stored under one key.
 		'link'            => Types\LinkType::class,

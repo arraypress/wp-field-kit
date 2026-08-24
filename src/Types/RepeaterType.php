@@ -30,7 +30,12 @@ use ArrayPress\FieldKit\Renderer;
  * renderer as a real row, so a new row is accessible for the same reason an
  * existing one is.
  */
-final class RepeaterType extends AbstractNestedType {
+/*
+ * Not final: FilesType is a repeater whose two columns are already decided,
+ * and expressing that as a subclass is what stops it being a second copy of
+ * the row, template and reindex logic.
+ */
+class RepeaterType extends AbstractNestedType {
 
 	/**
 	 * Config defaults.
