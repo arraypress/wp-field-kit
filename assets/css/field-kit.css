@@ -714,7 +714,6 @@ li.field-kit__repeater-row {
 	left: 50%;
 	z-index: 100;
 	transform: translateX(-50%);
-	display: block;
 	width: max-content;
 	max-width: 20rem;
 	padding: .5rem .75rem;
@@ -727,6 +726,14 @@ li.field-kit__repeater-row {
 	text-align: left;
 	white-space: normal;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+
+/* The panel is hidden with the `hidden` attribute, and the browser's own
+   `[hidden] { display: none }` is a bare-element rule that any class rule
+   with a `display` beats. It had one, so the panel was permanently open.
+   Stated here so the attribute wins whatever else is set. */
+.field-kit__tooltip-panel[hidden] {
+	display: none;
 }
 
 /* Flipped below, for an icon near the top of the screen. */
@@ -746,11 +753,15 @@ li.field-kit__repeater-row {
 }
 
 /* The pointer. */
+/* The arrow points at the icon. When the panel has been slid sideways to
+   stay on screen the script overrides --fk-tooltip-arrow with the icon's
+   position inside the panel, so the pointer stays on the thing it belongs
+   to rather than travelling with the box. */
 .field-kit__tooltip-panel::after {
 	content: "";
 	position: absolute;
 	top: 100%;
-	left: 50%;
+	left: var(--fk-tooltip-arrow, 50%);
 	margin-left: -5px;
 	border: 5px solid transparent;
 	border-top-color: #1d2327;
@@ -997,10 +1008,47 @@ li.field-kit__repeater-row {
  * tab count is whatever the consumer configured.
  * -------------------------------------------------------------------- */
 
+/* Left-aligned, for a screen that is mostly a list.
+
+   core's .privacy-settings-header is text-align:center and its title section
+   is justify-content:center, both of which have to be undone rather than
+   worked around — a centred heading with an "Add New" orphaned underneath is
+   what this exists to stop. The padding matches the .wrap the table below it
+   sits in, so the heading lines up with the list rather than starting a
+   couple of pixels to its left. */
+.field-kit__page-header--left,
+.field-kit__page-header--left .privacy-settings-title-section {
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.field-kit__page-header--left .privacy-settings-title-section {
+	gap: .5rem;
+	padding: 8px 20px 0 22px;
+}
+
+.field-kit__page-header--left h1 {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+/* Beside the heading, and on its baseline rather than the flex line's. */
+.field-kit__page-header--left .field-kit__page-actions {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	margin-bottom: 1rem;
+}
+
 .field-kit__page-tabs {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
+}
+
+.field-kit__page-header--left .field-kit__page-tabs {
+	justify-content: flex-start;
+	padding-left: 12px;
 }
 
 /* A tab may carry an icon — reports uses them — and it needs to sit on the

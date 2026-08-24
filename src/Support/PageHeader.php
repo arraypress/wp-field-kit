@@ -86,9 +86,21 @@ final class PageHeader {
 		$stacked = 'above' === (string) ( $config['logo_position'] ?? 'beside' );
 		$logo    = self::logo( (string) ( $config['logo'] ?? '' ) );
 
-		// The title section is a centred flex row in core, so a logo and a
-		// badge sit beside the heading without a rule of our own.
-		$markup = '<div class="privacy-settings-header field-kit__page-header">'
+		// Centred is core's privacy and Site Health shape, and is right for a
+		// settings page: a tall header with tabs under a centred title, read
+		// once on arrival.
+		//
+		// Left is right for a screen that is mostly a list. Core's own list
+		// tables put the heading and its "Add New" side by side at the left,
+		// and so does EDD — a centred title with a button orphaned underneath
+		// is neither. The actions ride beside the title there rather than at
+		// the far end of the row.
+		$left = 'left' === (string) ( $config['align'] ?? 'center' );
+
+		$markup = sprintf(
+			'<div class="privacy-settings-header field-kit__page-header%s">',
+			$left ? ' field-kit__page-header--left' : ''
+		)
 			. ( $stacked ? $logo : '' )
 			. sprintf(
 				'<div class="privacy-settings-title-section%s">',
@@ -97,9 +109,14 @@ final class PageHeader {
 			. ( $stacked ? '' : $logo )
 			. sprintf( '<h1>%s</h1>', esc_html( $title ) )
 			. self::badge( $config['badge'] ?? '' )
+			// Inside the title section when left-aligned, so the button sits
+			// against the heading rather than across the screen from it.
+			. ( $left && '' !== $actions
+				? sprintf( '<div class="field-kit__page-actions">%s</div>', $actions )
+				: '' )
 			. '</div>';
 
-		if ( '' !== $actions ) {
+		if ( ! $left && '' !== $actions ) {
 			$markup .= sprintf( '<div class="field-kit__page-actions">%s</div>', $actions );
 		}
 

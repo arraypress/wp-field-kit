@@ -2577,7 +2577,7 @@
 				function open() {
 					panel.hidden = false;
 					button.setAttribute( 'aria-expanded', 'true' );
-					Tooltip.place( panel );
+					Tooltip.place( panel, button );
 				}
 
 				function close() {
@@ -2615,22 +2615,63 @@
 		},
 
 		/**
-		 * Flip the panel below the icon when there is no room above it.
+		 * Keep the panel on the screen.
 		 *
-		 * A tooltip on the first field of a metabox opens off the top of the
-		 * scrolled area otherwise, which is the one place it is guaranteed to
-		 * be unreadable.
+		 * It is centred on its icon, which is wrong twice: a tooltip on the
+		 * first field of a metabox opens off the top of the scrolled area,
+		 * and one on a label in the left-hand column of a settings table
+		 * hangs half its width off the left of the window — far enough that
+		 * the first words are behind the admin menu.
 		 *
-		 * @param {Element} panel The panel.
+		 * So it flips below when there is no room above, and slides sideways
+		 * when there is none beside. The arrow is moved back onto the icon by
+		 * the same distance, because an arrow that no longer points at
+		 * anything is worse than no arrow.
+		 *
+		 * @param {Element} panel  The panel.
+		 * @param {Element} button The icon it belongs to.
 		 */
-		place: function ( panel ) {
+		place: function ( panel, button ) {
+			var gap = 8;
+
+			// Measured from a clean slate: this runs again every time the
+			// panel opens, and a shift left over from the last position would
+			// be measured as though it were the natural one.
 			delete panel.dataset.position;
+			panel.style.transform = '';
+			panel.style.removeProperty( '--fk-tooltip-arrow' );
 
 			var box = panel.getBoundingClientRect();
 
-			if ( box.top < 0 ) {
+			if ( box.top < gap ) {
 				panel.dataset.position = 'below';
 			}
+
+			var room = ( window.innerWidth || document.documentElement.clientWidth ) - gap;
+			var shift = 0;
+
+			if ( box.left < gap ) {
+				shift = gap - box.left;
+			} else if ( box.right > room ) {
+				shift = room - box.right;
+			}
+
+			if ( 0 === shift ) {
+				return;
+			}
+
+			panel.style.transform = 'translateX(calc(-50% + ' + Math.round( shift ) + 'px))';
+
+			// The arrow follows the icon rather than the panel. Clamped
+			// inside the panel's own corners, so it stays a pointer rather
+			// than becoming a notch in the edge.
+			var icon = button.getBoundingClientRect();
+			var centre = icon.left + ( icon.width / 2 ) - ( box.left + shift );
+
+			panel.style.setProperty(
+				'--fk-tooltip-arrow',
+				Math.round( Math.min( Math.max( centre, 12 ), box.width - 12 ) ) + 'px'
+			);
 		}
 	};
 

@@ -379,4 +379,96 @@ final class StylesheetTest extends TestCase {
 			);
 		}
 	}
+
+	/**
+	 * Nothing hidden with the attribute is given a display that beats it.
+	 *
+	 * The browser's own rule is `[hidden] { display: none }` — a bare element
+	 * selector, which any class rule carrying a `display` outranks. The
+	 * tooltip panel had one, so a panel rendered `hidden` was permanently on
+	 * screen; and the markup is right, so nothing about it looks wrong.
+	 *
+	 * The kit hides several things this way, because a class-based hide is
+	 * still read out by a screen reader and the attribute is not. So every
+	 * class that appears alongside `hidden` in the markup has to leave the
+	 * attribute able to win.
+	 */
+	public function test_nothing_hidden_by_attribute_is_displayed_by_a_class(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		foreach ( $this->classes_rendered_with_hidden() as $class ) {
+			// Any rule that sets a display on the class alone.
+			preg_match_all(
+				sprintf( '/([^{}]*\.%s(?![\w-])[^{}]*)\{([^}]*)\}/', preg_quote( $class, '/' ) ),
+				$css,
+				$rules,
+				PREG_SET_ORDER
+			);
+
+			foreach ( $rules as $rule ) {
+				if ( ! preg_match( '/(^|[;{\s])display\s*:/', $rule[2] ) ) {
+					continue;
+				}
+
+				// Either the rule excludes a hidden element itself, or the
+				// stylesheet states the attribute's own rule for this class
+				// so it outranks the display.
+				$excluded = (bool) preg_match( '/\[hidden\]|:not\(\s*\[hidden\]\s*\)/', $rule[1] );
+				$restated = (bool) preg_match(
+					sprintf( '/\.%s\[hidden\][^{}]*\{[^}]*display\s*:\s*none/', preg_quote( $class, '/' ) ),
+					$css
+				);
+
+				$this->assertTrue(
+					$excluded || $restated,
+					sprintf(
+						'.%s is given a display and is rendered carrying the hidden attribute. '
+						. 'The browser\'s [hidden] rule is a bare element selector and loses to a '
+						. 'class rule, so the element is permanently visible. Drop the display, or '
+						. 'state .%s[hidden] { display: none }.',
+						$class,
+						$class
+					)
+				);
+			}
+		}
+	}
+
+	/**
+	 * Classes the kit renders on an element carrying `hidden`.
+	 *
+	 * Read out of the source rather than listed, so a new one is covered
+	 * without anyone remembering to add it here.
+	 *
+	 * @return string[]
+	 */
+	private function classes_rendered_with_hidden(): array {
+		$classes = [];
+
+		$iterator = new RecursiveIteratorIterator(
+			new RecursiveDirectoryIterator( dirname( __DIR__ ) . '/src' )
+		);
+
+		foreach ( $iterator as $file ) {
+			if ( ! $file->isFile() || 'php' !== $file->getExtension() ) {
+				continue;
+			}
+
+			$source = (string) file_get_contents( $file->getPathname() );
+
+			// A class attribute and a bare `hidden` in the same tag.
+			preg_match_all( '/class="([^"]*field-kit__[^"]*)"[^>]*\shidden/', $source, $matches );
+
+			foreach ( $matches[1] as $attribute ) {
+				foreach ( preg_split( '/\s+/', $attribute ) as $class ) {
+					if ( str_starts_with( $class, 'field-kit__' ) ) {
+						$classes[] = $class;
+					}
+				}
+			}
+		}
+
+		return array_values( array_unique( $classes ) );
+	}
+
 }

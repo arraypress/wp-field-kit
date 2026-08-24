@@ -351,4 +351,53 @@ final class PageHeaderTest extends TestCase {
 		$this->assertSame( 1, substr_count( $html, 'dashicons dashicons-' ) );
 	}
 
+
+	/**
+	 * Left-aligned puts the actions beside the title.
+	 *
+	 * core's own list tables put the heading and its "Add New" side by side
+	 * at the left, and so does EDD. A centred title with a button orphaned
+	 * underneath it is neither, which is what a list table got from the
+	 * settings-page shape.
+	 */
+	public function test_a_left_aligned_header_keeps_its_actions_beside_the_title(): void {
+		$html = PageHeader::render(
+			[
+				'title'   => 'People',
+				'align'   => 'left',
+				'actions' => '<a class="page-title-action">Add person</a>',
+			]
+		);
+
+		$this->assertStringContainsString( 'field-kit__page-header--left', $html );
+
+		// Inside the title section, not after it.
+		$this->assertMatchesRegularExpression(
+			'/privacy-settings-title-section[^>]*>(?:(?!<\/div>).)*field-kit__page-actions/s',
+			$html,
+			'The actions are outside the title section, so they sit across the screen from the heading.'
+		);
+
+		// One set of actions, wherever they went.
+		$this->assertSame( 1, substr_count( $html, 'field-kit__page-actions' ) );
+	}
+
+	/**
+	 * Centred is still the default, and puts them at the far end.
+	 */
+	public function test_a_centred_header_keeps_its_actions_at_the_end(): void {
+		$html = PageHeader::render(
+			[
+				'title'   => 'Settings',
+				'actions' => '<button>Export</button>',
+			]
+		);
+
+		$this->assertStringNotContainsString( 'field-kit__page-header--left', $html );
+		$this->assertMatchesRegularExpression(
+			'/<\/div><div class="field-kit__page-actions">/',
+			$html
+		);
+	}
+
 }
