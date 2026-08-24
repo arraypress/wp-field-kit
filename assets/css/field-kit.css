@@ -727,7 +727,11 @@ li.field-kit__repeater-row {
 	position: absolute;
 	bottom: calc(100% + 8px);
 	left: 50%;
-	z-index: 100;
+
+	/* Above the admin menu, which core puts at 9990/9999, and below the admin
+	   bar at 99999. At 100 the panel slid underneath the menu the moment it
+	   reached the left-hand edge of the screen. */
+	z-index: 99998;
 	transform: translateX(-50%);
 	width: max-content;
 	max-width: 20rem;
