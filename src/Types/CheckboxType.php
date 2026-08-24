@@ -40,9 +40,12 @@ class CheckboxType extends AbstractType {
 
 		$this->apply_role( $attributes, $field );
 
+		// options-general.php's exact shape: the input inside the label, the
+		// text directly after it, no wrapping span. A span here was what let
+		// `.field-kit__field > label` bold the text, which core's never is.
 		return sprintf(
 			'<input type="hidden" name="%s" value="0" />' .
-			'<label class="field-kit__checkbox-label" for="%s"><input%s /><span>%s%s</span></label>',
+			'<label class="field-kit__checkbox-label" for="%s"><input%s /> %s%s</label>',
 			esc_attr( $name ),
 			esc_attr( $field->input_id() ),
 			$attributes->render(),

@@ -21,11 +21,23 @@
 	margin-bottom: 0;
 }
 
-.field-kit__field > label,
+/* The field's heading. A self-labelling control's label is not one — core's
+   "Anyone can register" beside a checkbox is normal weight and sits on the
+   same line as the box, so it is excluded here rather than un-bolded after
+   the fact. */
+.field-kit__field > label:not(.field-kit__checkbox-label),
 .field-kit__legend {
 	display: block;
 	margin-bottom: .35rem;
 	font-weight: 600;
+}
+
+/* Core sets .form-field input[type="text"] to 95% at specificity 0,2,1, which
+   a bare class loses to — so on a term screen the input was narrower than the
+   control around it and the arrow floated outside the box. */
+input.field-kit__combobox-input,
+.form-field input.field-kit__combobox-input {
+	width: 100%;
 }
 
 /* Core's .description carries the colour and size; only the spacing differs
@@ -141,10 +153,13 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	}
 }
 
+/* Inline, like core's. The gap is core's own input[type="checkbox"]
+   margin-right, so the box and its text sit exactly as they do on
+   options-general.php. */
 .field-kit__checkbox-label {
-	display: flex;
-	align-items: center;
-	gap: .4rem;
+	display: inline-block;
+	margin: 0;
+	font-weight: 400;
 }
 
 /* -----------------------------------------------------------------------
@@ -428,12 +443,14 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 /* A sortable row holds one checkbox and a label, so it wants the height of
    a list item rather than the padding of a panel. */
+/* Padding matched to a list-table row rather than a form control: these are
+   rows to be dragged, and .3rem left them looking squeezed. */
 .field-kit__sortable-item {
 	display: flex;
 	align-items: center;
 	gap: .5rem;
 	margin: 0 0 -1px;
-	padding: .3rem .5rem;
+	padding: .55rem .75rem;
 	border: 1px solid #dcdcde;
 	background: #fff;
 }
@@ -768,41 +785,54 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * -------------------------------------------------------------------- */
 
 .field-kit__screen-tools {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1.5rem 3rem;
-	padding: .5rem 0 1rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+	gap: 1.5rem 2.5rem;
+	padding: .75rem 0 1rem;
+	border-top: 1px solid #dcdcde;
+	margin-top: .75rem;
 }
 
 .field-kit__screen-tool {
-	min-width: 18rem;
 	margin: 0;
 	padding: 0;
 	border: 0;
+	max-width: 26rem;
 }
 
+/* Core's own weight and spacing for a legend in this panel:
+   #screen-options-wrap legend { padding: 8px 0; font-size: 13px }. */
 .field-kit__screen-tool-title {
-	padding: 0;
+	padding: 0 0 4px;
+	font-size: 13px;
 	font-weight: 600;
 }
 
 .field-kit__screen-tool .description {
-	margin: .2rem 0 .6rem;
-	max-width: 32rem;
-}
-
-.field-kit__screen-tool-controls {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: .5rem 1rem;
+	margin: 0 0 .75rem;
 }
 
 .field-kit__screen-tool-controls form {
-	display: inline-flex;
-	align-items: center;
-	gap: .4rem;
 	margin: 0;
+}
+
+/* core's .wp-upload-form, which ships no rules of its own — its spacing on
+   import.php comes from the paragraphs around the input. */
+.field-kit__screen-tool .wp-upload-form p {
+	margin: 0 0 .5rem;
+}
+
+.field-kit__screen-tool .wp-upload-form p.submit {
+	margin: 0;
+	padding: 0;
+}
+
+.field-kit__screen-tool .wp-upload-form label {
+	font-weight: 600;
+}
+
+.field-kit__screen-tool input[type="file"] {
+	max-width: 100%;
 }
 
 .field-kit__page-actions {
@@ -1012,10 +1042,14 @@ select.field-kit__select[multiple] {
 	font-weight: 600;
 }
 
+/* Pushed to the far right, where a drag handle belongs — beside the label it
+   read as part of the text. */
 .field-kit__sortable-actions {
 	display: inline-flex;
+	align-items: center;
 	gap: .15rem;
 	flex: none;
+	margin-left: auto;
 }
 
 /* -----------------------------------------------------------------------
@@ -1214,13 +1248,13 @@ select.field-kit__select[multiple] {
 	font-weight: 600;
 }
 
-/* A self-labelling control keeps its text beside the box. */
+/* A self-labelling control keeps its text beside the box, the same way it
+   does outside a nested field. */
 .field-kit__group .field-kit__field .field-kit__checkbox-label,
 .field-kit__repeater-fields .field-kit__field .field-kit__checkbox-label {
-	display: flex;
-	align-items: center;
-	gap: .4rem;
+	display: inline-block;
 	margin: 0;
+	font-weight: 400;
 }
 
 /* Inputs inside a nested field should not stretch to the row's full width
