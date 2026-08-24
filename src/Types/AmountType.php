@@ -119,9 +119,35 @@ final class AmountType extends AbstractType {
 			'%s<select id="%s" name="%s" class="field-kit__amount-unit">%s</select>',
 			$this->sub_label( $unit_id, __( 'Unit', 'arraypress' ), false ),
 			esc_attr( $unit_id ),
-			esc_attr( (string) $field->get( 'type_meta_key', $field->key() . '_type' ) ),
+			esc_attr( $this->unit_name( $field ) ),
 			$options
 		);
+	}
+
+	/**
+	 * What the unit select is called in the submission.
+	 *
+	 * A sibling of the amount, wherever the amount happens to be. The name
+	 * used to be the bare meta key, which is right at the top level of a form
+	 * and wrong everywhere else: inside a group the amount submits as
+	 * `discount[amount]` and the unit submitted as `rate_type`, so the group
+	 * never saw it and the unit was silently dropped on every save. Inside a
+	 * repeater, every row's unit shared one name and the last row won.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function unit_name( Field $field ): string {
+		$key  = (string) $field->get( 'type_meta_key', $field->key() . '_type' );
+		$name = $field->input_name();
+
+		// Nested: swap the last segment for the unit's key.
+		if ( str_ends_with( $name, '[' . $field->key() . ']' ) ) {
+			return substr( $name, 0, -strlen( $field->key() ) - 2 ) . '[' . $key . ']';
+		}
+
+		return $key;
 	}
 
 	/**

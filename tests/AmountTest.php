@@ -103,6 +103,48 @@ final class AmountTest extends TestCase {
 	}
 
 	/**
+	 * The unit is a sibling of the amount, wherever the amount is.
+	 *
+	 * The name used to be the bare meta key, which is right at the top level
+	 * of a form and wrong everywhere else. Inside a group the amount submits
+	 * as `discount[amount]` and the unit submitted as `rate_type`, so the
+	 * group never saw it and the unit was dropped on every save. Inside a
+	 * repeater, every row's unit shared one name and the last row won.
+	 */
+	public function test_the_unit_is_named_beside_the_amount(): void {
+		$set = new FieldSet(
+			[
+				'discount' => [
+					'type'   => 'group',
+					'label'  => 'Discount',
+					'fields' => [
+						'amount' => [
+							'type'          => 'amount_type',
+							'label'         => 'Amount',
+							'type_meta_key' => 'rate_type',
+						],
+					],
+				],
+			],
+			new ArrayContext(),
+			''
+		);
+
+		$html = $set->render_field( $set->field( 'discount' ) );
+
+		$this->assertStringContainsString( 'name="discount[amount]"', $html );
+		$this->assertStringContainsString( 'name="discount[rate_type]"', $html );
+		$this->assertStringNotContainsString( 'name="rate_type"', $html );
+	}
+
+	/**
+	 * At the top level it is still the plain key.
+	 */
+	public function test_at_the_top_level_the_unit_keeps_its_plain_name(): void {
+		$this->assertStringContainsString( 'name="rate_type"', $this->render( [ 'type_meta_key' => 'rate_type' ] ) );
+	}
+
+	/**
 	 * A fixed unit is escaped.
 	 */
 	public function test_a_fixed_unit_is_escaped(): void {

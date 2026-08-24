@@ -169,6 +169,8 @@ final class FieldSet {
 				$handlers['run'] = $config['action_callback'];
 			}
 
+			$named = (array) ( $config['action_names'] ?? [] );
+
 			foreach ( $handlers as $name => $callback ) {
 				if ( ! is_callable( $callback ) ) {
 					continue;
@@ -176,7 +178,7 @@ final class FieldSet {
 
 				$actions->register(
 					new CallbackAction(
-						$this->action_name( (string) $key, (string) $name ),
+						(string) ( $named[ $name ] ?? $this->action_name( (string) $key, (string) $name ) ),
 						$callback,
 						(string) ( $config['action_capability'] ?? 'manage_options' )
 					)
@@ -267,7 +269,14 @@ final class FieldSet {
 
 		// Likewise for its buttons: the field emits the registered names, so
 		// a button in the page corresponds to a handler that exists.
-		$config['action_names'] = $this->action_names_for( $key, $config );
+		//
+		// A consumer may have named them itself, for the same reason it may
+		// name a search source — a set built with no input prefix derives the
+		// name from the field key alone, and two panels each with an
+		// `activate` button would name the same handler.
+		if ( ! isset( $config['action_names'] ) || ! is_array( $config['action_names'] ) ) {
+			$config['action_names'] = $this->action_names_for( $key, $config );
+		}
 
 		$field = new Field( $key, $resolved, $config, null );
 

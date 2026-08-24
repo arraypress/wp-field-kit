@@ -13,6 +13,7 @@ use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Context\PostMetaContext;
 use ArrayPress\FieldKit\Context\ArrayContext;
 use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Actions\Actions;
 use ArrayPress\FieldKit\Search\Sources;
 use PHPUnit\Framework\TestCase;
 
@@ -669,4 +670,75 @@ final class FieldSetTest extends TestCase {
 		$this->assertFalse( Sources::shared()->has( 'customer' ) );
 	}
 
+	/**
+	 * A field with an action handler registers it and points at it.
+	 *
+	 * Registration happens when the set is built rather than when the field
+	 * renders, for the same reason a search source does: the request that
+	 * presses the button is not the request that drew it, and a handler that
+	 * only exists during a render is gone by then. That was the bug — a
+	 * flyout's action button came back "Unknown action." every time.
+	 */
+	public function test_an_action_callback_registers_a_handler(): void {
+		[ $set ] = $this->option_set(
+			[
+				'sync' => [
+					'type'            => 'action_button',
+					'label'           => 'Sync',
+					'action_callback' => static fn() => [ 'message' => 'done' ],
+				],
+			]
+		);
+
+		$this->assertTrue( Actions::shared()->has( 'fk_test_sync_run' ) );
+		$this->assertSame(
+			[ 'run' => 'fk_test_sync_run' ],
+			$set->field( 'sync' )->get( 'action_names' )
+		);
+	}
+
+	/**
+	 * A consumer can name the handlers itself.
+	 *
+	 * Same reasoning as a named search source: a set built with no input
+	 * prefix derives the name from the field key alone, so two panels each
+	 * with an `activate` button would name the same handler and the second
+	 * registration would answer the first's presses.
+	 *
+	 * Both halves again, because a name honoured in one place and not the
+	 * other emits a button pointing at nothing.
+	 */
+	public function test_named_actions_are_registered_and_emitted_under_those_names(): void {
+		$set = new FieldSet(
+			[
+				'licence' => [
+					'type'         => 'action_button',
+					'actions'      => [
+						'activate'   => static fn() => [ 'message' => 'on' ],
+						'deactivate' => static fn() => [ 'message' => 'off' ],
+					],
+					'action_names' => [
+						'activate'   => 'shop-licence-activate',
+						'deactivate' => 'shop-licence-deactivate',
+					],
+				],
+			],
+			new ArrayContext(),
+			''
+		);
+
+		$this->assertTrue( Actions::shared()->has( 'shop-licence-activate' ) );
+		$this->assertTrue( Actions::shared()->has( 'shop-licence-deactivate' ) );
+
+		$this->assertSame(
+			[
+				'activate'   => 'shop-licence-activate',
+				'deactivate' => 'shop-licence-deactivate',
+			],
+			$set->field( 'licence' )->get( 'action_names' )
+		);
+
+		// And not under the names it would have derived.
+		$this->assertFalse( Actions::shared()->has( 'licence_activate' ) );
+	}
 }
