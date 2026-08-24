@@ -321,3 +321,35 @@ if ( ! function_exists( 'register_meta' ) ) {
 		return true;
 	}
 }
+
+/*
+ * Front-end context, for Value.
+ *
+ * Driven by globals rather than arguments so a test can put the request into
+ * a state — "viewing post 5" — and then ask the code under test what it makes
+ * of it, which is how the real functions behave.
+ */
+
+if ( ! function_exists( 'get_permalink' ) ) {
+	function get_permalink( $post = 0 ) {
+		return $GLOBALS['fk_permalinks'][ (int) $post ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'home_url' ) ) {
+	function home_url( $path = '' ) {
+		return 'https://example.test' . $path;
+	}
+}
+
+if ( ! function_exists( 'is_singular' ) ) {
+	function is_singular( $post_types = '' ) {
+		return (bool) ( $GLOBALS['fk_is_singular'] ?? false );
+	}
+}
+
+if ( ! function_exists( 'get_queried_object_id' ) ) {
+	function get_queried_object_id() {
+		return (int) ( $GLOBALS['fk_queried_object'] ?? 0 );
+	}
+}
