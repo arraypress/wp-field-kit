@@ -190,4 +190,22 @@ final class ObjectContextTest extends TestCase {
 
 		$this->assertSame( 'Ada Lovelace', $set->field( 'name' )->value() );
 	}
+
+	/**
+	 * A cleared field is reported as cleared, not omitted.
+	 *
+	 * The difference between a collecting context and a store. A store drops
+	 * an empty value because an empty row is worth nothing; a caller about to
+	 * write a record has to be told the field was emptied, or the old value
+	 * survives a save that was meant to clear it.
+	 */
+	public function test_a_cleared_field_is_reported_rather_than_omitted(): void {
+		[ $set, $context ] = $this->set( (object) [ 'name' => 'Ada Lovelace' ] );
+
+		$set->save( [ 'name' => '' ] );
+
+		$this->assertArrayHasKey( 'name', $context->values() );
+		$this->assertNull( $context->values()['name'] );
+	}
+
 }

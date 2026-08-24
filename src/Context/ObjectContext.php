@@ -115,7 +115,13 @@ final class ObjectContext implements Context {
 	}
 
 	/**
-	 * Forget a value.
+	 * Record that a field was cleared.
+	 *
+	 * Null rather than forgotten, which is the difference between a
+	 * collecting context and a store. A store deletes an empty value because
+	 * an empty row is worth nothing; a caller about to write a record needs
+	 * to be told the field was emptied, or the old value survives a save that
+	 * was meant to clear it.
 	 *
 	 * @param int|string $object_id Unused.
 	 * @param Field      $field     The field.
@@ -123,7 +129,7 @@ final class ObjectContext implements Context {
 	 * @return void
 	 */
 	public function delete( int|string $object_id, Field $field ): void {
-		unset( $this->written[ $this->key( $field ) ] );
+		$this->written[ $this->key( $field ) ] = null;
 	}
 
 	/**
