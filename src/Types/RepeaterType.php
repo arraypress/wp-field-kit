@@ -29,6 +29,14 @@ use ArrayPress\FieldKit\Renderer;
  * string concatenation in the script: the markup then comes from the same
  * renderer as a real row, so a new row is accessible for the same reason an
  * existing one is.
+ *
+ * Two things decide the shape. `layout` is `stacked` — a bordered card per
+ * row — or `table`, which is a real table with a header derived from the
+ * fields. `direction` is which way a card's own fields run: `row` across, or
+ * `column` down. A card of two short text fields wants across; a card with a
+ * textarea or six fields in it is unreadable that way and wants down.
+ *
+ * `direction` does nothing to a table, where the columns are the direction.
  */
 /*
  * Not final: FilesType is a repeater whose two columns are already decided,
@@ -72,6 +80,12 @@ class RepeaterType extends AbstractNestedType {
 
 		foreach ( $rows as $index => $row ) {
 			$markup .= $this->render_row( $field, (int) $index, $row, $total );
+		}
+
+		// Which way a row's own fields run. Only meaningful for the card
+		// layout — a table's columns are the direction.
+		if ( 'column' === (string) $field->get( 'direction', 'row' ) && ! $this->is_table( $field ) ) {
+			$wrapper->add_class( 'field-kit__repeater--column' );
 		}
 
 		if ( $this->is_table( $field ) ) {
@@ -473,7 +487,7 @@ class RepeaterType extends AbstractNestedType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'add_label', 'empty_label', 'layout', 'max_rows', 'min_rows' ]
+			[ 'add_label', 'direction', 'empty_label', 'layout', 'max_rows', 'min_rows' ]
 		);
 	}
 }

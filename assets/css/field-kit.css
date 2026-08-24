@@ -514,6 +514,17 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
    the table's column algorithm entirely, and its cells stop lining up under
    the headers. So the panel appearance is pinned to the element the stacked
    layout renders, and the shared class stays purely behavioural. */
+/* Which way a card's own fields run. Across is right for two short fields
+   and unreadable for six or for anything with a textarea in it, which is why
+   it is a choice rather than a default nobody can escape.
+
+   The row itself keeps its own flex: the move and remove buttons sit beside
+   the fields either way, so it is the *fields* that turn, not the row. */
+.field-kit__repeater--column .field-kit__repeater-fields {
+	flex-direction: column;
+	align-items: stretch;
+}
+
 li.field-kit__repeater-row {
 	display: flex;
 	align-items: flex-start;
@@ -1534,6 +1545,19 @@ select.field-kit__select[multiple] {
 .field-kit__link .field-kit__sub-label {
 	display: block;
 	font-weight: 400;
+}
+
+/* A heading, a separator or a notice spans both columns of a form table, and
+   core pads that cell 10px on each side while padding the label cell
+   `20px 10px 20px 0` — so the label starts at the table's edge and the
+   spanning cell starts ten pixels in. The divider is then visibly indented
+   relative to everything it divides.
+
+   One class rather than three selectors: the settings, term and user screens
+   all build this row, and they had three different wrapper classes. */
+.form-table > tbody > tr.field-kit__spans-row > td {
+	padding-left: 0;
+	padding-right: 0;
 }
 
 /* A nested field inside a group or repeater is not a top-level field and
