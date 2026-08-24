@@ -1145,6 +1145,19 @@ li.field-kit__repeater-row {
 	margin-right: .6rem;
 }
 
+/* Above the title instead of beside it. Core's header is already a centred
+   column, so this only has to stop the logo claiming a right margin it no
+   longer sits to the left of. */
+.field-kit__page-header > .field-kit__page-logo {
+	display: block;
+	max-height: 48px;
+	margin: 0 auto .5rem;
+}
+
+.field-kit__page-title-section--stacked {
+	margin-top: 0;
+}
+
 .field-kit__page-badge {
 	align-self: center;
 	margin-left: .6rem;

@@ -269,4 +269,61 @@ final class PageHeaderTest extends TestCase {
 
 		$this->assertStringContainsString( 'href="https://example.test/?a=1&amp;b=2"', $html );
 	}
+
+	/**
+	 * A logo sits beside the title by default.
+	 *
+	 * Which is right for a wordmark: it reads as part of the heading.
+	 */
+	public function test_a_logo_sits_beside_the_title(): void {
+		$html = PageHeader::render( [ 'title' => 'Orders', 'logo' => 'https://example.test/logo.png' ] );
+
+		$this->assertMatchesRegularExpression(
+			'/privacy-settings-title-section[^>]*>\s*<img[^>]*field-kit__page-logo/',
+			$html,
+			'The logo is not inside the title section.'
+		);
+
+		$this->assertStringNotContainsString( 'field-kit__page-title-section--stacked', $html );
+	}
+
+	/**
+	 * It can go above instead.
+	 *
+	 * Right for a square or tall mark, which beside a heading either dwarfs
+	 * it or has to be shrunk until it cannot be read.
+	 */
+	public function test_a_logo_can_go_above_the_title(): void {
+		$html = PageHeader::render(
+			[
+				'title'         => 'Orders',
+				'logo'          => 'https://example.test/logo.png',
+				'logo_position' => 'above',
+			]
+		);
+
+		$this->assertMatchesRegularExpression(
+			'/field-kit__page-header">\s*<img[^>]*field-kit__page-logo/',
+			$html,
+			'The logo is not above the title section.'
+		);
+
+		$this->assertStringContainsString( 'field-kit__page-title-section--stacked', $html );
+
+		// Exactly one, wherever it went.
+		$this->assertSame( 1, substr_count( $html, 'field-kit__page-logo' ) );
+	}
+
+	/**
+	 * A logo is decorative.
+	 *
+	 * The page's own <h1> says where you are; a logo announced as well says
+	 * it twice.
+	 */
+	public function test_a_logo_is_decorative(): void {
+		$html = PageHeader::render( [ 'title' => 'Orders', 'logo' => 'https://example.test/logo.png' ] );
+
+		$this->assertMatchesRegularExpression( '/<img[^>]*alt=""/', $html );
+	}
+
 }

@@ -79,11 +79,22 @@ final class PageHeader {
 		$tabs    = (array) ( $config['tabs'] ?? [] );
 		$actions = (string) ( $config['actions'] ?? '' );
 
+		// Beside the title or above it. Beside is right for a wordmark, which
+		// reads as part of the heading; above is right for a square or tall
+		// mark, which beside a heading either dwarfs it or has to be shrunk
+		// to the point of being unreadable.
+		$stacked = 'above' === (string) ( $config['logo_position'] ?? 'beside' );
+		$logo    = self::logo( (string) ( $config['logo'] ?? '' ) );
+
 		// The title section is a centred flex row in core, so a logo and a
 		// badge sit beside the heading without a rule of our own.
 		$markup = '<div class="privacy-settings-header field-kit__page-header">'
-			. '<div class="privacy-settings-title-section">'
-			. self::logo( (string) ( $config['logo'] ?? '' ) )
+			. ( $stacked ? $logo : '' )
+			. sprintf(
+				'<div class="privacy-settings-title-section%s">',
+				$stacked ? ' field-kit__page-title-section--stacked' : ''
+			)
+			. ( $stacked ? '' : $logo )
 			. sprintf( '<h1>%s</h1>', esc_html( $title ) )
 			. self::badge( $config['badge'] ?? '' )
 			. '</div>';
@@ -120,6 +131,10 @@ final class PageHeader {
 		$image->set( 'src', $url );
 		$image->set( 'alt', '' );
 		$image->add_class( 'field-kit__page-logo' );
+
+		// Decorative: the page's <h1> already says where you are, and a logo
+		// announced as well would say it twice.
+		$image->set( 'alt', '' );
 
 		return sprintf( '<img%s />', $image->render() );
 	}
