@@ -1280,9 +1280,7 @@ li.field-kit__repeater-row {
 
 /* Beside the heading, and on its baseline rather than the flex line's. */
 .field-kit__page-header--left .field-kit__page-actions {
-	display: flex;
-	align-items: center;
-	gap: .5rem;
+	justify-content: flex-start;
 	margin-bottom: 1rem;
 }
 
@@ -1553,9 +1551,19 @@ li.field-kit__repeater-row {
 	max-width: 100%;
 }
 
+/* A row, whichever way the header is aligned. This was text-align: center,
+   which centres inline content and does nothing whatever to a block — so a
+   consumer putting two controls in the slot got them stacked one above the
+   other, the second hard against the left. The reports screen had a refresh
+   button sitting on top of its date picker for exactly that reason.
+   Alignment is then the only thing the left variant has to change. */
 .field-kit__page-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: .5rem;
 	padding: 0 1rem 1rem;
-	text-align: center;
 }
 
 /* Each control in the header is its own form, because these change state and

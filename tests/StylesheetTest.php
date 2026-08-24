@@ -583,4 +583,24 @@ final class StylesheetTest extends TestCase {
 			"These are given display twice, and the later one wins:\n  " . implode( "\n  ", $twice )
 		);
 	}
+	/**
+	 * The header's actions slot is a row.
+	 *
+	 * It was `text-align: center`, which centres inline content and does
+	 * nothing whatever to a block — so a consumer putting two controls in the
+	 * slot got them stacked one above the other, the second hard against the
+	 * left. The reports screen had a refresh button sitting on top of its
+	 * date picker for exactly that reason, and every rule involved was doing
+	 * what it said.
+	 */
+	public function test_the_page_actions_slot_lays_its_controls_out_in_a_row(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match( '/\n\.field-kit__page-actions\s*\{([^}]*)\}/', $css, $rule );
+
+		$this->assertNotEmpty( $rule, 'The actions slot has no rule.' );
+		$this->assertStringContainsString( 'display: flex', $rule[1] );
+		$this->assertStringNotContainsString( 'text-align: center', $rule[1] );
+	}
+
 }
