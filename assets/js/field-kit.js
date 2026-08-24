@@ -1858,6 +1858,110 @@
 	window.ArrayPressFieldKitModules.ColorPicker = ColorPicker;
 
 	/* ====================================================================
+	 * Panel tabs
+	 * ================================================================= */
+
+	var PanelTabs = {
+
+		/**
+		 * Bind every tab list within a root.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__panel-tabs' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+				PanelTabs.bind( wrap );
+			} );
+		},
+
+		/**
+		 * Wire one tab list.
+		 *
+		 * @param {Element} wrap The tabbed panel.
+		 */
+		bind: function ( wrap ) {
+			var tabs = Array.prototype.slice.call(
+				wrap.querySelectorAll( '.field-kit__panel-tab' )
+			);
+
+			if ( ! tabs.length ) {
+				return;
+			}
+
+			/**
+			 * Show one tab's panel and hide the rest.
+			 *
+			 * @param {number}  index      Which tab.
+			 * @param {boolean} moveFocus  Whether to focus it.
+			 */
+			function select( index, moveFocus ) {
+				tabs.forEach( function ( tab, i ) {
+					var chosen = i === index;
+					var panel = wrap.querySelector( '#' + CSS.escape( tab.getAttribute( 'aria-controls' ) ) );
+
+					tab.setAttribute( 'aria-selected', chosen ? 'true' : 'false' );
+
+					// Only the selected tab is in the tab order: arrow keys
+					// move between them, and tabbing leaves the list.
+					tab.tabIndex = chosen ? 0 : -1;
+					tab.classList.toggle( 'is-active', chosen );
+
+					if ( panel ) {
+						panel.hidden = ! chosen;
+					}
+				} );
+
+				if ( moveFocus ) {
+					tabs[ index ].focus();
+				}
+			}
+
+			tabs.forEach( function ( tab, index ) {
+				tab.addEventListener( 'click', function () {
+					select( index, false );
+				} );
+
+				tab.addEventListener( 'keydown', function ( event ) {
+					var last = tabs.length - 1;
+
+					switch ( event.key ) {
+						// Vertical list, so up and down are the ones that
+						// matter — but left and right are bound too, because
+						// a tab list is a tab list whichever way it is drawn.
+						case 'ArrowDown':
+						case 'ArrowRight':
+							event.preventDefault();
+							select( index === last ? 0 : index + 1, true );
+							break;
+						case 'ArrowUp':
+						case 'ArrowLeft':
+							event.preventDefault();
+							select( index === 0 ? last : index - 1, true );
+							break;
+						case 'Home':
+							event.preventDefault();
+							select( 0, true );
+							break;
+						case 'End':
+							event.preventDefault();
+							select( last, true );
+							break;
+						default:
+							break;
+					}
+				} );
+			} );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.PanelTabs = PanelTabs;
+
+	/* ====================================================================
 	 * Merge tag chooser
 	 * ================================================================= */
 
@@ -2345,7 +2449,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

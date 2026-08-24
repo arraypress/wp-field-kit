@@ -1754,3 +1754,126 @@ select.field-kit__select[multiple] {
 .field-kit__repeater-table tbody tr:nth-child(odd) {
 	background: #f6f7f7;
 }
+
+/* -----------------------------------------------------------------------
+ * Panel tabs
+ *
+ * A list of named sections down one side, one panel beside them. core has
+ * no component for this — the closest is the media modal's own menu — so
+ * this is written out, but every colour is core's: the selection follows
+ * --wp-admin-theme-color, so it changes with the user's admin scheme
+ * rather than being blue because blue is what core shipped with.
+ * -------------------------------------------------------------------- */
+
+.field-kit__panel-tabs {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #fff;
+}
+
+.field-kit__panel-tablist {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 12rem;
+	border-right: 1px solid #dcdcde;
+	background: #f6f7f7;
+}
+
+.field-kit__panel-tab {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .7rem 1rem;
+	border: 0;
+	border-bottom: 1px solid #dcdcde;
+	border-left: 3px solid transparent;
+	background: none;
+	color: #1d2327;
+	font-size: 13px;
+	text-align: left;
+	cursor: pointer;
+}
+
+.field-kit__panel-tab:last-child {
+	border-bottom: 0;
+}
+
+.field-kit__panel-tab:hover {
+	background: #f0f0f1;
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+/* The bar on the left is the selection, the same idea as core's own active
+   admin-menu item — and aria-selected is what conveys it, not the colour. */
+.field-kit__panel-tab[aria-selected="true"] {
+	border-left-color: var(--wp-admin-theme-color, #2271b1);
+	background: #fff;
+	color: var(--wp-admin-theme-color, #2271b1);
+	font-weight: 600;
+}
+
+.field-kit__panel-tab:focus-visible {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: -2px;
+}
+
+.field-kit__panel-tab .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	flex: none;
+}
+
+.field-kit__panel-bodies {
+	flex: 1;
+	min-width: 0;
+}
+
+.field-kit__panel-body {
+	padding: 1rem;
+}
+
+.field-kit__panel-body[hidden] {
+	display: none;
+}
+
+/* Focusable so leaving the tab list lands somewhere, but a focus ring on a
+   whole panel reads as an error — the outline is enough. */
+.field-kit__panel-body:focus {
+	outline: none;
+}
+
+.field-kit__panel-body:focus-visible {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: -2px;
+}
+
+/* Stacked on a narrow screen: a 12rem rail beside a panel is most of a
+   phone. */
+@media screen and (max-width: 782px) {
+
+	.field-kit__panel-tabs {
+		display: block;
+	}
+
+	.field-kit__panel-tablist {
+		flex-direction: row;
+		flex-wrap: wrap;
+		border-right: 0;
+		border-bottom: 1px solid #dcdcde;
+	}
+
+	.field-kit__panel-tab {
+		border-bottom: 0;
+		border-left: 0;
+		border-bottom: 3px solid transparent;
+	}
+
+	.field-kit__panel-tab[aria-selected="true"] {
+		border-left-color: transparent;
+		border-bottom-color: var(--wp-admin-theme-color, #2271b1);
+	}
+}

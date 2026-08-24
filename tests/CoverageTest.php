@@ -171,6 +171,58 @@ final class CoverageTest extends TestCase {
 	];
 
 	/**
+	 * Every type wp-register-post-fields rendered before its port.
+	 *
+	 * Taken from its ConfigParser trait at 0bbd8b9, the commit before it was
+	 * ported onto the kit. It includes the spellings that differ between the
+	 * predecessor libraries — post_ajax, taxonomy_ajax, user_ajax, term —
+	 * which resolve through aliases and are exactly what would break
+	 * silently if one were dropped.
+	 *
+	 * @var string[]
+	 */
+	private const POST_FIELD_TYPES = [
+		'ajax',
+		'amount_type',
+		'button_group',
+		'checkbox',
+		'code',
+		'color',
+		'date',
+		'date_range',
+		'datetime',
+		'dimensions',
+		'email',
+		'file',
+		'file_url',
+		'gallery',
+		'group',
+		'image',
+		'link',
+		'number',
+		'oembed',
+		'password',
+		'post',
+		'post_ajax',
+		'radio',
+		'range',
+		'repeater',
+		'select',
+		'taxonomy_ajax',
+		'tel',
+		'term',
+		'text',
+		'textarea',
+		'time',
+		'time_range',
+		'toggle',
+		'url',
+		'user',
+		'user_ajax',
+		'wysiwyg',
+	];
+
+	/**
 	 * Every setting field type resolves.
 	 */
 	public function test_setting_fields_types_all_resolve(): void {
@@ -188,24 +240,7 @@ final class CoverageTest extends TestCase {
 	 * Every post field type resolves.
 	 */
 	public function test_post_fields_types_all_resolve(): void {
-		$path = self::LIBRARIES . '/wp-register-post-fields/src/Traits/ConfigParser.php';
-
-		if ( ! file_exists( $path ) ) {
-			$this->markTestSkipped( 'wp-register-post-fields is not checked out.' );
-		}
-
-		preg_match( '/\$field_types\s*=\s*\[(.*?)\n\t\];/s', (string) file_get_contents( $path ), $block );
-
-		preg_match_all( "/'([a-z_0-9]+)'\s*=>/", $block[1] ?? '', $matches );
-
-		// The same array carries metabox config keys, which are not types.
-		$types = array_diff(
-			$matches[1],
-			[ 'title', 'post_types', 'context', 'priority', 'prefix', 'capability', 'fields', 'full_width', 'min', 'max', 'step', 'sanitize_callback' ]
-		);
-
-		$this->assertNotEmpty( $types );
-		$this->assertAllResolve( array_values( $types ), 'wp-register-post-fields' );
+		$this->assertAllResolve( self::POST_FIELD_TYPES, 'wp-register-post-fields' );
 	}
 
 	/**
