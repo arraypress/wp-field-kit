@@ -133,6 +133,14 @@ class SelectType extends AbstractType {
 		$markup = '';
 
 		foreach ( array_diff( $selected, $known ) as $value ) {
+			// Nothing selected comes back as a single empty string rather
+			// than an empty list, and rendering an option for it gives a
+			// multiple control one blank chip with a remove button and no
+			// label — on every empty creatable field on the page.
+			if ( '' === $value ) {
+				continue;
+			}
+
 			// The value is its own label: nobody chose it from a list, so
 			// there is nothing else to call it.
 			$markup .= $this->render_option( $value, $value, $selected );
