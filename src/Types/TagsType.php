@@ -41,8 +41,27 @@ final class TagsType extends AbstractInputType {
 	 * @return string
 	 */
 	public function render( Field $field, Attributes $attributes ): string {
+		$separator = (string) $field->get( 'separator', ',' );
+
 		$attributes->add_class( 'field-kit__tags-input' );
-		$attributes->set( 'data-separator', (string) $field->get( 'separator', ',' ) );
+		$attributes->set( 'data-separator', $separator );
+
+		// A separated list in a text input looks exactly like a text input,
+		// and the separator is the whole contract — get it wrong and one tag
+		// is stored where three were meant. So it is said out loud, unless
+		// the caller wrote something better.
+		if ( '' === $field->placeholder() ) {
+			$attributes->set(
+				'placeholder',
+				',' === $separator
+					? __( 'Separate tags with commas', 'arraypress' )
+					: sprintf(
+						/* translators: %s: the character tags are separated with. */
+						__( 'Separate tags with %s', 'arraypress' ),
+						$separator
+					)
+			);
+		}
 
 		return sprintf(
 			'<div class="field-kit__tags">%s<div class="field-kit__tags-list" aria-live="polite"></div></div>',

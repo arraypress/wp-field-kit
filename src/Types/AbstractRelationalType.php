@@ -132,6 +132,27 @@ abstract class AbstractRelationalType extends SelectType {
 	}
 
 	/**
+	 * A search control says so.
+	 *
+	 * "Choose one or more" is right for a list already on the page and wrong
+	 * for one that is fetched as you type: nothing is on offer until a query
+	 * is typed, so the instruction has to be to type.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function default_placeholder( Field $field ): string {
+		if ( (bool) $field->get( 'creatable', false ) ) {
+			return __( 'Search, or type to add', 'arraypress' );
+		}
+
+		return $this->is_multiple( $field )
+			? __( 'Search to add one or more', 'arraypress' )
+			: __( 'Type to search', 'arraypress' );
+	}
+
+	/**
 	 * Always searchable.
 	 *
 	 * @param Field $field The field.

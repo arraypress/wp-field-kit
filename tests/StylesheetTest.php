@@ -276,4 +276,58 @@ final class StylesheetTest extends TestCase {
 			'The script still builds a separate arrow element.'
 		);
 	}
+
+	/**
+	 * A repeater row's layout cannot reach the table variant's <tr>.
+	 *
+	 * Both layouts carry .field-kit__repeater-row, because the script
+	 * addresses rows by it to reindex and to drag. The stacked layout also
+	 * wanted a flex line, and attaching that to the shared class handed it to
+	 * every <tr> in the table variant as well — which takes the row out of
+	 * the table's column algorithm entirely, so its cells stop lining up
+	 * under the headers and the table reads as though it has the wrong number
+	 * of columns.
+	 *
+	 * So a rule that sets `display` on a repeater row has to name the element
+	 * the stacked layout renders. Asserted on the selector rather than by
+	 * reading the value, because there is no safe value here: `block`,
+	 * `grid`, `flow-root` all break a <tr> the same way.
+	 */
+	public function test_a_repeater_rows_display_cannot_reach_a_table_row(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match_all(
+			'/([^{}]*field-kit__repeater-row[^{}]*)\{([^}]*)\}/',
+			$css,
+			$rules,
+			PREG_SET_ORDER
+		);
+
+		$this->assertNotEmpty( $rules, 'The repeater row has no rule at all.' );
+
+		$checked = 0;
+
+		foreach ( $rules as $rule ) {
+			if ( ! preg_match( '/(^|[;{\s])display\s*:/', $rule[2] ) ) {
+				continue;
+			}
+
+			foreach ( explode( ',', $rule[1] ) as $selector ) {
+				if ( ! str_contains( $selector, 'field-kit__repeater-row' ) ) {
+					continue;
+				}
+
+				++$checked;
+
+				$this->assertStringContainsString(
+					'li.field-kit__repeater-row',
+					trim( $selector ),
+					'A repeater row is given a display without naming the stacked layout\'s element; '
+					. 'the table variant\'s rows will be laid out as flex containers.'
+				);
+			}
+		}
+
+		$this->assertGreaterThan( 0, $checked, 'No rule sets a display on a repeater row; this test proves nothing.' );
+	}
 }

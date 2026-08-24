@@ -447,7 +447,13 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	}
 }
 
-.field-kit__repeater-row {
+/* A stacked row is a panel: a bordered block with its fields in a flex line.
+   The table variant carries the same class — the JS addresses rows by it to
+   reindex and to drag — but a <tr> laid out as a flex container drops out of
+   the table's column algorithm entirely, and its cells stop lining up under
+   the headers. So the panel appearance is pinned to the element the stacked
+   layout renders, and the shared class stays purely behavioural. */
+li.field-kit__repeater-row {
 	display: flex;
 	align-items: flex-start;
 	gap: .75rem;

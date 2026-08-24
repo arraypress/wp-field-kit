@@ -36,11 +36,12 @@ class SelectType extends AbstractType {
 
 		if ( $this->uses_enhanced_ui( $field ) ) {
 			$attributes->add_class( 'field-kit__select--enhanced' );
-			$attributes->set_if(
-				'' !== $field->placeholder(),
-				'data-placeholder',
-				$field->placeholder()
-			);
+
+			$placeholder = '' !== $field->placeholder()
+				? $field->placeholder()
+				: $this->default_placeholder( $field );
+
+			$attributes->set_if( '' !== $placeholder, 'data-placeholder', $placeholder );
 
 			// A control allowed to invent values is a tag input. Same
 			// combobox, one permission.
@@ -135,6 +136,29 @@ class SelectType extends AbstractType {
 	 */
 	protected function is_multiple( Field $field ): bool {
 		return (bool) $field->get( 'multiple', false );
+	}
+
+	/**
+	 * What the combobox says when nothing is chosen and none was configured.
+	 *
+	 * A single select has an empty option to fall back on — the combobox
+	 * borrows its label, which is what a native select shows. A multiple
+	 * select has no empty option at all, so without this the control is an
+	 * empty box with no indication that it can be typed in, and a creatable
+	 * one gives no hint that typing a value it does not know is allowed.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function default_placeholder( Field $field ): string {
+		if ( (bool) $field->get( 'creatable', false ) ) {
+			return __( 'Choose, or type to add', 'arraypress' );
+		}
+
+		return $this->is_multiple( $field )
+			? __( 'Choose one or more', 'arraypress' )
+			: '';
 	}
 
 	/**
