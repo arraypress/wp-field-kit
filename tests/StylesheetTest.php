@@ -330,4 +330,45 @@ final class StylesheetTest extends TestCase {
 
 		$this->assertGreaterThan( 0, $checked, 'No rule sets a display on a repeater row; this test proves nothing.' );
 	}
+
+	/**
+	 * A rule in the admin is two hairlines, and ours have to be the same two.
+	 *
+	 * core's `hr` is `border-top: 1px solid #dcdcde` over `border-bottom: 1px
+	 * solid #f6f7f7`, and that faint second line is what gives every rule in
+	 * the admin its slight bevel. A separator that redeclared `border` lost
+	 * the lower one and drew a single flat line beside core's bevelled ones;
+	 * a heading's underline had never had it at all.
+	 *
+	 * The heading is not an <hr> and has one bottom edge, so its second line
+	 * is a shadow — which is why this asserts on the colours rather than on
+	 * which property carries them.
+	 */
+	public function test_a_rule_carries_both_of_cores_hairlines(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match( '/\.field-kit__separator\s*\{([^}]*)\}/', $css, $separator );
+
+		$this->assertNotEmpty( $separator, 'The separator has no rule.' );
+
+		// The element is an <hr>: core already draws it, and the only way to
+		// get this wrong is to draw over it.
+		$this->assertDoesNotMatchRegularExpression(
+			'/(^|[;\s])border(-top|-bottom)?\s*:/',
+			$separator[1],
+			'The separator redeclares a border over core\'s, which flattens the bevel.'
+		);
+
+		preg_match( '/\.field-kit__heading\s*\{([^}]*)\}/', $css, $heading );
+
+		$this->assertNotEmpty( $heading, 'The heading has no rule.' );
+
+		foreach ( [ '#dcdcde', '#f6f7f7' ] as $colour ) {
+			$this->assertStringContainsString(
+				$colour,
+				$heading[1],
+				sprintf( 'A heading\'s rule is missing %s, one of the two lines core draws.', $colour )
+			);
+		}
+	}
 }

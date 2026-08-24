@@ -59,10 +59,12 @@ input.field-kit__combobox-input,
 	color: #d63638;
 }
 
+/* Only the margin. The element is an <hr>, so core's own rule — a #dcdcde
+   hairline over a #f6f7f7 one, which is what gives every rule in the admin
+   its slight bevel — already applies, and restating half of it here is what
+   made ours a single flat line instead. */
 .field-kit__separator {
 	margin: 1.5rem 0;
-	border: 0;
-	border-top: 1px solid #dcdcde;
 }
 
 /* Core's own shape for a settings-page subheading: h2.title on
@@ -74,7 +76,12 @@ input.field-kit__combobox-input,
 .field-kit__heading {
 	margin: 1.5rem 0 .5rem;
 	padding-bottom: .4rem;
+
+	/* The same two hairlines core's <hr> carries, so a heading's rule and a
+	   separator on the same page are the same line. An element has one bottom
+	   edge, so the second one is a shadow rather than a border. */
 	border-bottom: 1px solid #dcdcde;
+	box-shadow: 0 1px 0 0 #f6f7f7;
 	font-size: 1.3em;
 	font-weight: 600;
 	line-height: 1.4;
