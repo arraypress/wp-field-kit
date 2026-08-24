@@ -1732,13 +1732,21 @@ select.field-kit__select[multiple] {
 }
 
 /* The spinner only occupies space once it is running, or every button row
-   carries a permanent gap beside it. */
-.field-kit__field .spinner {
+   carries a permanent gap beside it.
+
+   Core's own is visibility:hidden with a fixed 20px box and margins, because
+   it sits *outside* a Save button where reserving the space stops the layout
+   jumping. Inside a button that is 40px of dead air that never goes away, so
+   here it is display:none until .is-active — the same class core switches it
+   with, so the JS contract is unchanged. */
+.field-kit__field .spinner,
+.field-kit__button-spinner {
 	float: none;
-	margin: 0;
+	margin: 0 0 0 4px;
 }
 
-.field-kit__field .spinner:not(.is-active) {
+.field-kit__field .spinner:not(.is-active),
+.field-kit__button-spinner:not(.is-active) {
 	display: none;
 }
 

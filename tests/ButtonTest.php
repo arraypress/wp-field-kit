@@ -171,6 +171,37 @@ final class ButtonTest extends TestCase {
 	}
 
 	/**
+	 * A spinner is asked for, and is invisible until it is running.
+	 *
+	 * Core's own spinner is visibility:hidden with a fixed 20px box, because
+	 * it sits outside a Save button where reserving the space stops the
+	 * layout jumping. Inside a button that is dead air that never goes away —
+	 * so the stylesheet hides it outright until `.is-active`, which is the
+	 * class core switches it with either way.
+	 */
+	public function test_a_spinner_is_hidden_until_it_runs(): void {
+		$html = Button::render( [ 'label' => 'Run', 'spinner' => true ] );
+
+		$this->assertStringContainsString( 'class="spinner field-kit__button-spinner"', $html );
+		$this->assertStringNotContainsString( 'is-active', $html );
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/\.field-kit__button-spinner:not\(\.is-active\)[^{]*\{[^}]*display:\s*none/',
+			$css,
+			'A button spinner takes up space when nothing is running.'
+		);
+	}
+
+	/**
+	 * No spinner unless one is asked for.
+	 */
+	public function test_no_spinner_by_default(): void {
+		$this->assertStringNotContainsString( 'spinner', Button::render( [ 'label' => 'Run' ] ) );
+	}
+
+	/**
 	 * A label is escaped.
 	 */
 	public function test_a_label_is_escaped(): void {
