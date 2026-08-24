@@ -270,6 +270,15 @@ final class GalleryType extends AbstractMediaType {
 	}
 
 	/**
+	 * Each tile removes itself, so there is nothing for a clear button to do.
+	 *
+	 * @return bool
+	 */
+	protected function shows_clear(): bool {
+		return false;
+	}
+
+	/**
 	 * The configuration keys this type reads.
 	 *
 	 * @return string[]

@@ -149,6 +149,7 @@ final class Field {
 		$this->value  = $value;
 
 		$this->warn_about_unknown_keys();
+		$this->warn_about_missing_options();
 	}
 
 	/**
@@ -171,6 +172,58 @@ final class Field {
 				self::$allowed,
 				$this->type->config_keys()
 			)
+		);
+	}
+
+	/**
+	 * Complain, under WP_DEBUG, about a choice with nothing to choose from.
+	 *
+	 * A select with no options renders an empty dropdown and a card choice
+	 * renders an empty box. Neither throws, so the only symptom is a field
+	 * that looks like it failed to load — which is what a card choice did in
+	 * this library's own demo, on the page whose one job is showing what each
+	 * type looks like.
+	 *
+	 * The options may be a callable, and one that legitimately returns
+	 * nothing — no products yet, no terms yet — is not a mistake. It is still
+	 * worth saying: an empty control with no explanation looks the same
+	 * either way, and a field that expects to be empty sometimes should say
+	 * so with `empty_label`.
+	 *
+	 * @return void
+	 */
+	private function warn_about_missing_options(): void {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! function_exists( '_doing_it_wrong' ) ) {
+			return;
+		}
+
+		// Only the types that read them. A text field given none is not a
+		// choice with nothing in it.
+		if ( ! in_array( 'options', $this->type->config_keys(), true ) ) {
+			return;
+		}
+
+		// A relational type fills its own from a search, so an empty
+		// configuration is the normal case rather than an omission.
+		if ( $this->has( 'search_callback' ) || $this->has( 'search_source' ) ) {
+			return;
+		}
+
+		if ( [] !== $this->options() ) {
+			return;
+		}
+
+		_doing_it_wrong(
+			__METHOD__,
+			esc_html(
+				sprintf(
+					/* translators: 1: field key, 2: field type */
+					__( 'The field "%1$s" (%2$s) has no options, so it renders with nothing to choose from.', 'arraypress' ),
+					$this->key,
+					$this->type->id()
+				)
+			),
+			'1.0.0'
 		);
 	}
 

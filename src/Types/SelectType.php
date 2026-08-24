@@ -91,6 +91,53 @@ class SelectType extends AbstractType {
 			$markup .= $this->render_option( (string) $value, (string) $label, $selected );
 		}
 
+		return $markup . $this->render_created_options( $field, $selected );
+	}
+
+	/**
+	 * Options for values that were invented rather than chosen.
+	 *
+	 * A creatable control stores whatever was typed, and the configured
+	 * options will never contain it. Without this the value saved, then had
+	 * no `<option>` to be selected on when the page was drawn again — so it
+	 * vanished from the control, looked like it had never saved, and was
+	 * genuinely lost on the next save, because a value with no option is not
+	 * in the form that submits.
+	 *
+	 * The relational types have always done this, resolving labels for what
+	 * is stored. That is why a creatable `ajax` field kept its words and a
+	 * creatable `enhanced_select` did not.
+	 *
+	 * @param Field    $field    The field.
+	 * @param string[] $selected Currently selected values.
+	 *
+	 * @return string
+	 */
+	private function render_created_options( Field $field, array $selected ): string {
+		if ( ! (bool) $field->get( 'creatable', false ) ) {
+			return '';
+		}
+
+		$known = [];
+
+		foreach ( $field->options() as $value => $label ) {
+			if ( is_array( $label ) ) {
+				$known = array_merge( $known, array_map( 'strval', array_keys( $label ) ) );
+
+				continue;
+			}
+
+			$known[] = (string) $value;
+		}
+
+		$markup = '';
+
+		foreach ( array_diff( $selected, $known ) as $value ) {
+			// The value is its own label: nobody chose it from a list, so
+			// there is nothing else to call it.
+			$markup .= $this->render_option( $value, $value, $selected );
+		}
+
 		return $markup;
 	}
 

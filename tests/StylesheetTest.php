@@ -485,4 +485,102 @@ final class StylesheetTest extends TestCase {
 		return array_values( array_unique( $classes ) );
 	}
 
+	/**
+	 * No rule swallows the one above it.
+	 *
+	 * A comment between a comma and the opening brace merges two rules: the
+	 * selectors before it keep matching, but they take the *next* rule's
+	 * declarations. That is what happened when a comment was inserted above
+	 * `.field-kit__oembed-card` — a dimensions field and a range pair
+	 * inherited its border, padding and white background, and appeared as
+	 * boxes nobody had asked for.
+	 *
+	 * CSS has no errors, so nothing said a word.
+	 */
+	public function test_no_comment_sits_inside_a_selector_list(): void {
+		$css   = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+		$merged = [];
+
+		preg_match_all( '/(?:^|\})([^{}]*)\{/', $css, $rules );
+
+		foreach ( $rules[1] as $selector ) {
+			$before = explode( '/*', $selector )[0];
+
+			if ( str_contains( $selector, '/*' ) && str_contains( $before, ',' ) ) {
+				$merged[] = trim( explode( "\n", trim( $before ) )[0] );
+			}
+		}
+
+		$this->assertSame(
+			[],
+			$merged,
+			"A comment sits between a comma and a brace, so these selectors take the next rule's declarations:\n  "
+			. implode( "\n  ", $merged )
+		);
+	}
+
+	/**
+	 * Every brace is closed.
+	 *
+	 * One missing takes every rule after it with it, silently.
+	 */
+	public function test_the_braces_balance(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		$this->assertSame( substr_count( $css, '{' ), substr_count( $css, '}' ) );
+	}
+	/**
+	 * No selector is given `display` twice.
+	 *
+	 * A later rule wins silently, and the two are usually a long way apart —
+	 * the clipboard was `display: flex` at line 1495 and `display: flow-root`
+	 * at 1628, so its copy confirmation sat on the baseline beside the button
+	 * instead of centred with it, and nothing anywhere said why.
+	 */
+	public function test_no_selector_is_given_display_twice(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Comments out of the way, so one mentioning `display` is not a rule.
+		$css = (string) preg_replace( '{/\*.*?\*/}s', '', $css );
+
+		$seen   = [];
+		$twice  = [];
+
+		preg_match_all( '/(?:^|\})([^{}@]*)\{([^}]*)\}/', $css, $rules, PREG_SET_ORDER );
+
+		foreach ( $rules as $rule ) {
+			if ( ! preg_match( '/(?:^|;|\s)display\s*:/', $rule[2] ) ) {
+				continue;
+			}
+
+			foreach ( explode( ',', $rule[1] ) as $selector ) {
+				$selector = trim( (string) preg_replace( '/\s+/', ' ', $selector ) );
+
+				if ( '' === $selector ) {
+					continue;
+				}
+
+				if ( isset( $seen[ $selector ] ) ) {
+					$twice[] = $selector;
+				}
+
+				$seen[ $selector ] = true;
+			}
+		}
+
+		// A modifier legitimately restates it — `:not(.is-active)` hiding
+		// something the base rule shows — so only a bare repeat counts.
+		$twice = array_values(
+			array_filter(
+				array_unique( $twice ),
+				static fn( $selector ) => ! str_contains( $selector, ':' ) && ! str_contains( $selector, '[' )
+			)
+		);
+
+		$this->assertSame(
+			[],
+			$twice,
+			"These are given display twice, and the later one wins:\n  " . implode( "\n  ", $twice )
+		);
+	}
 }

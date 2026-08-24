@@ -84,6 +84,21 @@ abstract class AbstractMediaType extends AbstractType {
 	abstract protected function render_preview( Field $field ): string;
 
 	/**
+	 * Whether a button that clears the whole field belongs here.
+	 *
+	 * It does for a field holding one thing: "Remove" beside a chosen image
+	 * means the image. It does not for a gallery, where every tile carries
+	 * its own remove and a second one at the bottom reads as "remove which?"
+	 * — its label said "Remove the selection for Screenshots", which does not
+	 * answer that either.
+	 *
+	 * @return bool
+	 */
+	protected function shows_clear(): bool {
+		return true;
+	}
+
+	/**
 	 * The choose and clear buttons.
 	 *
 	 * Each button names the field it acts on for assistive technology, since
@@ -95,6 +110,26 @@ abstract class AbstractMediaType extends AbstractType {
 	 * @return string
 	 */
 	protected function render_controls( Field $field ): string {
+		if ( ! $this->shows_clear() ) {
+			$choose = new Attributes();
+			$choose->set( 'type', 'button' );
+			$choose->add_class( 'button', 'field-kit__media-choose' );
+			$choose->set(
+				'aria-label',
+				sprintf(
+					/* translators: %s: field label */
+					__( 'Choose a file for %s', 'arraypress' ),
+					$field->label()
+				)
+			);
+
+			return sprintf(
+				'<p class="field-kit__media-actions"><button%s>%s</button></p>',
+				$choose->render(),
+				esc_html( $this->choose_label() )
+			);
+		}
+
 		// absint rather than a string comparison, so an id of 0 left behind
 		// by an older save is treated as nothing selected.
 		$has_value = $this->has_selection( $field );

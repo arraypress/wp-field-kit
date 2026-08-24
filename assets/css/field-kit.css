@@ -285,9 +285,26 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__dimensions,
 .field-kit__range-pair,
+.field-kit__amount {
+	display: flex;
+	align-items: flex-end;
+	gap: .5rem;
+}
+
 /* A text field with a button that fills it in. Same shape as the clipboard
    field: the control and its button on one line, the input taking what is
    left. */
+.field-kit__code {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+}
+
+.field-kit__code-value {
+	flex: 1;
+	min-width: 0;
+}
+
 /* A provider that answers with a script rather than an iframe cannot be shown
    inline — innerHTML never executes one — so what was found is shown instead.
    Twitter and Reddit are the common ones. */
@@ -314,22 +331,7 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	margin: .25rem 0 0;
 }
 
-.field-kit__code {
-	display: flex;
-	align-items: center;
-	gap: .5rem;
-}
 
-.field-kit__code-value {
-	flex: 1;
-	min-width: 0;
-}
-
-.field-kit__amount {
-	display: flex;
-	align-items: flex-end;
-	gap: .5rem;
-}
 
 /* The unit on the left instead, which is what a currency wants in most of
    the world's locales. */
@@ -366,8 +368,11 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	color: #646970;
 }
 
+/* On the inputs' own line rather than nudged with padding: the parts are
+   flex with `align-items: flex-end`, so the unit lines up with the boxes by
+   sitting in the same row rather than by being pushed towards it. */
 .field-kit__dimensions-unit {
-	padding-bottom: .35rem;
+	align-self: center;
 	color: #646970;
 }
 
@@ -1619,11 +1624,14 @@ select.field-kit__select[multiple] {
  * -------------------------------------------------------------------- */
 
 .field-kit__media,
+/* Not the clipboard or the licence: both are flex above, and a later
+   `display` on the same selector silently wins — which left the copy
+   confirmation and the licence status sitting on the baseline, unaligned with
+   the button beside them and touching it. Flex already establishes a block
+   formatting context, so there was nothing here for them to gain. */
 .field-kit__gallery,
 .field-kit__repeater,
 .field-kit__group,
-.field-kit__license,
-.field-kit__clipboard,
 .field-kit__oembed,
 .field-kit__tags {
 	display: flow-root;
