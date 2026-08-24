@@ -120,7 +120,7 @@ if ( ! modules ) {
 }
 
 const expected = [
-	'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox',
+	'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox',
 	'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor',
 	'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton',
 	'Tooltip',

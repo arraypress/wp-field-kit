@@ -13,10 +13,20 @@ use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Field;
 
 /**
- * A URL that resolves to an embed, with a live preview beside it.
+ * A URL that resolves to an embed, previewed as it is typed.
+ *
+ * The preview resolves in the browser through core's own
+ * `oembed/1.0/proxy` — the endpoint the block editor uses. It fetches only
+ * from WordPress's provider allowlist and is gated on `edit_posts`, so there
+ * is no endpoint of our own here and no way to aim it at an arbitrary host.
  *
  * The preview region is `aria-live="polite"`, so resolving an embed is
  * announced rather than being a change only sighted users notice.
+ *
+ * A provider that answers with a script rather than an iframe — Twitter and
+ * Reddit among them — cannot be shown inline, because assigning innerHTML
+ * never executes a script. Those get a card naming what was found, rather
+ * than an empty box that looks like a failure.
  */
 final class OembedType extends AbstractInputType {
 

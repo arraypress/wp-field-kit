@@ -217,6 +217,11 @@ final class Assets {
 		return [
 			'restUrl'   => rest_url( Runtime::rest_namespace() . '/' ),
 			'restNonce' => wp_create_nonce( 'wp_rest' ),
+
+			// Core's own, which the block editor uses. It only fetches from
+			// WordPress's provider allowlist and is gated on `edit_posts`, so
+			// there is nothing here worth writing a second endpoint for.
+			'oembedUrl' => rest_url( 'oembed/1.0/proxy' ),
 			'i18n'      => [
 				'noResults'        => __( 'No results found.', 'arraypress' ),
 				'resultsAvailable' => __( 'results available.', 'arraypress' ),
@@ -229,6 +234,9 @@ final class Assets {
 				'removeItem'       => __( 'Remove', 'arraypress' ),
 				'actionDone'       => __( 'Done.', 'arraypress' ),
 				'actionFailed'     => __( 'That did not work.', 'arraypress' ),
+				'embedResolving'   => __( 'Looking for an embed…', 'arraypress' ),
+				'embedFailed'      => __( 'That URL could not be embedded.', 'arraypress' ),
+				'embedOnSave'      => __( 'This will render once saved.', 'arraypress' ),
 			],
 		];
 	}

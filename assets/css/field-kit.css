@@ -288,6 +288,32 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 /* A text field with a button that fills it in. Same shape as the clipboard
    field: the control and its button on one line, the input taking what is
    left. */
+/* A provider that answers with a script rather than an iframe cannot be shown
+   inline — innerHTML never executes one — so what was found is shown instead.
+   Twitter and Reddit are the common ones. */
+.field-kit__oembed-card {
+	display: flex;
+	gap: .75rem;
+	align-items: center;
+	max-width: 600px;
+	padding: .75rem;
+	border: 1px solid #dcdcde;
+	border-radius: 2px;
+	background: #fff;
+}
+
+.field-kit__oembed-card img {
+	flex: none;
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border-radius: 2px;
+}
+
+.field-kit__oembed-card p {
+	margin: .25rem 0 0;
+}
+
 .field-kit__code {
 	display: flex;
 	align-items: center;

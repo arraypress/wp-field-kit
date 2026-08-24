@@ -458,7 +458,175 @@
 		}
 	};
 
-	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, announce: announce, t: t, config: config };
+	/**
+	 * A URL that resolves to an embed, previewed as it is typed.
+	 *
+	 * Through core's own `oembed/1.0/proxy`, which is what the block editor
+	 * uses: it fetches only from WordPress's provider allowlist and is gated
+	 * on `edit_posts`, so there is no second endpoint here and no way to aim
+	 * it at an arbitrary host.
+	 *
+	 * The request is debounced and the last one wins. Typing a URL fires an
+	 * input event per character, and without a sequence number a slow lookup
+	 * for half a URL can land after the fast one for the whole of it and
+	 * overwrite the right answer with the wrong one.
+	 */
+	var Oembed = {
+
+		/**
+		 * Wire the oembed fields.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__oembed' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var input = wrap.querySelector( '.field-kit__oembed-input' );
+				var preview = wrap.querySelector( '.field-kit__oembed-preview' );
+
+				if ( ! input || ! preview ) {
+					return;
+				}
+
+				// What is on screen already, so a field that has not been
+				// touched is not re-fetched on every keystroke elsewhere.
+				var last = input.value.trim();
+				var timer = null;
+				var sequence = 0;
+
+				input.addEventListener( 'input', function () {
+					window.clearTimeout( timer );
+
+					timer = window.setTimeout( function () {
+						var url = input.value.trim();
+
+						if ( url === last ) {
+							return;
+						}
+
+						last = url;
+
+						if ( '' === url ) {
+							preview.innerHTML = '';
+
+							return;
+						}
+
+						Oembed.resolve( preview, url, ++sequence, function () {
+							return sequence;
+						} );
+					}, 500 );
+				} );
+			} );
+		},
+
+		/**
+		 * Fetch one URL and render whatever came back.
+		 *
+		 * @param {Element}  preview The preview region.
+		 * @param {string}   url     The URL to resolve.
+		 * @param {number}   ticket  This request's number.
+		 * @param {Function} current The latest request's number.
+		 */
+		resolve: function ( preview, url, ticket, current ) {
+			preview.textContent = t( 'embedResolving', 'Looking for an embed…' );
+
+			var endpoint = config.oembedUrl;
+
+			if ( ! endpoint ) {
+				return;
+			}
+
+			var query = endpoint + ( endpoint.indexOf( '?' ) === -1 ? '?' : '&' ) +
+				'url=' + encodeURIComponent( url ) + '&maxwidth=600';
+
+			window.fetch( query, {
+				credentials: 'same-origin',
+				headers: { 'X-WP-Nonce': config.restNonce }
+			} )
+				.then( function ( response ) {
+					return response.ok ? response.json() : null;
+				} )
+				.catch( function () {
+					return null;
+				} )
+				.then( function ( data ) {
+					// A later keystroke has already asked for something else.
+					if ( ticket !== current() ) {
+						return;
+					}
+
+					Oembed.render( preview, data );
+				} );
+		},
+
+		/**
+		 * Show an embed, a card, or a failure.
+		 *
+		 * @param {Element}     preview The preview region.
+		 * @param {Object|null} data    The oEmbed response.
+		 */
+		render: function ( preview, data ) {
+			if ( ! data || ! data.html ) {
+				preview.textContent = t( 'embedFailed', 'That URL could not be embedded.' );
+
+				return;
+			}
+
+			// Some providers answer with a script rather than an iframe —
+			// Twitter and Reddit among them — and innerHTML never executes
+			// one. Rendering it would leave an empty box that looks like a
+			// failure, so those get a card saying what was found instead.
+			if ( data.html.indexOf( '<iframe' ) === -1 ) {
+				preview.innerHTML = '';
+				preview.appendChild( Oembed.card( data ) );
+
+				return;
+			}
+
+			preview.innerHTML = data.html;
+		},
+
+		/**
+		 * What was found, for a provider that cannot be shown inline.
+		 *
+		 * @param {Object} data The oEmbed response.
+		 * @return {Element} The card.
+		 */
+		card: function ( data ) {
+			var card = document.createElement( 'div' );
+			card.className = 'field-kit__oembed-card';
+
+			if ( data.thumbnail_url ) {
+				var image = document.createElement( 'img' );
+				image.src = data.thumbnail_url;
+				image.alt = '';
+				card.appendChild( image );
+			}
+
+			var body = document.createElement( 'div' );
+
+			var title = document.createElement( 'strong' );
+			title.textContent = data.title || data.provider_name || '';
+			body.appendChild( title );
+
+			var note = document.createElement( 'p' );
+			note.className = 'description';
+			note.textContent = t( 'embedOnSave', 'This will render once saved.' );
+			body.appendChild( note );
+
+			card.appendChild( body );
+
+			return card;
+		}
+	};
+
+	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, t: t, config: config };
 } )();
 
 /**
@@ -2810,7 +2978,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {
