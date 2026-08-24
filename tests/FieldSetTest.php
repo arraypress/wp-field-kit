@@ -11,6 +11,7 @@ namespace ArrayPress\FieldKit\Tests;
 
 use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Context\PostMetaContext;
+use ArrayPress\FieldKit\Context\ArrayContext;
 use ArrayPress\FieldKit\FieldSet;
 use PHPUnit\Framework\TestCase;
 
@@ -572,6 +573,43 @@ final class FieldSetTest extends TestCase {
 			[ 'text/css', 'text/html' ],
 			$set->dependencies()['code_editors']
 		);
+	}
+
+
+	/**
+	 * A field's own sanitize_callback replaces its type's.
+	 *
+	 * The key is listed on Field as common, so a consumer reading that list
+	 * expects it to work on any field. Only `custom` honoured it, which made
+	 * it true of one type and documented for all of them.
+	 *
+	 * Replaces rather than runs after: someone who supplies one has an
+	 * opinion about the whole value, and cleaning it first would mean they
+	 * never see what was actually submitted.
+	 */
+	public function test_a_sanitize_callback_replaces_the_types(): void {
+		$context = new ArrayContext( [] );
+
+		$set = new FieldSet(
+			[
+				'count' => [
+					'type'              => 'number',
+					'max'               => 10,
+					'sanitize_callback' => static fn( $value ) => 'saw ' . $value,
+				],
+				'plain' => [ 'type' => 'number', 'max' => 10 ],
+			],
+			$context,
+			''
+		);
+
+		$set->save( [ 'count' => '9999', 'plain' => '9999' ] );
+
+		// The callback saw the raw value, not one already clamped to 10.
+		$this->assertSame( 'saw 9999', $context->values()['count'] );
+
+		// And a field without one is still clamped by its type.
+		$this->assertSame( 10, $context->values()['plain'] );
 	}
 
 }

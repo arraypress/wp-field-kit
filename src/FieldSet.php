@@ -375,7 +375,20 @@ final class FieldSet {
 				continue;
 			}
 
-			$value = $field->type()->sanitize( $input[ $field->key() ] ?? null, $field );
+			$raw = $input[ $field->key() ] ?? null;
+
+			// A consumer's own cleaning, which replaces the type's rather
+			// than running after it: someone who supplies one has an opinion
+			// about the whole value, and running the type's first would mean
+			// they never see what was actually submitted. The key is listed
+			// on Field as common, so every type has to honour it — only
+			// `custom` did, which made it true of one type and documented for
+			// all of them.
+			$override = $field->get( 'sanitize_callback' );
+
+			$value = is_callable( $override )
+				? $override( $raw, $field )
+				: $field->type()->sanitize( $raw, $field );
 
 			if ( $this->is_empty( $value ) ) {
 				$this->context->delete( $object_id, $field );
