@@ -34,10 +34,20 @@
 
 /* Core sets .form-field input[type="text"] to 95% at specificity 0,2,1, which
    a bare class loses to — so on a term screen the input was narrower than the
-   control around it and the arrow floated outside the box. */
+   control around it and the arrow, positioned against the control, floated
+   outside the box. The element is in the selector to match that specificity;
+   the kit's stylesheet loads after core's, so an equal one wins. */
 input.field-kit__combobox-input,
 .form-field input.field-kit__combobox-input {
 	width: 100%;
+}
+
+/* And the control itself matches the width core gives the inputs beside it,
+   rather than the kit's own cap — a dropdown two thirds the width of the
+   text field above it reads as a different kind of field. */
+.form-field .field-kit__combobox {
+	width: 95%;
+	max-width: none;
 }
 
 /* Core's .description carries the colour and size; only the spacing differs

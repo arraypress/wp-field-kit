@@ -72,16 +72,26 @@ final class Assets {
 
 		self::$registered = true;
 
-		$handle  = Runtime::handle();
-		$version = $this->version();
+		$handle = Runtime::handle();
 
-		wp_register_style( $handle, $this->url . '/css/field-kit.css', [ 'dashicons' ], $version );
+		wp_register_style(
+			$handle,
+			$this->url . '/css/field-kit.css',
+			[ 'dashicons' ],
+			$this->version( 'css/field-kit.css' )
+		);
 
 		// jquery is a base dependency even though the kit is vanilla: several
 		// of the core controls it drives — the colour picker above all — are
 		// jQuery plugins, and a script that runs before them finds nothing to
 		// call and fails without a word.
-		wp_register_script( $handle, $this->url . '/js/field-kit.js', [ 'jquery' ], $version, true );
+		wp_register_script(
+			$handle,
+			$this->url . '/js/field-kit.js',
+			[ 'jquery' ],
+			$this->version( 'js/field-kit.js' ),
+			true
+		);
 
 		wp_add_inline_script(
 			$handle,
@@ -222,17 +232,25 @@ final class Assets {
 	}
 
 	/**
-	 * A cache-busting version.
+	 * A cache-busting version for one asset.
 	 *
-	 * The file's modification time rather than a constant, so an edit during
-	 * development is picked up without bumping anything by hand.
+	 * The file's own modification time rather than a constant, so an edit
+	 * during development is picked up without bumping anything by hand.
+	 *
+	 * Per file, and that is the whole point. Both assets used to share the
+	 * script's mtime, so a stylesheet-only change kept the version it already
+	 * had and every browser went on serving the cached copy. A CSS fix then
+	 * looked like a CSS fix that did not work — repeatedly, and there is no
+	 * way to tell that apart from a rule that loses on specificity.
+	 *
+	 * @param string $relative Path under the assets directory.
 	 *
 	 * @return string
 	 */
-	private function version(): string {
-		$script = $this->path . '/js/field-kit.js';
+	private function version( string $relative ): string {
+		$file = $this->path . '/' . $relative;
 
-		return file_exists( $script ) ? (string) filemtime( $script ) : '1.0.0';
+		return file_exists( $file ) ? (string) filemtime( $file ) : '1.0.0';
 	}
 
 	/**
