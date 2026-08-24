@@ -52,6 +52,10 @@ final class StylesheetTest extends TestCase {
 		'field-kit__field--heading',
 		'field-kit__field--locked',
 
+		// LicenseType: 'field-kit__license-state--' . ( active ? 'active' : 'inactive' )
+		'field-kit__license-state--active',
+		'field-kit__license-state--inactive',
+
 		// Modifiers a consumer opts into.
 		'field-kit__radio-group--inline',
 		'field-kit__checkbox-group--inline',
@@ -179,7 +183,11 @@ final class StylesheetTest extends TestCase {
 			while ( false !== strrpos( $stem, '-' ) ) {
 				$stem = substr( $stem, 0, strrpos( $stem, '-' ) + 1 );
 
-				if ( str_contains( $source, "'" . $stem . "'" ) ) {
+				// Either concatenated onto — 'field-kit__repeater-' . $action —
+				// or interpolated by sprintf, which is the same statement
+				// written the other way and is how most of the kit builds
+				// markup: 'field-kit__license-state--%s'.
+				if ( str_contains( $source, "'" . $stem . "'" ) || str_contains( $source, $stem . '%s' ) ) {
 					$found = true;
 					break;
 				}
