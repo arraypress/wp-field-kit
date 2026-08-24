@@ -155,6 +155,13 @@ abstract class AbstractRelationalType extends SelectType {
 			return array_values( array_filter( array_map( 'absint', (array) $value ) ) );
 		}
 
-		return absint( is_array( $value ) ? reset( $value ) : $value );
+		$id = absint( is_array( $value ) ? reset( $value ) : $value );
+
+		// Nothing selected comes back as '' rather than 0, the same as an
+		// emptied media field. Zero is a value as far as the field set is
+		// concerned — an unticked checkbox deliberately stores it — so
+		// returning it here writes a post id of 0 for every relational field
+		// nobody touched, and get_the_title( 0 ) is not a post that exists.
+		return 0 === $id ? '' : $id;
 	}
 }

@@ -105,6 +105,45 @@ final class FieldSetTest extends TestCase {
 	}
 
 	/**
+	 * A relational field with nothing selected stores nothing.
+	 *
+	 * Zero is a value to the field set, deliberately — an unticked checkbox
+	 * stores it. A relational type returning it for an empty select is how a
+	 * page nobody touched ends up holding a post id of 0 for every post,
+	 * page, user and term field on it. The media types learned this first;
+	 * these had not.
+	 */
+	public function test_an_empty_relational_field_stores_nothing(): void {
+		[ $set, $context ] = $this->option_set(
+			[
+				'related_post' => [ 'type' => 'post' ],
+				'author'       => [ 'type' => 'user' ],
+				'category'     => [ 'type' => 'taxonomy' ],
+			]
+		);
+
+		$set->save(
+			[
+				'related_post' => '',
+				'author'       => '0',
+			]
+		);
+
+		$this->assertSame( [], $context->values() );
+	}
+
+	/**
+	 * A relational field that has a selection stores the id.
+	 */
+	public function test_a_relational_field_stores_its_id(): void {
+		[ $set, $context ] = $this->option_set( [ 'related_post' => [ 'type' => 'post' ] ] );
+
+		$set->save( [ 'related_post' => '42' ] );
+
+		$this->assertSame( [ 'related_post' => 42 ], $context->values() );
+	}
+
+	/**
 	 * A field whose conditions fail is removed, not stored.
 	 *
 	 * The script hides it, but nothing stops a submission carrying it.
