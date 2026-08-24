@@ -1507,6 +1507,44 @@ select.field-kit__select[multiple] {
 	color: #007017;
 }
 
+/* The licence's own state, beside the button.
+
+   A shape and a word, not a colour on its own: "activated" is the sort of
+   thing a plugin conveys with a green dot and nothing else, which conveys
+   nothing at all to anyone who cannot see the green. The colours here are
+   core's — #007017 and #646970, the same pair the status messages above use. */
+.field-kit__license-state {
+	display: inline-flex;
+	align-items: center;
+	gap: .2rem;
+	margin-left: .5rem;
+	font-size: 12px;
+	font-weight: 600;
+	vertical-align: middle;
+}
+
+.field-kit__license-state--active {
+	color: #007017;
+}
+
+.field-kit__license-state--inactive {
+	color: #646970;
+}
+
+.field-kit__license-state .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.field-kit__license-sites {
+	margin-left: .4rem;
+	color: #646970;
+	font-size: 12px;
+	vertical-align: middle;
+}
+
 .field-kit__status--error {
 	color: #b32d2e;
 }

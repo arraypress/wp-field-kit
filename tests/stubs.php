@@ -369,3 +369,9 @@ if ( ! function_exists( 'wp_kses' ) ) {
 		return strip_tags( (string) $content, $tags );
 	}
 }
+
+if ( ! function_exists( 'number_format_i18n' ) ) {
+	function number_format_i18n( $number, $decimals = 0 ) {
+		return number_format( (float) $number, (int) $decimals );
+	}
+}

@@ -52,8 +52,18 @@ final class LicenseType extends AbstractInputType {
 		$button = new Attributes();
 		$button->set( 'type', 'button' );
 		$button->add_class( 'button', 'field-kit__license-action' );
-		$names  = (array) $field->get( 'action_names', [] );
-		$local  = $active ? 'deactivate' : 'activate';
+
+		// Deactivating is the destructive half, and is drawn the way core
+		// draws a destructive bordered button. Activating is an ordinary
+		// secondary action — the state is told by the badge beside it and by
+		// the status text, not by making the button green, because a control
+		// coloured for the state it is *in* rather than the action it
+		// performs is the classic way to get a licence deactivated by
+		// accident.
+		$button->set_if( $active, 'class', 'field-kit__button--delete' );
+
+		$names = (array) $field->get( 'action_names', [] );
+		$local = $active ? 'deactivate' : 'activate';
 
 		$button->set( 'data-action', (string) ( $names[ $local ] ?? '' ) );
 		$button->set( 'data-payload-from', $field->input_id() );
@@ -62,13 +72,60 @@ final class LicenseType extends AbstractInputType {
 		$button->set( 'data-field', $field->key() );
 
 		return sprintf(
-			'<div class="field-kit__license">%s <button%s>%s</button>' .
+			'<div class="field-kit__license">%s <button%s>%s</button>%s' .
 			'<span class="spinner"></span>' .
 			'<p class="field-kit__license-status description" aria-live="polite">%s</p></div>',
 			parent::render( $field, $attributes ),
 			$button->render(),
 			esc_html( $active ? __( 'Deactivate', 'arraypress' ) : __( 'Activate', 'arraypress' ) ),
+			$this->render_state( $field, $active ),
 			esc_html( (string) $field->get( 'status_message', '' ) )
+		);
+	}
+
+	/**
+	 * The badge saying whether the licence is active, and how far it is used.
+	 *
+	 * Text and a shape, not a colour alone: "activated" is the sort of thing
+	 * a plugin conveys with a green dot and nothing else, which conveys
+	 * nothing to anyone who cannot see the green.
+	 *
+	 * `sites` is optional and takes the shape [ used, total ] — "1 of 3 sites"
+	 * — because a licence that is active *here* and exhausted everywhere else
+	 * is a different situation from one with room to spare, and the field is
+	 * where someone looks to find that out.
+	 *
+	 * @param Field $field  The field.
+	 * @param bool  $active Whether the licence is active.
+	 *
+	 * @return string
+	 */
+	private function render_state( Field $field, bool $active ): string {
+		if ( ! $active && ! $field->has( 'sites' ) ) {
+			return '';
+		}
+
+		$sites = (array) $field->get( 'sites', [] );
+		$usage = '';
+
+		if ( 2 === count( $sites ) ) {
+			$usage = sprintf(
+				/* translators: 1: sites the licence is active on, 2: sites it allows */
+				__( '%1$s of %2$s sites', 'arraypress' ),
+				number_format_i18n( (int) $sites[0] ),
+				number_format_i18n( (int) $sites[1] )
+			);
+		}
+
+		return sprintf(
+			'<span class="field-kit__license-state field-kit__license-state--%s">' .
+			'<span class="dashicons dashicons-%s" aria-hidden="true"></span>%s</span>%s',
+			$active ? 'active' : 'inactive',
+			$active ? 'yes-alt' : 'marker',
+			esc_html( $active ? __( 'Active', 'arraypress' ) : __( 'Not active', 'arraypress' ) ),
+			'' === $usage
+				? ''
+				: sprintf( '<span class="field-kit__license-sites">%s</span>', esc_html( $usage ) )
 		);
 	}
 
@@ -124,7 +181,7 @@ final class LicenseType extends AbstractInputType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'action_names', 'is_active', 'status_message' ]
+			[ 'action_names', 'is_active', 'sites', 'status_message' ]
 		);
 	}
 }
