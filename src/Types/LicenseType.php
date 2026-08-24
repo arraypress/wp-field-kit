@@ -66,6 +66,15 @@ final class LicenseType extends AbstractInputType {
 		$local = $active ? 'deactivate' : 'activate';
 
 		$button->set( 'data-action', (string) ( $names[ $local ] ?? '' ) );
+
+		// Both names, so the button can become the other one without a page
+		// load. An action that succeeds and leaves the field showing the
+		// state it was in before is an action that looks like it failed.
+		$button->set_if( isset( $names['activate'] ), 'data-action-activate', (string) ( $names['activate'] ?? '' ) );
+		$button->set_if( isset( $names['deactivate'] ), 'data-action-deactivate', (string) ( $names['deactivate'] ?? '' ) );
+
+		$button->set( 'data-label-activate', __( 'Activate', 'arraypress' ) );
+		$button->set( 'data-label-deactivate', __( 'Deactivate', 'arraypress' ) );
 		$button->set( 'data-payload-from', $field->input_id() );
 		$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/action' ) );
 		$button->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
@@ -77,7 +86,9 @@ final class LicenseType extends AbstractInputType {
 		// the screen — and the state badge somewhere between the button and
 		// the sentence, belonging to neither.
 		return sprintf(
-			'<div class="field-kit__license">' .
+			'<div class="field-kit__license"' .
+			' data-label-active="' . esc_attr__( 'Active', 'arraypress' ) . '"' .
+			' data-label-inactive="' . esc_attr__( 'Not active', 'arraypress' ) . '">' .
 			'<div class="field-kit__license-control">%s<button%s>%s</button><span class="spinner"></span></div>' .
 			'%s' .
 			'<p class="field-kit__license-status description" aria-live="polite">%s</p>' .
@@ -108,10 +119,6 @@ final class LicenseType extends AbstractInputType {
 	 * @return string
 	 */
 	private function render_state( Field $field, bool $active ): string {
-		if ( ! $active && ! $field->has( 'sites' ) ) {
-			return '';
-		}
-
 		$sites = (array) $field->get( 'sites', [] );
 		$usage = '';
 
@@ -124,16 +131,28 @@ final class LicenseType extends AbstractInputType {
 			);
 		}
 
+		// The seat count is a template as well as a value, so the script can
+		// rewrite it with new numbers without knowing how the sentence is
+		// worded — or which language it is in.
 		return sprintf(
-			'<div class="field-kit__license-meta">' .
+			'<div class="field-kit__license-meta" data-sites-template="%s">' .
 			'<span class="field-kit__license-state field-kit__license-state--%s">' .
-			'<span class="dashicons dashicons-%s" aria-hidden="true"></span>%s</span>%s</div>',
+			'<span class="dashicons dashicons-%s" aria-hidden="true"></span>' .
+			'<span class="field-kit__license-state-text">%s</span></span>' .
+			'<span class="field-kit__license-sites"%s>%s</span></div>',
+			esc_attr(
+				sprintf(
+					/* translators: 1: sites the licence is active on, 2: sites it allows */
+					__( '%1$s of %2$s sites', 'arraypress' ),
+					'%1$s',
+					'%2$s'
+				)
+			),
 			$active ? 'active' : 'inactive',
 			$active ? 'yes-alt' : 'marker',
 			esc_html( $active ? __( 'Active', 'arraypress' ) : __( 'Not active', 'arraypress' ) ),
-			'' === $usage
-				? ''
-				: sprintf( '<span class="field-kit__license-sites">%s</span>', esc_html( $usage ) )
+			'' === $usage ? ' hidden' : '',
+			esc_html( $usage )
 		);
 	}
 

@@ -47,7 +47,12 @@ final class LicenseTest extends TestCase {
 
 		$this->assertStringContainsString( '>Activate</button>', $html );
 		$this->assertStringNotContainsString( 'field-kit__button--delete', $html );
-		$this->assertStringNotContainsString( 'field-kit__license-state', $html );
+
+		// The badge is there, saying so. It used to be omitted entirely,
+		// which left an activation nothing to write into and the field stuck
+		// reading "Not active" until the page was reloaded.
+		$this->assertStringContainsString( 'field-kit__license-state--inactive', $html );
+		$this->assertStringContainsString( '>Not active</span>', $html );
 	}
 
 	/**
@@ -74,7 +79,8 @@ final class LicenseTest extends TestCase {
 		$html = $this->render( [ 'is_active' => true ] );
 
 		$this->assertMatchesRegularExpression(
-			'/field-kit__license-state[^>]*>\s*<span class="dashicons[^>]*aria-hidden="true"[^>]*><\/span>Active/',
+			'/field-kit__license-state[^>]*>\s*<span class="dashicons[^>]*aria-hidden="true"[^>]*><\/span>'
+			. '<span class="field-kit__license-state-text">Active/',
 			$html
 		);
 	}
@@ -92,9 +98,11 @@ final class LicenseTest extends TestCase {
 			$this->render( [ 'is_active' => true, 'sites' => [ 1, 3 ] ] )
 		);
 
-		// Not invented when it is not known.
-		$this->assertStringNotContainsString(
-			'field-kit__license-sites',
+		// Not invented when it is not known. The span is there — the script
+		// needs somewhere to put a count it is given — but it is empty and
+		// carries `hidden`, so nothing is shown and nothing is read out.
+		$this->assertStringContainsString(
+			'<span class="field-kit__license-sites" hidden></span>',
 			$this->render( [ 'is_active' => true ] )
 		);
 	}

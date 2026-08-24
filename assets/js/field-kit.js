@@ -2864,6 +2864,90 @@
 					preview.hidden = false;
 				}
 			}
+
+			// Or the new state of the field it acted on, which is what a
+			// licence activation has to hand back: an action that succeeds
+			// and leaves the field showing the state it was in before is an
+			// action that looks like it failed.
+			if ( result.success && result.data && result.data.state ) {
+				ActionButton.applyState( wrap, result.data.state );
+			}
+		},
+
+		/**
+		 * Put a field into the state a handler reported.
+		 *
+		 * Only the licence field has a state to be in; everything else is a
+		 * button that does something and says what happened. Written here
+		 * rather than in a module of its own because this is where the
+		 * response arrives, and a second listener for the same fetch would be
+		 * a second place for the two to drift apart.
+		 *
+		 * @param {Element} wrap  The field.
+		 * @param {Object}  state What it is now.
+		 */
+		applyState: function ( wrap, state ) {
+			var licence = wrap.querySelector( '.field-kit__license' );
+
+			if ( ! licence ) {
+				return;
+			}
+
+			var active = !! state.active;
+			var badge = wrap.querySelector( '.field-kit__license-state' );
+			var text = wrap.querySelector( '.field-kit__license-state-text' );
+			var icon = badge && badge.querySelector( '.dashicons' );
+			var button = wrap.querySelector( '.field-kit__license-action' );
+			var input = wrap.querySelector( '.field-kit__license-key' );
+			var meta = wrap.querySelector( '.field-kit__license-meta' );
+			var sites = wrap.querySelector( '.field-kit__license-sites' );
+
+			if ( badge ) {
+				badge.classList.toggle( 'field-kit__license-state--active', active );
+				badge.classList.toggle( 'field-kit__license-state--inactive', ! active );
+			}
+
+			if ( text ) {
+				text.textContent = active
+					? licence.dataset.labelActive
+					: licence.dataset.labelInactive;
+			}
+
+			if ( icon ) {
+				icon.classList.toggle( 'dashicons-yes-alt', active );
+				icon.classList.toggle( 'dashicons-marker', ! active );
+			}
+
+			if ( button ) {
+				button.textContent = active
+					? button.dataset.labelDeactivate
+					: button.dataset.labelActivate;
+
+				// The registered name of the *other* action, so the next
+				// press reaches the handler that undoes this one.
+				button.dataset.action = active
+					? ( button.dataset.actionDeactivate || '' )
+					: ( button.dataset.actionActivate || '' );
+
+				button.classList.toggle( 'field-kit__button--delete', active );
+			}
+
+			// The key is masked while a licence is active, and the box is
+			// read-only — there is nothing to type until it is released.
+			if ( input ) {
+				input.readOnly = active;
+
+				if ( typeof state.key === 'string' ) {
+					input.value = state.key;
+				}
+			}
+
+			if ( sites && meta && Array.isArray( state.sites ) && 2 === state.sites.length ) {
+				sites.hidden = false;
+				sites.textContent = ( meta.dataset.sitesTemplate || '%1$s of %2$s sites' )
+					.replace( '%1$s', String( state.sites[ 0 ] ) )
+					.replace( '%2$s', String( state.sites[ 1 ] ) );
+			}
 		}
 	};
 

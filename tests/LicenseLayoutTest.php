@@ -86,7 +86,7 @@ final class LicenseLayoutTest extends TestCase {
 	 * The badge and the seat count travel together.
 	 */
 	public function test_the_state_and_the_seat_count_share_a_row(): void {
-		preg_match( '{<div class="field-kit__license-meta">(.*?)</div>\s*<p}s', $this->render(), $row );
+		preg_match( '{<div class="field-kit__license-meta"[^>]*>(.*?)</div>\s*<p}s', $this->render(), $row );
 
 		$this->assertNotEmpty( $row );
 		$this->assertStringContainsString( 'license-state', $row[1] );

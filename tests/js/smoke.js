@@ -603,6 +603,144 @@ try {
 	}
 } )();
 
+/*
+ * A licence field takes the state its handler reported.
+ *
+ * The whole point of the field is to say whether the licence is active, so an
+ * activation that succeeds and leaves the badge reading "Not active" with a
+ * seat count of nought is the one outcome that must not happen — and it is
+ * exactly what shipped: the handler's answer went into the status line and
+ * nowhere else, and the field told the user to reload.
+ *
+ * Written against a stub rather than jsdom for the same reason as the rest of
+ * this file, but with real classList and textContent, because those are what
+ * is being asserted.
+ */
+( function () {
+	/**
+	 * An element that remembers what was done to it.
+	 *
+	 * @param {string} selector What querySelector call should return it.
+	 *
+	 * @return {Object} The element.
+	 */
+	function node( selector ) {
+		const classes = new Set();
+
+		return {
+			selector,
+			dataset: {},
+			textContent: '',
+			hidden: false,
+			readOnly: false,
+			value: '',
+			classList: {
+				add: ( name ) => classes.add( name ),
+				remove: ( name ) => classes.delete( name ),
+				contains: ( name ) => classes.has( name ),
+				toggle: ( name, on ) => ( on ? classes.add( name ) : classes.delete( name ) ),
+			},
+			querySelector: () => null,
+		};
+	}
+
+	const licence = node( '.field-kit__license' );
+	const badge = node( '.field-kit__license-state' );
+	const text = node( '.field-kit__license-state-text' );
+	const icon = node( '.dashicons' );
+	const button = node( '.field-kit__license-action' );
+	const input = node( '.field-kit__license-key' );
+	const meta = node( '.field-kit__license-meta' );
+	const sites = node( '.field-kit__license-sites' );
+
+	licence.dataset.labelActive = 'Active';
+	licence.dataset.labelInactive = 'Not active';
+	meta.dataset.sitesTemplate = '%1$s of %2$s sites';
+	button.dataset.actionActivate = 'demo_activate';
+	button.dataset.actionDeactivate = 'demo_deactivate';
+	button.dataset.labelActivate = 'Activate';
+	button.dataset.labelDeactivate = 'Deactivate';
+	button.dataset.action = 'demo_activate';
+
+	badge.querySelector = ( one ) => ( '.dashicons' === one ? icon : null );
+	badge.classList.add( 'field-kit__license-state--inactive' );
+	icon.classList.add( 'dashicons-marker' );
+	sites.hidden = true;
+	text.textContent = 'Not active';
+
+	const found = [ licence, badge, text, button, input, meta, sites ];
+	const wrap = makeElement();
+
+	wrap.querySelector = ( one ) => found.find( ( each ) => each.selector === one ) || null;
+
+	const ActionButton = modules.ActionButton;
+
+	if ( typeof ActionButton.applyState !== 'function' ) {
+		console.error( '  ActionButton: applyState is gone, so a licence never leaves the state it loaded in' );
+		failures ++;
+	} else {
+		// Through report(), not applyState() directly. Testing the helper on
+		// its own is how the Reorder bug got past: the helper was correct and
+		// nothing called it. This is the path a real response takes.
+		const respond = ( state ) => ActionButton.report(
+			wrap,
+			null,
+			{ success: true, message: 'Done.', data: { state } }
+		);
+
+		respond( { active: true, key: '*********9012', sites: [ 1, 3 ] } );
+
+		if ( 'Active' !== text.textContent ) {
+			console.error( `  License: the badge still reads "${ text.textContent }" after activating` );
+			failures ++;
+		}
+
+		if ( ! badge.classList.contains( 'field-kit__license-state--active' )
+			|| badge.classList.contains( 'field-kit__license-state--inactive' ) ) {
+			console.error( '  License: the badge kept its inactive class after activating' );
+			failures ++;
+		}
+
+		if ( ! icon.classList.contains( 'dashicons-yes-alt' ) || icon.classList.contains( 'dashicons-marker' ) ) {
+			console.error( '  License: the badge icon did not change' );
+			failures ++;
+		}
+
+		if ( '1 of 3 sites' !== sites.textContent || sites.hidden ) {
+			console.error( `  License: the seat count reads "${ sites.textContent }" (hidden: ${ sites.hidden })` );
+			failures ++;
+		}
+
+		// The button has to become the other one, or the next press calls the
+		// handler that just ran.
+		if ( 'Deactivate' !== button.textContent || 'demo_deactivate' !== button.dataset.action ) {
+			console.error( `  License: the button is still "${ button.textContent }" (${ button.dataset.action })` );
+			failures ++;
+		}
+
+		if ( ! input.readOnly || '*********9012' !== input.value ) {
+			console.error( '  License: the key box is still editable, or still holds the typed key' );
+			failures ++;
+		}
+
+		// And back, which is not symmetrical for free: the reverse swap reads
+		// a different pair of data attributes.
+		respond( { active: false, key: 'AP-1234-5678-9012', sites: [ 0, 3 ] } );
+
+		if ( 'Not active' !== text.textContent
+			|| 'Activate' !== button.textContent
+			|| 'demo_activate' !== button.dataset.action
+			|| input.readOnly
+			|| '0 of 3 sites' !== sites.textContent
+			|| ! badge.classList.contains( 'field-kit__license-state--inactive' )
+			|| badge.classList.contains( 'field-kit__license-state--active' )
+			|| ! icon.classList.contains( 'dashicons-marker' ) ) {
+			console.error( '  License: deactivating does not put the field back' );
+			failures ++;
+		}
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );
