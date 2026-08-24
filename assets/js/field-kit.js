@@ -2801,6 +2801,7 @@
 		 */
 		payload: function ( button, wrap ) {
 			var payload = {};
+			var key = wrap.dataset ? wrap.dataset.fieldKey : '';
 
 			wrap.querySelectorAll( '[name]' ).forEach( function ( input ) {
 				if ( input.type === 'checkbox' || input.type === 'radio' ) {
@@ -2814,6 +2815,17 @@
 				var name = input.name.replace( /^.*\[([^\]]+)\]$/, '$1' );
 
 				payload[ name ] = input.value;
+
+				// And under `value`, for the field's own control.
+				//
+				// Otherwise a handler has to know the field key to find it,
+				// which differs per screen for the same field: a licence is
+				// `apfd_license` on a term screen and `apfd_every_license` on
+				// a settings page, so a handler written for one silently read
+				// nothing on the other and reported the box as empty.
+				if ( key && name === key ) {
+					payload.value = input.value;
+				}
 			} );
 
 			return payload;

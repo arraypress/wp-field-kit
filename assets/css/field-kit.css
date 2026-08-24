@@ -1343,15 +1343,23 @@ li.field-kit__repeater-row {
 	margin-left: 22px;
 }
 
-/* Admin notices land after the header, outside .wrap, so they need the inset
-   too. Core's own figures for these screens. */
-/* Core's own is `25px 20px 15px 22px`, because on its two screens the notice
-   sits directly in #wpbody-content with nothing else supplying the gutter.
-   Here the .wrap below already has one, so those numbers indent every notice
-   relative to the content underneath it. */
+/* Admin notices land after the header, outside .wrap, where nothing else
+   supplies a gutter — so they carry their own, lined up with the content
+   below rather than with core's figures for a page whose wrap sits
+   elsewhere. */
 .field-kit__page-screen .notice,
 .field-kit__page-screen .update-nag {
 	margin: 25px 0 15px;
+}
+
+/* Not the ones inside .wrap. `settings_errors()` prints "Settings saved."
+   there, the wrap already positions it, and core's own margin is what makes
+   it sit where every other settings page's does. The rule above is scoped to
+   the header's notices and this puts core's back for the rest. */
+.field-kit__page-screen .wrap .notice,
+.field-kit__page-screen .wrap div.updated,
+.field-kit__page-screen .wrap div.error {
+	margin: 5px 15px 2px;
 }
 
 .field-kit__page-screen .notice ~ .notice {
@@ -1380,6 +1388,12 @@ li.field-kit__repeater-row {
 
 	.field-kit__page-screen .notice,
 	.field-kit__page-screen .update-nag {
+		margin: 5px 0 15px;
+	}
+
+	.field-kit__page-screen .wrap .notice,
+	.field-kit__page-screen .wrap div.updated,
+	.field-kit__page-screen .wrap div.error {
 		margin: 5px 0 15px;
 	}
 

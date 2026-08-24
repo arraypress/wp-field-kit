@@ -528,6 +528,20 @@ try {
 	// That it exists is half of it; the other half is that dragover asks it.
 	// Testing the helper alone passes against a call site that has gone back
 	// to measuring vertically, which is exactly the bug.
+	/*
+	 * A handler is given the field's own value under `value`.
+	 *
+	 * Without it a handler has to know the field key to find it, and the key
+	 * differs per screen for the same field: a licence is `apfd_license` on a
+	 * term screen and `apfd_every_license` on a settings page, so a handler
+	 * written for one silently read nothing on the other and reported an
+	 * empty box no matter what had been typed into it.
+	 */
+	if ( ! /payload\.value = input\.value/.test( source ) ) {
+		console.error( '  ActionButton: the payload no longer carries the field\'s own value under `value`' );
+		failures ++;
+	}
+
 	if ( ! /past = Reorder\.isHorizontal\( over \)/.test( source ) ) {
 		console.error( '  Reorder: dragover no longer asks which way the list runs, so a grid is measured vertically' );
 		failures ++;
