@@ -4,6 +4,12 @@
 
     <file>src</file>
 
+    <!--
+        bin/verify-docs.php ships inside every plugin built on the kit, so it
+        is formatted to the same standard as src/.
+    -->
+    <file>bin</file>
+
     <arg name="extensions" value="php"/>
     <arg name="colors"/>
     <arg value="sp"/>
@@ -43,6 +49,15 @@
             would stop the autoloader finding them at all.
         -->
         <exclude-pattern>*</exclude-pattern>
+    </rule>
+
+    <rule ref="WordPress.Security.EscapeOutput">
+        <!--
+            bin/ is a command line program: it writes to a terminal, not to a
+            page, and esc_html() on a report line would print entities where
+            the operator expects text.
+        -->
+        <exclude-pattern>bin/*</exclude-pattern>
     </rule>
 
 </ruleset>

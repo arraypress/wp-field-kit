@@ -46,9 +46,6 @@ if ( ! class_exists( Registry::class ) ) {
 	exit( 1 );
 }
 
-// Stubs, so a config array containing __() can be evaluated at all.
-require_once __DIR__ . '/../tests/stubs.php';
-
 /*
  * A consuming library has a vocabulary of its own. Flyouts documents `header`
  * and `info_grid`, which are components it draws rather than field types the
@@ -179,11 +176,429 @@ function fenced_php( string $markdown ): array {
 }
 
 /**
- * Pull the field configurations out of a block and evaluate them.
+ * The value of a PHP array literal, without running it.
+ *
+ * Without running it, because this tool reads documentation, and
+ * documentation is untrusted the moment anyone but its author edits it. The
+ * obvious implementation *executes* whatever a README fence contains.
+ *
+ * There is a second reason. This file ships: Composer installs bin/ alongside
+ * src/, so it lands in the vendor tree of every plugin that depends on the
+ * kit, and the runtime code interpreter is the first thing a WordPress
+ * security scanner looks for. A dev tool is not worth a scanner warning on
+ * somebody's live site.
+ *
+ * So the literal is tokenized and walked. Only constants are recognised --
+ * strings, numbers, true/false/null, arrays of those, and the translation
+ * calls in TRANSLATION_CALLS -- and anything else throws, which puts a block
+ * containing a function call in the same bucket as one that will not parse:
+ * skipped, never run.
+ *
+ * @param string $literal A PHP array literal.
+ *
+ * @return mixed The value.
+ *
+ * @throws UnexpectedValueException When the literal is not constant.
+ */
+function literal_value( string $literal ) {
+	// The lenient mode on purpose: TOKEN_PARSE would raise on a literal that
+	// does not compile, and documentation is full of ones that do not. A stream
+	// of tokens that means nothing walks into the same refusal as any other
+	// non-constant expression.
+	$tokens = token_get_all( '<?php ' . $literal . ';' );
+
+	// Whitespace and comments carry nothing.
+	$tokens = array_values(
+		array_filter(
+			$tokens,
+			static fn( $token ) => ! is_array( $token )
+				|| ! in_array( $token[0], [ T_WHITESPACE, T_COMMENT, T_DOC_COMMENT, T_OPEN_TAG ], true )
+		)
+	);
+
+	$position = 0;
+	$value    = read_value( $tokens, $position );
+
+	// Everything but the trailing `;` should be consumed.
+	if ( $position < count( $tokens ) && ';' !== $tokens[ $position ] ) {
+		throw new UnexpectedValueException( 'Trailing tokens.' );
+	}
+
+	return $value;
+}
+
+/**
+ * Read one constant value, advancing the position past it.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor, by reference.
+ *
+ * @return mixed
+ *
+ * @throws UnexpectedValueException When the next token is not a constant.
+ */
+function read_value( array $tokens, int &$position ) {
+	$token = $tokens[ $position ] ?? null;
+
+	if ( null === $token ) {
+		throw new UnexpectedValueException( 'Ran out of tokens.' );
+	}
+
+	// A negative number is a minus and a number, not one token.
+	if ( '-' === $token || '+' === $token ) {
+		++$position;
+		$number = read_value( $tokens, $position );
+
+		if ( ! is_int( $number ) && ! is_float( $number ) ) {
+			throw new UnexpectedValueException( 'Sign on a non-number.' );
+		}
+
+		return '-' === $token ? -$number : $number;
+	}
+
+	if ( '[' === $token ) {
+		return read_array( $tokens, $position );
+	}
+
+	if ( ! is_array( $token ) ) {
+		throw new UnexpectedValueException( 'Not a constant: ' . $token );
+	}
+
+	++$position;
+
+	switch ( $token[0] ) {
+		case T_CONSTANT_ENCAPSED_STRING:
+			return unquote( $token[1] );
+
+		case T_LNUMBER:
+			return (int) $token[1];
+
+		case T_DNUMBER:
+			return (float) $token[1];
+
+		case T_ARRAY:
+			// The long form: array( ... ).
+			if ( '(' !== ( $tokens[ $position ] ?? null ) ) {
+				throw new UnexpectedValueException( 'array without a bracket.' );
+			}
+
+			return read_array( $tokens, $position, ')' );
+
+		case T_NS_SEPARATOR:
+			// A leading backslash on a global function.
+			return read_value( $tokens, $position );
+
+		case T_STRING:
+			$name = strtolower( $token[1] );
+
+			if ( in_array( $name, TRANSLATION_CALLS, true ) ) {
+				return read_translation( $tokens, $position );
+			}
+
+			return match ( $name ) {
+				'true'  => true,
+				'false' => false,
+				'null'  => null,
+				default => throw new UnexpectedValueException( 'Not a constant: ' . $token[1] ),
+			};
+	}
+
+	throw new UnexpectedValueException( 'Not a constant: ' . token_name( $token[0] ) );
+}
+
+/**
+ * The translation functions a documented configuration may call.
+ *
+ * These are the only calls recognised, and what is taken from them is the
+ * literal being translated -- the tool never loads WordPress, and a label's
+ * text domain has no bearing on whether the key it sits under is real.
+ *
+ * Anything outside this list throws, so a configuration built by a function
+ * call is skipped rather than run.
+ */
+const TRANSLATION_CALLS = [ '__', '_x', '_n', '_nx', 'esc_html__', 'esc_attr__', 'esc_html_x', 'esc_attr_x' ];
+
+/**
+ * Read a translation call, returning the string it wraps.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor, by reference, on the opening parenthesis.
+ *
+ * @return string
+ *
+ * @throws UnexpectedValueException When the arguments are not constant.
+ */
+function read_translation( array $tokens, int &$position ): string {
+	if ( '(' !== ( $tokens[ $position ] ?? null ) ) {
+		throw new UnexpectedValueException( 'A translation function without arguments.' );
+	}
+
+	++$position;
+
+	$arguments = [];
+
+	while ( ')' !== ( $tokens[ $position ] ?? null ) ) {
+		$arguments[] = read_value( $tokens, $position );
+
+		if ( ',' === ( $tokens[ $position ] ?? null ) ) {
+			++$position;
+		}
+	}
+
+	// Past the closing parenthesis.
+	++$position;
+
+	if ( [] === $arguments || ! is_string( $arguments[0] ) ) {
+		throw new UnexpectedValueException( 'A translation function without a string.' );
+	}
+
+	return $arguments[0];
+}
+
+/**
+ * Read an array literal, advancing past its closing bracket.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor, by reference, on the opening bracket.
+ * @param string                                      $close    The closing character.
+ *
+ * @return array<array-key, mixed>
+ *
+ * @throws UnexpectedValueException When the array is not constant.
+ */
+function read_array( array $tokens, int &$position, string $close = ']' ): array {
+	// Past the opening bracket.
+	++$position;
+
+	$array = [];
+
+	while ( true ) {
+		$token = $tokens[ $position ] ?? null;
+
+		if ( null === $token ) {
+			throw new UnexpectedValueException( 'Unclosed array.' );
+		}
+
+		if ( $close === $token ) {
+			++$position;
+
+			return $array;
+		}
+
+		$before = $position;
+		$value  = read_entry( $tokens, $position );
+
+		// `key => value` rather than a bare value.
+		if ( is_array( $tokens[ $position ] ?? null ) && T_DOUBLE_ARROW === $tokens[ $position ][0] ) {
+			++$position;
+
+			$entry = read_entry( $tokens, $position );
+
+			if ( is_int( $value ) || is_string( $value ) ) {
+				$array[ $value ] = $entry;
+			}
+
+			// A key that is itself an expression -- a constant, a variable --
+			// has nothing to file the entry under, so the entry is dropped.
+			// It has been read either way, which is what keeps the cursor in
+			// the right place.
+		} else {
+			$array[] = $value;
+		}
+
+		// A comma, or the end.
+		if ( ',' === ( $tokens[ $position ] ?? null ) ) {
+			++$position;
+		}
+
+		// An array that was never closed leaves the cursor on a token no part
+		// of this knows how to consume -- `[` and then the end of the block,
+		// which happens whenever a documentation fence is a fragment. Without
+		// this the loop appends nothing for ever and the tool dies on memory
+		// rather than skipping the block.
+		if ( $position === $before ) {
+			throw new UnexpectedValueException( 'Unclosed array.' );
+		}
+	}
+}
+
+/**
+ * Read one entry of an array, constant or not.
+ *
+ * A documented configuration is mostly literals, but not entirely: a
+ * `sanitize_callback` is a closure, an `options` is often a function that
+ * queries something, and a `logo` is a plugins_url() call. None of them can
+ * be read without running them, and none of them need to be -- what is being
+ * checked is that the *key* is real, not what the value computes to.
+ *
+ * So a value that is not constant is stepped over and comes back as null,
+ * which is what `unknown_keys()` wants anyway: the key is present, and its
+ * value is nothing this tool has an opinion about.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor, by reference.
+ *
+ * @return mixed The value, or null where it is not constant.
+ */
+function read_entry( array $tokens, int &$position ) {
+	$start = $position;
+
+	if ( ! starts_constant( $tokens, $position ) ) {
+		return skip_expression( $tokens, $position );
+	}
+
+	$value = read_value( $tokens, $position );
+
+	// The constant may be the first part of something larger: `'a' . $b`, or
+	// `__( 'Save' ) . '!'`. If what follows is not an entry boundary then the
+	// value read is not the entry's value, so the whole thing is stepped over.
+	$next = $tokens[ $position ] ?? null;
+
+	$ends = null === $next
+		|| ',' === $next
+		|| ']' === $next
+		|| ')' === $next
+		|| ';' === $next
+		|| ( is_array( $next ) && T_DOUBLE_ARROW === $next[0] );
+
+	if ( ! $ends ) {
+		$position = $start;
+
+		return skip_expression( $tokens, $position );
+	}
+
+	return $value;
+}
+
+/**
+ * Whether the token at the cursor begins a constant.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor.
+ *
+ * @return bool
+ */
+function starts_constant( array $tokens, int $position ): bool {
+	$token = $tokens[ $position ] ?? null;
+
+	if ( null === $token ) {
+		return false;
+	}
+
+	if ( in_array( $token, [ '[', '-', '+' ], true ) ) {
+		return true;
+	}
+
+	if ( ! is_array( $token ) ) {
+		return false;
+	}
+
+	// A leading backslash on a global function.
+	if ( T_NS_SEPARATOR === $token[0] ) {
+		return starts_constant( $tokens, $position + 1 );
+	}
+
+	if ( in_array( $token[0], [ T_CONSTANT_ENCAPSED_STRING, T_LNUMBER, T_DNUMBER, T_ARRAY ], true ) ) {
+		return true;
+	}
+
+	if ( T_STRING !== $token[0] ) {
+		return false;
+	}
+
+	$name = strtolower( $token[1] );
+
+	// A call is constant only if it is one of the translation functions;
+	// anything else would have to be run to know its value.
+	if ( '(' === ( $tokens[ $position + 1 ] ?? null ) ) {
+		return in_array( $name, TRANSLATION_CALLS, true );
+	}
+
+	return in_array( $name, [ 'true', 'false', 'null' ], true );
+}
+
+/**
+ * Step over an expression, stopping at the entry boundary.
+ *
+ * Balanced across every bracket kind, so a closure body, an argument list and
+ * a nested array all pass by whole. Nothing in here is run.
+ *
+ * @param array<int, array{0: int, 1: string}|string> $tokens   The token stream.
+ * @param int                                         $position Cursor, by reference.
+ *
+ * @return null Always, being the stand-in for a value that is not constant.
+ */
+function skip_expression( array $tokens, int &$position ) {
+	$depth = 0;
+	$count = count( $tokens );
+
+	for ( ; $position < $count; $position++ ) {
+		$token = $tokens[ $position ];
+
+		// `{$name}` inside a double-quoted string opens with a token rather
+		// than a bare brace, and closes with a bare one.
+		if ( is_array( $token ) ) {
+			if ( in_array( $token[0], [ T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES ], true ) ) {
+				++$depth;
+			}
+
+			continue;
+		}
+
+		if ( '(' === $token || '[' === $token || '{' === $token ) {
+			++$depth;
+			continue;
+		}
+
+		if ( ')' === $token || ']' === $token || '}' === $token ) {
+			// The array's own closing bracket: the entry ended before it.
+			if ( 0 === $depth ) {
+				return null;
+			}
+
+			--$depth;
+			continue;
+		}
+
+		if ( 0 === $depth && ( ',' === $token || ';' === $token ) ) {
+			return null;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * The value of a quoted string token.
+ *
+ * Only the escapes a configuration example uses. A double-quoted string
+ * carrying an interpolation is not this token type, so it never arrives here.
+ *
+ * @param string $token The token text, quotes included.
+ *
+ * @return string
+ */
+function unquote( string $token ): string {
+	$quote = $token[0];
+	$body  = substr( $token, 1, -1 );
+
+	if ( "'" === $quote ) {
+		return str_replace( [ '\\\\', "\\'" ], [ '\\', "'" ], $body );
+	}
+
+	return str_replace(
+		[ '\\\\', '\\"', '\\n', '\\t', '\\r', '\\$' ],
+		[ '\\', '"', "\n", "\t", "\r", '$' ],
+		$body
+	);
+}
+
+/**
+ * Pull the field configurations out of a block and read their values.
  *
  * The call shapes differ across the libraries — a taxonomy name and a config,
  * a list of post types and a config, or a single config on its own — so every
- * top-level array literal in a register_*() call is evaluated and the ones
+ * top-level array literal in a register_*() call is read and the ones
  * carrying `fields`, `panels` or `steps` are kept. Nothing is guessed at from
  * position.
  *
@@ -228,7 +643,7 @@ function configs_in( string $code ): array {
 	$length = strlen( $code );
 
 	foreach ( $calls[0] as $call ) {
-		// Walk the argument list, evaluating each array literal at depth one.
+		// Walk the argument list, reading each array literal at depth one.
 		$i     = (int) $call[1] + strlen( (string) $call[0] );
 		$depth = 0;
 
@@ -261,12 +676,12 @@ function configs_in( string $code ): array {
 			$literal = substr( $code, $open, $i - $open + 1 );
 
 			try {
-				// A parse error is a ParseError in PHP 8, which @ does not
-				// suppress. Documentation is full of placeholders — `callable`,
-				// `/* ... */` — that are prose rather than code, and a block
-				// that will not parse is skipped rather than reported: this
-				// checks what a reader would copy, not what they would read.
-				$value = eval( 'return ' . $literal . ';' ); // phpcs:ignore Squiz.PHP.Eval.Discouraged
+				// Documentation is full of placeholders — `callable`,
+				// `/* ... */`, `$my_callback` — that are prose rather than
+				// code, and a literal that is not constant is skipped rather
+				// than reported: this checks what a reader would copy, not
+				// what they would read.
+				$value = literal_value( $literal );
 			} catch ( \Throwable $error ) {
 				continue;
 			}
