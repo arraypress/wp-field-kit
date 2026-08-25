@@ -184,7 +184,8 @@ function fenced_php( string $markdown ): array {
  * The call shapes differ across the libraries — a taxonomy name and a config,
  * a list of post types and a config, or a single config on its own — so every
  * top-level array literal in a register_*() call is evaluated and the ones
- * carrying `fields` or `panels` are kept. Nothing is guessed at from position.
+ * carrying `fields`, `panels` or `steps` are kept. Nothing is guessed at from
+ * position.
  *
  * @param string $code A fenced PHP block.
  *
@@ -270,7 +271,7 @@ function configs_in( string $code ): array {
 				continue;
 			}
 
-			if ( is_array( $value ) && ( isset( $value['fields'] ) || isset( $value['panels'] ) ) ) {
+			if ( is_array( $value ) && ( isset( $value['fields'] ) || isset( $value['panels'] ) || isset( $value['steps'] ) ) ) {
 				$found[] = $value;
 			} elseif ( is_field_map( $value ) ) {
 				// Four of the five libraries take the field map as an argument
@@ -383,12 +384,18 @@ foreach ( $files as $file ) {
 		foreach ( configs_in( $code ) as $config ) {
 			$fields = $config['fields'] ?? null;
 
-			// A tabbed metabox puts its fields inside panels.
-			if ( null === $fields && isset( $config['panels'] ) && is_array( $config['panels'] ) ) {
+			// A tabbed metabox puts its fields inside panels, and a setup
+			// wizard inside steps. Both are a list of named groups with a
+			// `fields` map in each.
+			foreach ( [ 'panels', 'steps' ] as $container ) {
+				if ( null !== $fields || ! isset( $config[ $container ] ) || ! is_array( $config[ $container ] ) ) {
+					continue;
+				}
+
 				$fields = [];
 
-				foreach ( $config['panels'] as $panel ) {
-					$fields = array_merge( $fields, (array) ( $panel['fields'] ?? [] ) );
+				foreach ( $config[ $container ] as $group ) {
+					$fields = array_merge( $fields, (array) ( $group['fields'] ?? [] ) );
 				}
 			}
 
