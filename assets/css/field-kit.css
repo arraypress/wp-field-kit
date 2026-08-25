@@ -1503,13 +1503,14 @@ li.field-kit__repeater-row {
  * stylesheet of its own.
  * -------------------------------------------------------------------- */
 
+/* No rule above it and no gap over that. Screen Options is already a panel
+   with an edge of its own, so a second line inside it divides a thing that
+   was not two things. */
 .field-kit__screen-tools {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
 	gap: 1.5rem 2.5rem;
 	padding: .75rem 0 1rem;
-	border-top: 1px solid #dcdcde;
-	margin-top: .75rem;
 }
 
 .field-kit__screen-tool {
