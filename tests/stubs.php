@@ -62,15 +62,34 @@ if ( ! function_exists( 'wp_kses_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/*
+	 * Core drops a script or style element's *content* as well as its tags,
+	 * which strip_tags() alone does not — so the stub used to leave
+	 * "Acme alert(1)" where WordPress leaves "Acme", and a test asserting the
+	 * stub encoded the wrong expectation in the dangerous direction.
+	 */
+	function wp_strip_all_tags( $text, $remove_breaks = false ) {
+		$text = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text ) ?? '';
+		$text = strip_tags( $text );
+
+		if ( $remove_breaks ) {
+			$text = preg_replace( '/[\r\n\t ]+/', ' ', $text ) ?? '';
+		}
+
+		return trim( $text );
+	}
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( $str ) {
-		return trim( preg_replace( '/[\r\n\t ]+/', ' ', strip_tags( (string) $str ) ) ?? '' );
+		return trim( preg_replace( '/[\r\n\t ]+/', ' ', wp_strip_all_tags( (string) $str ) ) ?? '' );
 	}
 }
 
 if ( ! function_exists( 'sanitize_textarea_field' ) ) {
 	function sanitize_textarea_field( $str ) {
-		return trim( strip_tags( (string) $str ) );
+		return trim( wp_strip_all_tags( (string) $str ) );
 	}
 }
 
