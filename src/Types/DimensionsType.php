@@ -18,6 +18,11 @@ use ArrayPress\FieldKit\Field;
  * Each box carries its own visible label. Placeholder-only labelling is the
  * usual shortcut here and it fails twice over: the placeholder disappears the
  * moment someone types, and it is not a label at all to assistive technology.
+ *
+ * A placeholder *alongside* those labels is a different thing and is allowed:
+ * it says what the value should look like — `0.00`, `30` — which the label
+ * cannot. `placeholder` gives every box the same one; `placeholders`, keyed by
+ * part, gives them their own.
  */
 final class DimensionsType extends AbstractType {
 
@@ -62,6 +67,9 @@ final class DimensionsType extends AbstractType {
 		$labels = $this->part_labels();
 		$parts  = (array) $field->get( 'parts', [ 'width', 'height' ] );
 		$unit   = (string) $field->get( 'unit', '' );
+
+		// Per part, falling back to the single placeholder for all of them.
+		$hints  = (array) $field->get( 'placeholders', [] );
 		$markup = '';
 		$first  = true;
 
@@ -75,6 +83,10 @@ final class DimensionsType extends AbstractType {
 			$box->set_if( $field->has( 'min' ), 'min', $field->get( 'min' ) );
 			$box->set_if( $field->has( 'max' ), 'max', $field->get( 'max' ) );
 			$box->set_if( $field->has( 'step' ), 'step', $field->get( 'step' ) );
+
+			$hint = (string) ( $hints[ $part ] ?? $field->placeholder() );
+
+			$box->set_if( '' !== $hint, 'placeholder', $hint );
 
 			$markup .= sprintf(
 				'<div class="field-kit__dimensions-part">%s<input%s /></div>',
@@ -155,7 +167,18 @@ final class DimensionsType extends AbstractType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'max', 'min', 'parts', 'step', 'unit' ]
+			[ 'max', 'min', 'parts', 'placeholders', 'step', 'unit' ]
 		);
+	}
+
+	/**
+	 * Each box takes a placeholder of its own.
+	 *
+	 * Not as a label — they have those — but as an example of the value.
+	 *
+	 * @return bool
+	 */
+	public function supports_placeholder(): bool {
+		return true;
 	}
 }

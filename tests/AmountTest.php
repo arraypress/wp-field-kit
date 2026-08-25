@@ -11,6 +11,7 @@ namespace ArrayPress\FieldKit\Tests;
 
 use ArrayPress\FieldKit\Context\ArrayContext;
 use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Types\DimensionsType;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -207,4 +208,61 @@ final class AmountTest extends TestCase {
 
 		$this->assertSame( 0.0, $context->values()['rate'] );
 	}
+	/**
+	 * A dimensions box takes a placeholder alongside its label.
+	 *
+	 * The type refused one on the grounds that placeholder-only labelling is
+	 * bad, which it is — and each box already has a visible label, so the
+	 * objection did not apply. What was left was three empty boxes with no
+	 * indication of the format wanted.
+	 */
+	public function test_a_dimension_takes_a_placeholder(): void {
+		$html = $this->render(
+			[
+				'type'        => 'dimensions',
+				'label'       => 'Size',
+				'parts'       => [ 'width', 'height' ],
+				'placeholder' => '0.00',
+			]
+		);
+
+		$this->assertSame( 2, substr_count( $html, 'placeholder="0.00"' ) );
+
+		// And the labels are still there: the placeholder is an example of
+		// the value, not a replacement for the name of it.
+		$this->assertStringContainsString( 'Width', $html );
+		$this->assertStringContainsString( 'Height', $html );
+	}
+
+	/**
+	 * And each box can have its own.
+	 */
+	public function test_each_dimension_can_have_its_own_placeholder(): void {
+		$html = $this->render(
+			[
+				'type'         => 'dimensions',
+				'label'        => 'Size',
+				'parts'        => [ 'width', 'height' ],
+				'placeholder'  => '0',
+				'placeholders' => [ 'height' => '30' ],
+			]
+		);
+
+		$this->assertStringContainsString( 'placeholder="30"', $html );
+		$this->assertSame( 1, substr_count( $html, 'placeholder="0"' ) );
+	}
+
+	/**
+	 * And says so when asked.
+	 *
+	 * Asserted separately because it is not load-bearing: the type renders
+	 * its own boxes and reads the placeholder itself, so flipping this to
+	 * false changes no markup. It is still the answer the type gives anyone
+	 * who asks what it accepts, and an answer that contradicts the behaviour
+	 * is worse than no answer.
+	 */
+	public function test_dimensions_declares_that_it_takes_a_placeholder(): void {
+		$this->assertTrue( ( new DimensionsType() )->supports_placeholder() );
+	}
+
 }
