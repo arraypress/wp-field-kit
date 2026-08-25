@@ -263,13 +263,20 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * Range
  * -------------------------------------------------------------------- */
 
-/* No max-width: the cell it sits in already constrains it, and capping it
-   makes a slider stop short of the field beside it on a narrow screen — the
-   term screens are where that shows. */
+/* No max-width by default: on a term or user screen the cell already
+   constrains it, and capping it there makes the slider stop short of the
+   field beside it. */
 .field-kit__range {
 	display: flex;
 	align-items: center;
 	gap: .75rem;
+}
+
+/* A settings page is the exception. Its cell is as wide as the screen, so an
+   uncapped slider runs the width of a monitor to choose a number between one
+   and ten — which reads as a progress bar rather than a control. */
+.field-kit__page-screen .field-kit__range {
+	max-width: 25rem;
 }
 
 .field-kit__range input[type="range"] {
@@ -517,23 +524,19 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * a mouse — hiding them on hover alone would make the gallery unorderable
  * for anyone tabbing through it, while looking perfectly fine to everyone
  * else. */
+/* One rule, not two. A second one seventeen hundred lines further down set
+   position: static and display: contents, which won — so the absolute
+   placement, the white backing, the fade and the hover rule below it were
+   all dead, and had been since the gallery lost everything but its remove
+   button. What the gallery actually looks like is what is left. */
 .field-kit__gallery-actions {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	display: flex;
-	justify-content: center;
+	position: static;
+	display: contents;
 	gap: .1rem;
-	padding: .15rem 0;
-	background: rgba(255, 255, 255, .92);
-	opacity: 0;
-	transition: opacity .1s ease-in-out;
-}
-
-.field-kit__gallery-item:hover .field-kit__gallery-actions,
-.field-kit__gallery-item:focus-within .field-kit__gallery-actions {
+	padding: 0;
+	background: none;
 	opacity: 1;
+	outline-offset: -2px;
 }
 
 .wp-core-ui .field-kit__gallery-remove {
@@ -2183,14 +2186,7 @@ select.field-kit__select[multiple] {
 	outline-offset: -2px;
 }
 
-/* Gallery: only the remove action shows on hover now. */
-.field-kit__gallery-actions {
-	position: static;
-	display: contents;
-	padding: 0;
-	background: none;
-	opacity: 1;
-}
+
 
 /* -----------------------------------------------------------------------
  * Email panel

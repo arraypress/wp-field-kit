@@ -603,4 +603,27 @@ final class StylesheetTest extends TestCase {
 		$this->assertStringNotContainsString( 'text-align: center', $rule[1] );
 	}
 
+	/**
+	 * A range is capped on a settings page and nowhere else.
+	 *
+	 * Both halves, because each one alone was wrong at some point. A settings
+	 * page cell is as wide as the screen, so an uncapped slider runs the
+	 * width of a monitor to pick a number between one and ten and reads as a
+	 * progress bar. A term or user screen cell is already narrow, and capping
+	 * it there makes the slider stop short of the field beside it.
+	 */
+	public function test_a_range_is_capped_only_on_a_settings_page(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		preg_match( '/\n\.field-kit__range\s*\{([^}]*)\}/', $css, $bare );
+
+		$this->assertNotEmpty( $bare, 'The range has no rule.' );
+		$this->assertStringNotContainsString( 'max-width', $bare[1] );
+
+		preg_match( '/\.field-kit__page-screen \.field-kit__range\s*\{([^}]*)\}/', $css, $scoped );
+
+		$this->assertNotEmpty( $scoped, 'Nothing caps the range on a settings page.' );
+		$this->assertStringContainsString( 'max-width', $scoped[1] );
+	}
+
 }
