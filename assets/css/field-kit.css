@@ -2714,3 +2714,26 @@ select.field-kit__select[multiple] {
 	height: 20px;
 	width: 20px;
 }
+
+/* Flexible content
+   ------------------------------------------------------------------------- */
+
+.field-kit__flexible-label {
+	color: var( --fk-muted, #50575e );
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	margin-bottom: 6px;
+	text-transform: uppercase;
+}
+
+.field-kit__flexible-add {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.field-kit__flexible-orphan {
+	margin: 0 0 8px;
+}

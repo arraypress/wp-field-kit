@@ -73,11 +73,14 @@ abstract class AbstractNestedType extends AbstractType {
 	 *
 	 * @return string
 	 */
-	protected function render_children( Field $owner, array $values, string $prefix, string $scope = '' ): string {
+	protected function render_children( Field $owner, array $values, string $prefix, string $scope = '', ?array $fields = null ): string {
 		$renderer = new Renderer();
 		$markup   = '';
 
-		foreach ( $owner->sub_fields() as $key => $config ) {
+		// Flexible content hands its own list in: each of its rows has a
+		// different set of fields depending on the layout that row chose, so
+		// the owner's sub_fields() is not the answer for every row.
+		foreach ( $fields ?? $owner->sub_fields() as $key => $config ) {
 			$child = $this->child( $owner, (string) $key, (array) $config, $values[ $key ] ?? null, $prefix, $scope );
 
 			if ( null !== $child ) {
@@ -96,12 +99,12 @@ abstract class AbstractNestedType extends AbstractType {
 	 *
 	 * @return array<string, mixed>
 	 */
-	protected function sanitize_children( Field $owner, mixed $value ): array {
+	protected function sanitize_children( Field $owner, mixed $value, ?array $fields = null ): array {
 		$registry = $this->registry ?? new Registry();
 		$value    = is_array( $value ) ? $value : [];
 		$clean    = [];
 
-		foreach ( $owner->sub_fields() as $key => $config ) {
+		foreach ( $fields ?? $owner->sub_fields() as $key => $config ) {
 			$type = (string) ( $config['type'] ?? 'text' );
 
 			if ( ! $registry->has( $type ) ) {

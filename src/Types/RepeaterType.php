@@ -269,7 +269,7 @@ class RepeaterType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
-	private function row_button( string $action, string $position, string $label, string $icon, bool $disabled ): string {
+	protected function row_button( string $action, string $position, string $label, string $icon, bool $disabled ): string {
 		$button = new Attributes();
 		$button->set( 'type', 'button' );
 		$button->add_class( 'button-link', 'field-kit__repeater-' . $action );

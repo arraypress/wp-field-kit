@@ -1913,9 +1913,16 @@
 				wrap.dataset.fkBound = '1';
 
 				wrap.addEventListener( 'click', function ( event ) {
-					if ( event.target.closest( '.field-kit__repeater-add' ) ) {
+					var addButton = event.target.closest( '.field-kit__repeater-add' );
+
+					if ( addButton ) {
 						event.preventDefault();
-						Repeater.add( wrap );
+
+						// Flexible content has a layout per row. The button
+						// either names one, or a select beside it does.
+						var picker = wrap.querySelector( '.field-kit__flexible-layout' );
+
+						Repeater.add( wrap, addButton.dataset.layout || ( picker ? picker.value : '' ) );
 					}
 
 					var remove = event.target.closest( '.field-kit__repeater-remove' );
@@ -1937,8 +1944,13 @@
 		 *
 		 * @param {Element} wrap The repeater.
 		 */
-		add: function ( wrap ) {
-			var template = wrap.querySelector( '.field-kit__repeater-template' );
+		add: function ( wrap, layout ) {
+			// A flexible field has one template per layout; a plain repeater
+			// has exactly one and ignores the argument.
+			var template = layout
+				? wrap.querySelector( '.field-kit__repeater-template[data-layout="' + CSS.escape( layout ) + '"]' )
+				: wrap.querySelector( '.field-kit__repeater-template' );
+
 			var list = wrap.querySelector( '.field-kit__repeater-rows' );
 
 			if ( ! template || ! list ) {
