@@ -244,4 +244,20 @@ final class SectionsTest extends TestCase {
 		$this->assertSame( [ 'accordion' => 'accordion', 'tab' => 'tab' ], $openers );
 	}
 
+
+	/**
+	 * A collapsible section is painted like the tab panel it replaces.
+	 *
+	 * Left transparent the body took the page's own grey while a tab panel
+	 * sat on white, so the two ways of dividing a form looked like two
+	 * unrelated widgets on the same screen.
+	 */
+	public function test_an_accordion_body_is_painted(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		$this->assertMatchesRegularExpression(
+			'/\.field-kit__accordion-body\s*\{[^}]*background:\s*#fff/',
+			$css
+		);
+	}
 }

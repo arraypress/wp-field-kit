@@ -699,6 +699,25 @@ li.field-kit__repeater-row {
 	background: #fff;
 }
 
+/* A one-column row is a single line, so its controls belong on that line's
+   middle rather than at the top of a card. flex-start is right when a row is
+   a stack of labelled fields and wrong when it is one input -- the move and
+   remove buttons floated above the control they act on, and the row carried
+   a card's padding around a single line.
+ *
+ * The class is on the repeater rather than detected from the row, so the
+ * rule is deterministic and the template row matches the real ones. */
+.field-kit__repeater--single li.field-kit__repeater-row {
+	align-items: center;
+	padding: .4rem .5rem;
+}
+
+/* The field inside it is the row: it takes the width, and its own bottom
+   margin would push the buttons off centre. */
+.field-kit__repeater--single .field-kit__repeater-fields .field-kit__field {
+	margin: 0;
+}
+
 /* A sortable row holds one checkbox and a label, so it wants the height of
    a list item rather than the padding of a panel. */
 /* Padding matched to a list-table row rather than a form control: these are
@@ -2773,9 +2792,21 @@ select.field-kit__select[multiple] {
 	outline: none;
 }
 
+/* White, like the tab panel it is an alternative to. Left transparent it
+   took the page's own grey, so the two ways of dividing a form looked like
+   two unrelated widgets on the same screen. */
 .field-kit__accordion-body {
+	background: #fff;
 	border-top: 1px solid var( --fk-border, #c3c4c7 );
 	padding: 12px;
+}
+
+.field-kit__accordion-summary {
+	background: #f6f7f7;
+}
+
+.field-kit__accordion[open] > .field-kit__accordion-summary {
+	border-bottom: 0;
 }
 
 @media ( prefers-reduced-motion: reduce ) {
@@ -2787,18 +2818,53 @@ select.field-kit__select[multiple] {
 /* Icon picker
    ------------------------------------------------------------------------- */
 
+/* The chosen icon sits inside the control, at its left-hand end. Beside it,
+   as a flex sibling, it read as a stray glyph that had come loose from the
+   field -- and an icon picker anywhere else shows the current icon in the
+   box you click to change it.
+ *
+ * Positioned against the wrapper rather than the control, because the
+ * control is replaced: the combobox script inserts its own element where the
+ * select was, inside this wrapper, and both start at its left edge. */
 .field-kit__icon {
-	align-items: center;
-	display: inline-flex;
-	gap: 8px;
+	display: inline-block;
+	position: relative;
 }
 
 .field-kit__icon-preview {
 	color: var( --fk-muted, #50575e );
-	flex: 0 0 auto;
 	font-size: 20px;
 	height: 20px;
+	left: 8px;
+	line-height: 1;
+	pointer-events: none;
+	position: absolute;
+	top: 50%;
+	transform: translateY( -50% );
 	width: 20px;
+	z-index: 1;
+}
+
+/* Room for it. Both selectors, because which one is on the page depends on
+   whether the script has run -- and it must not shift when it does. */
+.field-kit__icon .field-kit__icon-select,
+.field-kit__icon .field-kit__combobox-input {
+	padding-left: 34px;
+}
+
+/* A row of forty icon names with no icons is not an icon picker. */
+.field-kit__combobox-option--icon {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+}
+
+.field-kit__combobox-option--icon .dashicons {
+	color: var( --fk-muted, #50575e );
+	flex: 0 0 auto;
+	font-size: 18px;
+	height: 18px;
+	width: 18px;
 }
 
 /* Flexible content

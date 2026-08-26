@@ -88,6 +88,13 @@ class RepeaterType extends AbstractNestedType {
 			$wrapper->add_class( 'field-kit__repeater--column' );
 		}
 
+		// A one-column row is a single line rather than a card of fields, and
+		// is laid out as one: its controls sit on the line's middle instead
+		// of floating above the input they act on.
+		if ( ! $this->is_table( $field ) && ! $this->labels_rows( $field ) ) {
+			$wrapper->add_class( 'field-kit__repeater--single' );
+		}
+
 		if ( $this->is_table( $field ) ) {
 			$wrapper->add_class( 'field-kit__repeater--table' );
 

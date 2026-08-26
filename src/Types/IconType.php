@@ -135,16 +135,39 @@ final class IconType extends SelectType {
 		 * broken before it had been touched.
 		 */
 		$preview = sprintf(
-			'<span class="field-kit__icon-preview dashicons %s%s" aria-hidden="true"></span>',
-			'' === $value ? 'dashicons-art field-kit__icon-preview--empty' : esc_attr( $value ),
-			''
+			'<span class="field-kit__icon-preview dashicons %s" aria-hidden="true"></span>',
+			'' === $value ? 'dashicons-art field-kit__icon-preview--empty' : esc_attr( $value )
 		);
 
+		/*
+		 * The preview sits inside the control rather than beside it. Outside,
+		 * it read as a stray glyph that had come loose from the field -- and
+		 * an icon picker anywhere else shows the current icon in the box you
+		 * click to change it. The stylesheet lays it over the left-hand end;
+		 * this wrapper is only what it is positioned against, and it stays
+		 * the positioning context after the combobox is built inside it.
+		 */
 		return sprintf(
 			'<span class="field-kit__icon">%s%s</span>',
 			$preview,
 			parent::render( $field, $attributes )
 		);
+	}
+
+	/**
+	 * Each option carries its own icon.
+	 *
+	 * The value is the dashicon class, so the option already knows which
+	 * glyph it means -- this only makes it legible to the combobox, which
+	 * reads its rows off the real options and draws one beside each label.
+	 * A list of forty icon names with no icons is not an icon picker.
+	 *
+	 * @param string $value Option value.
+	 *
+	 * @return string
+	 */
+	protected function option_attributes( string $value ): string {
+		return '' === $value ? '' : sprintf( ' data-icon="%s"', esc_attr( $value ) );
 	}
 
 	/**

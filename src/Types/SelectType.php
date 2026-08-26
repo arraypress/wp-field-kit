@@ -158,15 +158,33 @@ class SelectType extends AbstractType {
 	 *
 	 * @return string
 	 */
-	private function render_option( string $value, string $label, array $selected ): string {
+	protected function render_option( string $value, string $label, array $selected ): string {
 		return sprintf(
-			'<option value="%s"%s>%s</option>',
+			'<option value="%s"%s%s>%s</option>',
 			esc_attr( $value ),
 			// Loose comparison on purpose: an option key of 1 and a stored
 			// value of "1" are the same choice.
 			in_array( $value, $selected, false ) ? ' selected' : '', // phpcs:ignore WordPress.PHP.StrictInArray.FoundNonStrictFalse -- see comment.
+			$this->option_attributes( $value ),
 			esc_html( $label )
 		);
+	}
+
+	/**
+	 * Extra attributes for one option.
+	 *
+	 * Nothing by default. A subtype that has something to say about each
+	 * choice puts it here, where it reaches both the native select and the
+	 * combobox built over it -- the combobox reads its rows back off the
+	 * real options, so anything hung on them is available to it without a
+	 * second source of truth.
+	 *
+	 * @param string $value Option value.
+	 *
+	 * @return string Attribute markup, already escaped, with a leading space.
+	 */
+	protected function option_attributes( string $value ): string {
+		return '';
 	}
 
 	/**

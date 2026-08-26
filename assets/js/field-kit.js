@@ -952,7 +952,14 @@
 						return '' !== option.value;
 					} )
 					.map( function ( option ) {
-						return { id: option.value, text: option.text };
+						// data-icon, where a type has one to offer. The rows
+						// are read off the real options, so anything hung on
+						// them reaches the list without a second source.
+						return {
+							id: option.value,
+							text: option.text,
+							icon: option.dataset.icon || ''
+						};
 					} );
 			}
 
@@ -1257,9 +1264,23 @@
 					option.id = list.id + '__' + i;
 					option.setAttribute( 'role', 'option' );
 					option.setAttribute( 'aria-selected', 'false' );
-					option.textContent = result.create
+
+					var text = result.create
 						? t( 'addItem', 'Add' ) + ' “' + result.text + '”'
 						: result.text;
+
+					// Built rather than assigned, so the label stays text and
+					// the glyph is an element beside it.
+					if ( result.icon ) {
+						var glyph = document.createElement( 'span' );
+						glyph.className = 'dashicons ' + result.icon;
+						glyph.setAttribute( 'aria-hidden', 'true' );
+						option.appendChild( glyph );
+						option.appendChild( document.createTextNode( text ) );
+						option.classList.add( 'field-kit__combobox-option--icon' );
+					} else {
+						option.textContent = text;
+					}
 
 					option.addEventListener( 'mousedown', function ( event ) {
 						event.preventDefault();
