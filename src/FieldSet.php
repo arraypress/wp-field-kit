@@ -21,8 +21,7 @@ use ArrayPress\FieldKit\Actions\CallbackAction;
 use ArrayPress\FieldKit\Search\CallbackSource;
 use ArrayPress\FieldKit\Search\Sources;
 use ArrayPress\FieldKit\Support\Badge;
-use ArrayPress\FieldKit\Support\PanelTabs;
-use ArrayPress\FieldKit\Utils\Runtime;
+use ArrayPress\FieldKit\Support\Sections;
 
 /**
  * A group of fields bound to one storage context.
@@ -340,16 +339,16 @@ final class FieldSet {
 	 * @return string
 	 */
 	public function render( int|string $object_id = 0, array $errors = [] ): string {
-		$fields   = $this->fields( $object_id );
-		$sections = $this->sections( $fields );
+		$fields = $this->fields( $object_id );
+		$layout = Sections::split( $fields );
 
-		if ( [] === $sections ) {
+		$render = function ( array $group ) use ( $errors ): string {
 			$markup = '';
 
-			foreach ( $fields as $field ) {
+			foreach ( $group as $field ) {
 				// A lone marker is not a layout, and it draws nothing, so it
 				// is dropped rather than left to emit an empty row.
-				if ( '' !== $field->type()->opens_section() ) {
+				if ( Sections::is_marker( $field ) ) {
 					continue;
 				}
 
@@ -357,146 +356,13 @@ final class FieldSet {
 			}
 
 			return $markup;
+		};
+
+		if ( [] === $layout ) {
+			return $render( $fields );
 		}
 
-		return $this->render_sections( $sections, $errors );
-	}
-
-	/**
-	 * Split fields into sections on tab or accordion markers.
-	 *
-	 * A marker divides everything after it, up to the next marker, which is
-	 * ACF's model and the one people expect. Anything before the first marker
-	 * belongs to no section and is rendered ahead of them, so a set can open
-	 * with a few fields and then start tabbing.
-	 *
-	 * One marker is not a division, so a single tab is treated as no tabs at
-	 * all -- a tab strip with one tab is furniture that does nothing.
-	 *
-	 * @param Field[] $fields The built fields.
-	 *
-	 * @return array{kind: string, lead: Field[], sections: array<int, array{field: Field, fields: Field[]}>}|array
-	 * @since 1.1.0
-	 */
-	private function sections( array $fields ): array {
-		$kind     = '';
-		$lead     = [];
-		$sections = [];
-
-		foreach ( $fields as $field ) {
-			$opens = $field->type()->opens_section();
-
-			if ( '' !== $opens ) {
-				// The first marker decides the kind. Mixing tabs and
-				// accordions in one set is not a layout, it is a mistake.
-				if ( '' === $kind ) {
-					$kind = $opens;
-				}
-
-				if ( $opens === $kind ) {
-					$sections[] = [
-						'field' => $field,
-						'fields' => [],
-					];
-
-					continue;
-				}
-			}
-
-			if ( [] === $sections ) {
-				$lead[] = $field;
-
-				continue;
-			}
-
-			$sections[ array_key_last( $sections ) ]['fields'][] = $field;
-		}
-
-		if ( count( $sections ) < 2 ) {
-			return [];
-		}
-
-		return [
-			'kind' => $kind,
-			'lead' => $lead,
-			'sections' => $sections,
-		];
-	}
-
-	/**
-	 * Draw the sections, as tabs or as collapsible regions.
-	 *
-	 * Tabs are handed to PanelTabs, which already emits the pattern its script
-	 * drives. Accordions use details/summary, a disclosure widget the browser
-	 * implements itself -- including keyboard operation and find-in-page opening
-	 * the right one, neither of which a div and a click handler gets.
-	 *
-	 * @param array $layout The result of sections().
-	 * @param array $errors Validation messages, keyed by field key.
-	 *
-	 * @return string
-	 * @since 1.1.0
-	 */
-	private function render_sections( array $layout, array $errors ): string {
-		$markup = '';
-
-		foreach ( $layout['lead'] as $field ) {
-			$markup .= $this->renderer->render( $field, $errors[ $field->key() ] ?? '' );
-		}
-
-		$prefix = Runtime::handle( 'section' ) . '-' . substr( md5( $this->input_prefix . count( $layout['sections'] ) ), 0, 8 );
-
-		if ( 'accordion' === $layout['kind'] ) {
-			foreach ( $layout['sections'] as $index => $section ) {
-				$open = (bool) $section['field']->get( 'open', 0 === $index );
-
-				$markup .= sprintf(
-					'<details class="field-kit__accordion"%s><summary class="field-kit__accordion-summary">%s</summary><div class="field-kit__accordion-body">%s</div></details>',
-					$open ? ' open' : '',
-					esc_html( $section['field']->label() ),
-					$this->render_section_fields( $section['fields'], $errors )
-				);
-			}
-
-			return $markup;
-		}
-
-		/*
-		 * Built by PanelTabs rather than by hand. It already emits the ARIA
-		 * tabs pattern the PanelTabs script drives -- roving tabindex, arrow
-		 * keys, the lot -- and a second implementation here would be a second
-		 * thing to keep correct.
-		 */
-		$panels = [];
-
-		foreach ( $layout['sections'] as $index => $section ) {
-			$panels[ 'section-' . $index ] = [
-				'label'   => $section['field']->label(),
-				'icon'    => (string) $section['field']->get( 'icon', '' ),
-				'content' => $this->render_section_fields( $section['fields'], $errors ),
-			];
-		}
-
-		return $markup . PanelTabs::render( $prefix, $panels );
-	}
-
-	/**
-	 * Render the fields inside one section.
-	 *
-	 * @param Field[] $fields The section's fields.
-	 * @param array   $errors Validation messages, keyed by field key.
-	 *
-	 * @return string
-	 * @since 1.1.0
-	 */
-	private function render_section_fields( array $fields, array $errors ): string {
-		$markup = '';
-
-		foreach ( $fields as $field ) {
-			$markup .= $this->renderer->render( $field, $errors[ $field->key() ] ?? '' );
-		}
-
-		return $markup;
+		return Sections::render( $layout, $render, $this->input_prefix );
 	}
 
 	/**
