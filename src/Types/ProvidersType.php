@@ -220,17 +220,20 @@ final class ProvidersType extends AbstractNestedType {
 		$row->add_class( 'field-kit__provider' );
 		$row->set( 'data-key', $id );
 
+		// Name on the left, controls on the right, the grab edge outermost.
+		$controls = sprintf(
+			'<span class="field-kit__provider-controls">%s%s%s</span>',
+			$this->render_toggle( $field, $id, $label ),
+			[] === $fields ? '' : $this->render_configure( $label, $body_id, $this->layout( $field ) ),
+			$orderable ? $this->render_handle( $label, $position, $total ) : ''
+		);
+
 		return sprintf(
-			'<li%s>%s%s<div class="field-kit__provider-row">%s%s%s%s</div>%s</li>',
+			'<li%s>%s<div class="field-kit__provider-row">%s%s</div>%s</li>',
 			$row->render(),
 			$position_input,
-			$orderable
-				? '<span class="field-kit__drag-handle dashicons dashicons-menu" aria-hidden="true"></span>'
-				: '',
-			$this->render_toggle( $field, $id, $label ),
 			$this->render_identity( $provider, $label ),
-			$orderable ? $this->render_moves( $label, $position, $total ) : '',
-			[] === $fields ? '' : $this->render_configure( $label, $body_id, $this->layout( $field ) ),
+			$controls,
 			[] === $fields ? '' : $this->render_body( $field, $id, $label, $fields, $body_id )
 		);
 	}
@@ -252,12 +255,21 @@ final class ProvidersType extends AbstractNestedType {
 		$value   = (array) $field->value();
 		$enabled = array_map( 'strval', (array) ( $value['enabled'] ?? [] ) );
 
+		$on = in_array( $id, $enabled, true );
+
+		// The kit's switch rather than a bare checkbox: on and off is what is
+		// being asked, and role="switch" is what makes it announce that way
+		// instead of as checked and unchecked. Still a real checkbox
+		// underneath, so it is focusable and operable from the keyboard with
+		// nothing rebuilt.
 		$box = new Attributes();
 		$box->set( 'type', 'checkbox' );
 		$box->set( 'name', $field->input_name() . '[enabled][]' );
 		$box->set( 'value', $id );
-		$box->add_class( 'field-kit__provider-switch' );
-		$box->set_if( in_array( $id, $enabled, true ), 'checked', true );
+		$box->add_class( 'field-kit__toggle', 'field-kit__provider-switch' );
+		$box->set( 'role', 'switch' );
+		$box->set( 'aria-checked', $on ? 'true' : 'false' );
+		$box->set_if( $on, 'checked', true );
 		$box->set(
 			'aria-label',
 			sprintf(
@@ -312,10 +324,17 @@ final class ProvidersType extends AbstractNestedType {
 	}
 
 	/**
-	 * The reorder controls.
+	 * The grab handle, which is also the keyboard's way to reorder.
 	 *
-	 * A drag handle cannot be operated from a keyboard at all, so these are
-	 * the mechanism and the handle is the hint.
+	 * A button rather than a decorative span. Dragging cannot be done from a
+	 * keyboard at all, so a handle that is only draggable makes the list
+	 * unorderable for anyone not using a pointer -- and a pair of chevrons
+	 * beside it is a second control doing the same job, which is what this
+	 * replaced. One control: drag it, or focus it and press the arrow keys.
+	 *
+	 * The position is in its accessible name because a handle that only says
+	 * "Reorder Stripe" gives no feedback that anything happened; announcing
+	 * "3 of 4" is how a keyboard user knows the move landed.
 	 *
 	 * @param string $label    Provider label.
 	 * @param int    $position Its place in the list.
@@ -323,42 +342,41 @@ final class ProvidersType extends AbstractNestedType {
 	 *
 	 * @return string
 	 */
-	private function render_moves( string $label, int $position, int $total ): string {
-		return sprintf(
-			'<span class="field-kit__provider-moves">%s%s</span>',
-			$this->move_button( $label, 'up', $position < 1 ),
-			$this->move_button( $label, 'down', $position >= $total - 1 )
+	private function render_handle( string $label, int $position, int $total ): string {
+		$handle = new Attributes();
+		$handle->set( 'type', 'button' );
+		$handle->add_class( 'field-kit__drag-handle', 'field-kit__provider-handle' );
+		$handle->set( 'aria-roledescription', __( 'Sortable', 'arraypress' ) );
+		$handle->set( 'aria-keyshortcuts', 'ArrowUp ArrowDown' );
+		/*
+		 * One translated string, kept as a template so the script can rewrite
+		 * the numbers after a move without a second copy of the wording to
+		 * translate -- and without the announced position going stale the
+		 * moment a row is dragged.
+		 */
+		$template = sprintf(
+			/* translators: 1: provider label, 2: its position, 3: how many there are */
+			__( 'Reorder %1$s, %2$s of %3$s', 'arraypress' ),
+			$label,
+			'{position}',
+			'{total}'
 		);
-	}
 
-	/**
-	 * One reorder button.
-	 *
-	 * @param string $label     Provider label.
-	 * @param string $direction Either `up` or `down`.
-	 * @param bool   $disabled  Whether the move is possible.
-	 *
-	 * @return string
-	 */
-	private function move_button( string $label, string $direction, bool $disabled ): string {
-		$button = new Attributes();
-		$button->set( 'type', 'button' );
-		$button->add_class( 'button-link', 'field-kit__provider-move' );
-		$button->set( 'data-direction', $direction );
-		$button->set_if( $disabled, 'disabled', true );
-		$button->set(
+		$handle->set( 'data-label-template', $template );
+		$handle->set(
 			'aria-label',
-			'up' === $direction
-				/* translators: %s: provider label */
-				? sprintf( __( 'Move %s earlier', 'arraypress' ), $label )
-				/* translators: %s: provider label */
-				: sprintf( __( 'Move %s later', 'arraypress' ), $label )
+			strtr(
+				$template,
+				[
+					'{position}' => (string) ( $position + 1 ),
+					'{total}'    => (string) $total,
+				]
+			)
 		);
 
 		return sprintf(
-			'<button%s><span class="dashicons dashicons-arrow-%s-alt2" aria-hidden="true"></span></button>',
-			$button->render(),
-			'up' === $direction ? 'up' : 'down'
+			'<button%s><span class="dashicons dashicons-menu" aria-hidden="true"></span></button>',
+			$handle->render()
 		);
 	}
 

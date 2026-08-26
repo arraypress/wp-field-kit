@@ -141,23 +141,70 @@ final class ProvidersTest extends TestCase {
 	}
 
 	/**
-	 * The switch reflects what is stored, and names what it switches.
+	 * It is a switch, not a checkbox.
+	 *
+	 * On and off is what is being asked, and `role="switch"` is what makes it
+	 * announce that way instead of as checked and unchecked. Still a real
+	 * checkbox underneath, so it is focusable and operable from the keyboard
+	 * with nothing rebuilt.
 	 */
-	public function test_the_enabled_switch_is_checked_and_named(): void {
+	public function test_enabling_a_provider_is_a_switch(): void {
 		$html = $this->render( [], [ 'enabled' => [ 'stripe' ] ] );
 
 		$this->assertMatchesRegularExpression(
-			'/name="gateways\[enabled\]\[\]" value="stripe"[^>]*checked/',
+			'/class="field-kit__toggle[^"]*"[^>]*value="stripe"[^>]*role="switch"[^>]*aria-checked="true"/',
 			$html
 		);
 
 		$this->assertMatchesRegularExpression(
-			'/name="gateways\[enabled\]\[\]" value="paypal"(?![^>]*checked)/',
+			'/value="paypal"[^>]*aria-checked="false"/',
 			$html
 		);
 
 		// Icon-only, so it carries its own name.
 		$this->assertStringContainsString( 'aria-label="Enable Stripe"', $html );
+	}
+
+	/**
+	 * Reordering is one control, and it can be operated from a keyboard.
+	 *
+	 * A pair of chevrons beside a drag handle is two controls doing the same
+	 * job. Dropping them is only safe because the handle became a real
+	 * button: a handle that is only draggable cannot be used from a keyboard
+	 * at all, which would leave the list unorderable without a pointer.
+	 */
+	public function test_reordering_is_a_single_focusable_handle(): void {
+		$html = $this->render();
+
+		$this->assertStringNotContainsString( 'field-kit__provider-move', $html );
+		$this->assertStringNotContainsString( 'dashicons-arrow-up-alt2', $html );
+
+		$this->assertMatchesRegularExpression(
+			'/<button[^>]*field-kit__drag-handle[^>]*type="button"/',
+			$html
+		);
+
+		$this->assertStringContainsString( 'aria-keyshortcuts="ArrowUp ArrowDown"', $html );
+	}
+
+	/**
+	 * The handle says where the row is, and can say where it moved to.
+	 *
+	 * A handle that only says "Reorder Stripe" gives no feedback that a move
+	 * landed. The wording is kept as a template so the script rewrites the
+	 * numbers without a second string to translate.
+	 */
+	public function test_the_handle_announces_its_position(): void {
+		$html = $this->render();
+
+		$this->assertStringContainsString( 'aria-label="Reorder Stripe, 1 of 2"', $html );
+		$this->assertStringContainsString( 'aria-label="Reorder PayPal, 2 of 2"', $html );
+		$this->assertStringContainsString( 'data-label-template="Reorder Stripe, {position} of {total}"', $html );
+
+		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
+
+		$this->assertStringContainsString( 'handle.dataset.labelTemplate', $js );
+		$this->assertStringContainsString( "button.field-kit__drag-handle", $js );
 	}
 
 	/**
@@ -320,7 +367,6 @@ final class ProvidersTest extends TestCase {
 	public function test_ordering_and_switching_are_optional(): void {
 		$html = $this->render( [ 'orderable' => false, 'toggleable' => false ] );
 
-		$this->assertStringNotContainsString( 'field-kit__provider-move', $html );
 		$this->assertStringNotContainsString( 'field-kit__drag-handle', $html );
 		$this->assertStringNotContainsString( '[enabled][]', $html );
 

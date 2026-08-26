@@ -119,12 +119,20 @@ if ( ! modules ) {
 	process.exit( 1 );
 }
 
-const expected = [
-	'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox',
-	'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor',
-	'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton',
-	'Tooltip',
-];
+/*
+ * Read out of the script's own init list rather than kept by hand here. The
+ * hand-written copy had drifted: IconPreview and Providers were both added to
+ * the script and never to this list, so neither was ever checked -- and a
+ * module that is not on the list is exactly the one nobody notices is broken.
+ */
+const bootstrap = source.match( /\[\s*'Conditions'[^\]]*\]/ );
+
+if ( ! bootstrap ) {
+	console.error( '  could not find the script\'s module list' );
+	process.exit( 1 );
+}
+
+const expected = bootstrap[ 0 ].match( /'([A-Za-z]+)'/g ).map( ( name ) => name.slice( 1, -1 ) );
 
 expected.forEach( ( name ) => {
 	if ( ! modules[ name ] ) {

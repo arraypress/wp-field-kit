@@ -1577,6 +1577,39 @@
 				// re-rendered or becomes disabled at the end of the list.
 				Reorder.restoreFocus( list, item, direction );
 			} );
+
+			// A handle that is only draggable cannot be operated from a
+			// keyboard at all, so a list whose only reorder control is a
+			// handle would be unorderable without a pointer. Only the button
+			// form takes part: the older lists draw the handle as a
+			// decorative span and keep their own move buttons.
+			list.addEventListener( 'keydown', function ( event ) {
+				if ( 'ArrowUp' !== event.key && 'ArrowDown' !== event.key ) {
+					return;
+				}
+
+				var handle = event.target.closest( 'button.field-kit__drag-handle' );
+
+				if ( ! handle ) {
+					return;
+				}
+
+				var item = handle.closest( Reorder.itemSelector( list ) );
+
+				if ( ! item ) {
+					return;
+				}
+
+				// Or the page scrolls under the list while the row moves.
+				event.preventDefault();
+
+				Reorder.move( list, item, 'ArrowUp' === event.key ? 'up' : 'down' );
+
+				// Focus stays on the handle, which has moved with its row --
+				// so the arrow keys keep working and the new position is
+				// announced by the name sync() just rewrote.
+				handle.focus();
+			} );
 		},
 
 		/**
@@ -1656,6 +1689,21 @@
 
 				if ( position ) {
 					position.textContent = t( 'position', 'Item' ) + ' ' + ( index + 1 ) + ' / ' + total;
+				}
+
+				// A handle that is the only reorder control has to say where
+				// the row landed, or a keyboard user gets no feedback that
+				// anything happened. The wording is PHP's, kept as a template
+				// so there is one translated string rather than two.
+				var handle = item.querySelector( 'button.field-kit__drag-handle[data-label-template]' );
+
+				if ( handle ) {
+					handle.setAttribute(
+						'aria-label',
+						handle.dataset.labelTemplate
+							.replace( '{position}', String( index + 1 ) )
+							.replace( '{total}', String( total ) )
+					);
 				}
 
 				item.dataset.index = String( index );
