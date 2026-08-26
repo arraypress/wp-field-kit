@@ -140,6 +140,23 @@ if ( ! function_exists( 'esc_html__' ) ) {
 	}
 }
 
+/*
+ * The echoing pair. Missing for the same reason the two above were: nothing
+ * in this package calls them, and a consumer that did only found out when a
+ * test finally rendered the component doing it.
+ */
+if ( ! function_exists( 'esc_attr_e' ) ) {
+	function esc_attr_e( $text, $domain = 'default' ) {
+		echo esc_attr__( $text, $domain );
+	}
+}
+
+if ( ! function_exists( 'esc_html_e' ) ) {
+	function esc_html_e( $text, $domain = 'default' ) {
+		echo esc_html__( $text, $domain );
+	}
+}
+
 if ( ! function_exists( 'wp_editor' ) ) {
 	function wp_editor( $content, $editor_id, $settings = [] ) {
 		printf(

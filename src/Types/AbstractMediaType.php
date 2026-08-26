@@ -173,6 +173,107 @@ abstract class AbstractMediaType extends AbstractType {
 	}
 
 	/**
+	 * An icon-only control that sits inside the input.
+	 *
+	 * Modelled on the way EDD draws the file field on a download: the picker
+	 * lives at the right-hand end of the input it fills in, rather than as a
+	 * separate labelled button underneath it. Two full-width buttons stacked
+	 * below a URL made a single file look like a form of its own, and in the
+	 * table layout — where this field is a cell — they wrapped onto their own
+	 * line and doubled the height of every row.
+	 *
+	 * Icon-only, so it needs a real accessible name; it also names the field
+	 * it acts on, since a screen with several file fields would otherwise
+	 * present a list of identical "Choose" buttons.
+	 *
+	 * @param Field  $field  The field.
+	 * @param string $action Either `choose` or `clear`.
+	 * @param string $icon   Dashicon suffix.
+	 * @param string $label  Accessible name.
+	 * @param bool   $hidden Whether it starts hidden.
+	 *
+	 * @return string
+	 */
+	protected function inline_button( Field $field, string $action, string $icon, string $label, bool $hidden = false ): string {
+		$button = new Attributes();
+		$button->set( 'type', 'button' );
+		$button->add_class( 'field-kit__media-button', 'field-kit__media-' . $action );
+		$button->set_if( $hidden, 'hidden', true );
+		$button->set( 'aria-label', $label );
+
+		return sprintf(
+			'<button%s><span class="dashicons dashicons-%s" aria-hidden="true"></span></button>',
+			$button->render(),
+			esc_attr( $icon )
+		);
+	}
+
+	/**
+	 * The picker, for a field whose input it sits inside.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	protected function choose_button( Field $field ): string {
+		return $this->inline_button(
+			$field,
+			'choose',
+			'upload',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Choose a file for %s', 'arraypress' ),
+				$field->label()
+			)
+		);
+	}
+
+	/**
+	 * The clear control, for a field whose input it sits inside.
+	 *
+	 * @param Field $field     The field.
+	 * @param bool  $has_value Whether anything is selected.
+	 *
+	 * @return string
+	 */
+	protected function clear_button( Field $field, bool $has_value ): string {
+		return $this->inline_button(
+			$field,
+			'clear',
+			'no-alt',
+			sprintf(
+				/* translators: %s: field label */
+				__( 'Remove the selection for %s', 'arraypress' ),
+				$field->label()
+			),
+			! $has_value
+		);
+	}
+
+	/**
+	 * An input with its controls tucked inside it.
+	 *
+	 * The count is a class rather than a runtime-built modifier because the
+	 * input's right-hand padding has to clear whatever sits on top of it,
+	 * and a stylesheet test here asserts that every rule targets a class
+	 * something actually writes out.
+	 *
+	 * @param string $input   The input's markup.
+	 * @param string $buttons The controls' markup.
+	 * @param int    $count   How many controls $buttons holds.
+	 *
+	 * @return string
+	 */
+	protected function input_group( string $input, string $buttons, int $count = 1 ): string {
+		return sprintf(
+			'<div class="field-kit__media-input%s">%s<span class="field-kit__media-buttons">%s</span></div>',
+			$count > 1 ? ' field-kit__media-input--pair' : '',
+			$input,
+			$buttons
+		);
+	}
+
+	/**
 	 * Whether anything is actually selected.
 	 *
 	 * @param Field $field The field.

@@ -2207,10 +2207,17 @@
 			var input = wrap.querySelector( '.field-kit__media-value' );
 			var preview = wrap.querySelector( '.field-kit__media-preview' );
 			var clear = wrap.querySelector( '.field-kit__media-clear' );
+			var filenameInput = wrap.querySelector( 'input.field-kit__media-filename' );
 
 			// file_url stores the URL; every other media field stores the id.
 			input.value = wrap.dataset.returns === 'url' ? attachment.url : attachment.id;
 			input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+
+			// `file` holds an attachment id, which is nothing to show anyone,
+			// so a readonly input beside it carries the name.
+			if ( filenameInput ) {
+				filenameInput.value = attachment.filename || attachment.title || '';
+			}
 
 			if ( preview ) {
 				var sizes = attachment.sizes || {};
@@ -2243,9 +2250,14 @@
 			var preview = wrap.querySelector( '.field-kit__media-preview' );
 			var clear = wrap.querySelector( '.field-kit__media-clear' );
 			var choose = wrap.querySelector( '.field-kit__media-choose' );
+			var filenameInput = wrap.querySelector( 'input.field-kit__media-filename' );
 
 			input.value = '';
 			input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+
+			if ( filenameInput ) {
+				filenameInput.value = '';
+			}
 
 			if ( preview ) {
 				preview.innerHTML = '';

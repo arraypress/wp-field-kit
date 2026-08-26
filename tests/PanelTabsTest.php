@@ -115,23 +115,17 @@ final class PanelTabsTest extends TestCase {
 	}
 
 	/**
-	 * An icon is decorative; the label is the name.
+	 * A tab is its label. It carries no glyph, even when one is offered.
+	 *
+	 * WordPress draws no icon on .nav-tab anywhere in its own admin, and a
+	 * row of icons above a row of words is the same list twice — it is what
+	 * made this read as a toolbar borrowed from another application.
 	 */
-	public function test_an_icon_is_hidden_from_assistive_technology(): void {
+	public function test_a_tab_renders_no_icon(): void {
 		$html = PanelTabs::render( 'box', $this->panels() );
 
-		$this->assertStringContainsString( 'dashicons-media-default', $html );
-		$this->assertStringContainsString( 'aria-hidden="true"', $html );
-		$this->assertStringContainsString( '>Files</span>', $html );
-	}
-
-	/**
-	 * A panel with no icon renders without one.
-	 */
-	public function test_a_panel_without_an_icon_renders_no_icon(): void {
-		$html = PanelTabs::render( 'box', [ 'notes' => [ 'label' => 'Notes' ] ] );
-
 		$this->assertStringNotContainsString( 'dashicons', $html );
+		$this->assertStringContainsString( '>Files</span>', $html );
 	}
 
 	/**

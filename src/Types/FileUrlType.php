@@ -22,7 +22,7 @@ use ArrayPress\FieldKit\Field;
 final class FileUrlType extends FileType {
 
 	/**
-	 * Render an editable URL input alongside the picker.
+	 * Render an editable URL input with the picker inside it.
 	 *
 	 * @param Field      $field      The field.
 	 * @param Attributes $attributes Prepared attributes.
@@ -40,11 +40,16 @@ final class FileUrlType extends FileType {
 		$wrapper->set( 'data-frame-title', $this->frame_title() );
 		$wrapper->set( 'data-returns', 'url' );
 
+		// No clear button. The input is a real, editable URL field — it can
+		// be selected and deleted like any other — so a second control to
+		// empty it is a button that duplicates the keyboard.
 		return sprintf(
-			'<div%s><input%s />%s</div>',
+			'<div%s>%s</div>',
 			$wrapper->render(),
-			$attributes->render(),
-			$this->render_controls( $field )
+			$this->input_group(
+				sprintf( '<input%s />', $attributes->render() ),
+				$this->choose_button( $field )
+			)
 		);
 	}
 

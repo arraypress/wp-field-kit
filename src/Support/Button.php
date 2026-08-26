@@ -87,7 +87,22 @@ final class Button {
 	public static function render( array $config ): string {
 		$label   = (string) ( $config['label'] ?? '' );
 		$variant = (string) ( $config['variant'] ?? 'secondary' );
-		$icon    = (string) ( $config['icon'] ?? '' );
+
+		/*
+		 * An icon only when there is no label to read instead.
+		 *
+		 * WordPress does not put a glyph in front of a button's text
+		 * anywhere in its own admin -- not on Add New, not on Publish, not
+		 * on Apply -- and a button carrying both says the same thing twice,
+		 * the second time in a language the reader has to learn. Icon-only
+		 * buttons are a different case: a row's remove control has nowhere
+		 * to put a label, so it keeps its glyph and carries an accessible
+		 * name instead.
+		 *
+		 * Passing both is not an error, because a caller who has a label is
+		 * always better served by it.
+		 */
+		$icon = '' === $label ? (string) ( $config['icon'] ?? '' ) : '';
 
 		$button = new Attributes();
 
@@ -119,7 +134,7 @@ final class Button {
 		}
 
 		// An icon-only button still has to announce itself.
-		if ( '' === $label && '' !== $icon && ! $button->has( 'aria-label' ) ) {
+		if ( '' !== $icon && ! $button->has( 'aria-label' ) ) {
 			$button->set( 'aria-label', (string) ( $config['aria_label'] ?? $icon ) );
 		}
 

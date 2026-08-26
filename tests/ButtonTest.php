@@ -130,14 +130,32 @@ final class ButtonTest extends TestCase {
 	}
 
 	/**
-	 * An icon is decorative, and the label is the name.
+	 * A labelled button does not also get a picture.
+	 *
+	 * WordPress puts no glyph in front of a button's text anywhere in its
+	 * own admin, and a button carrying both says the same thing twice. An
+	 * `icon` passed alongside a `label` is dropped rather than rejected:
+	 * a caller who has a label is always better served by it.
 	 */
-	public function test_an_icon_is_hidden_from_assistive_technology(): void {
+	public function test_a_labelled_button_drops_its_icon(): void {
 		$html = Button::render( [ 'label' => 'Add', 'icon' => 'plus-alt' ] );
 
-		$this->assertStringContainsString( 'dashicons-plus-alt', $html );
-		$this->assertStringContainsString( 'aria-hidden="true"', $html );
+		$this->assertStringNotContainsString( 'dashicons', $html );
 		$this->assertStringContainsString( '>Add<', $html );
+	}
+
+	/**
+	 * An icon-only button keeps its icon, and it stays decorative.
+	 *
+	 * The glyph is not the name — the aria-label is — so announcing it too
+	 * would read the button out twice.
+	 */
+	public function test_an_icon_only_button_hides_the_glyph_from_assistive_technology(): void {
+		$html = Button::render( [ 'icon' => 'trash', 'aria_label' => 'Remove' ] );
+
+		$this->assertStringContainsString( 'dashicons-trash', $html );
+		$this->assertStringContainsString( 'aria-hidden="true"', $html );
+		$this->assertStringContainsString( 'aria-label="Remove"', $html );
 	}
 
 	/**
@@ -145,13 +163,13 @@ final class ButtonTest extends TestCase {
 	 *
 	 * Core has no rule for an icon inside a button — a dashicon is a 20px
 	 * inline box on a baseline inside a button whose line-height is 2.15, so
-	 * it rides low and the label sits proud of it. Every library that puts
-	 * one there has invented its own fix and got it slightly wrong.
+	 * it rides low. Only icon-only buttons reach this now, but the box still
+	 * has to be centred inside the button.
 	 */
 	public function test_an_icon_button_is_marked_and_aligned(): void {
 		$this->assertStringContainsString(
 			'field-kit__button--icon',
-			Button::render( [ 'label' => 'Add', 'icon' => 'plus-alt' ] )
+			Button::render( [ 'icon' => 'plus-alt', 'aria_label' => 'Add' ] )
 		);
 
 		// And not when there is no icon to align.

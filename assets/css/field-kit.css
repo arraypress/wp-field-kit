@@ -474,6 +474,99 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	display: block;
 }
 
+/* An input with its controls inside it, the way EDD draws a download's file
+   row and core draws the search box on a list table.
+ *
+ * The alternative — a labelled "Choose file" button and a labelled "Remove"
+ * button under the input — took three lines of vertical space for one file,
+ * and inside the table layout, where this field is a cell, the two buttons
+ * wrapped below the input and doubled the height of every row. */
+.field-kit__media-input {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+}
+
+/* The input has to leave room for whatever sits on top of it, and the room
+   needed depends on how many controls there are. Set from the buttons' own
+   width rather than a magic number, so adding one cannot silently start
+   overlapping the text. */
+.field-kit__media-input .field-kit__media-value,
+.field-kit__media-input .field-kit__media-filename {
+	width: 100%;
+	padding-right: calc(var(--field-kit-media-buttons, 1) * 1.75rem + .25rem);
+}
+
+.field-kit__media-input--pair {
+	--field-kit-media-buttons: 2;
+}
+
+.field-kit__media-buttons {
+	position: absolute;
+	top: 1px;
+	right: 1px;
+	bottom: 1px;
+	display: flex;
+	align-items: stretch;
+}
+
+/* Not a .button: core's button has its own border, background and height,
+   and none of the three belong on something drawn inside another control.
+   A left border separates it from the text, as EDD's does. */
+.wp-core-ui .field-kit__media-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	padding: 0;
+	border: 0;
+	border-left: 1px solid #dcdcde;
+	border-radius: 0;
+	background: #f6f7f7;
+	color: #50575e;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.wp-core-ui .field-kit__media-button:hover {
+	background: #f0f0f1;
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+.wp-core-ui .field-kit__media-clear:hover {
+	color: #b32d2e;
+}
+
+/* Core draws the focus ring as an outline plus a shadow sized for a
+   standalone button; inset here so it stays within the input's own border
+   instead of drawing a second ring around the whole field. */
+.wp-core-ui .field-kit__media-button:focus {
+	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+	outline-offset: -2px;
+	box-shadow: none;
+}
+
+.field-kit__media-button .dashicons {
+	width: 1rem;
+	height: 1rem;
+	font-size: 1rem;
+	line-height: 1;
+}
+
+/* A readonly input is still an input: without this it renders on core's
+   disabled-looking grey and reads as broken rather than as filled in by the
+   picker. */
+.field-kit__media-filename[readonly] {
+	background: #fff;
+	color: #2c3338;
+}
+
+/* Inside a table repeater the cell decides the width, so the group has to
+   fill it rather than sit at the input's natural size. */
+.field-kit__repeater--table .field-kit__media-input {
+	display: block;
+}
+
 .field-kit__media-actions {
 	margin: .5rem 0 0;
 }
@@ -1296,17 +1389,6 @@ li.field-kit__repeater-row {
 .field-kit__page-header--left .field-kit__page-tabs {
 	justify-content: flex-start;
 	padding-left: 12px;
-}
-
-/* A tab may carry an icon — reports uses them — and it needs to sit on the
-   text's line rather than on the dashicon font's own. */
-.field-kit__page-tab .dashicons {
-	width: 18px;
-	height: 18px;
-	margin-right: .2rem;
-	font-size: 18px;
-	line-height: inherit;
-	vertical-align: text-bottom;
 }
 
 /* .privacy-settings-tab supplies the padding, colour and transition; the
@@ -2357,14 +2439,6 @@ select.field-kit__select[multiple] {
 	color: #1d2327;
 }
 
-.field-kit__tag-button .dashicons {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-	line-height: 1.4;
-	vertical-align: text-bottom;
-}
-
 .field-kit__tag-frame {
 	padding: 1rem;
 	overflow-y: auto;
@@ -2587,13 +2661,6 @@ select.field-kit__select[multiple] {
 .field-kit__panel-tab:focus-visible {
 	outline: 2px solid var(--wp-admin-theme-color, #2271b1);
 	outline-offset: -2px;
-}
-
-.field-kit__panel-tab .dashicons {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-	flex: none;
 }
 
 .field-kit__panel-bodies {

@@ -328,12 +328,13 @@ final class PageHeaderTest extends TestCase {
 
 
 	/**
-	 * A tab can carry an icon, and the icon is decorative.
+	 * A tab is its label, and carries no glyph even when one is offered.
 	 *
-	 * Reports tabs have them. The label beside it is the tab's name; a
-	 * dashicon announced as well reads as a second one.
+	 * The reports header used to draw one per tab. Core draws none on its
+	 * own secondary nav, and a row of pictures above a row of words says the
+	 * same thing twice.
 	 */
-	public function test_a_tab_can_carry_a_decorative_icon(): void {
+	public function test_a_tab_renders_no_icon(): void {
 		$html = PageHeader::render(
 			[
 				'title' => 'Reports',
@@ -344,13 +345,9 @@ final class PageHeaderTest extends TestCase {
 			]
 		);
 
-		$this->assertStringContainsString( 'dashicons-chart-bar', $html );
-		$this->assertMatchesRegularExpression( '/dashicons-chart-bar[^>]*aria-hidden="true"/', $html );
-
-		// One icon, for the one tab that asked for it.
-		$this->assertSame( 1, substr_count( $html, 'dashicons dashicons-' ) );
+		$this->assertStringNotContainsString( 'dashicons', $html );
+		$this->assertStringContainsString( '>Tiles</a>', $html );
 	}
-
 
 	/**
 	 * Left-aligned puts the actions beside the title.

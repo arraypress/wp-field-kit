@@ -18,7 +18,7 @@ use ArrayPress\FieldKit\Attributes;
  * A list of tabs down one side and a panel beside them.
  *
  * The shape EDD's download metabox uses and the one flyouts wants: a handful
- * of named sections with an icon each — Files, Notes, Prices — where only one
+ * of named sections — Files, Notes, Prices — where only one
  * is on screen and the rest are one click away. It is the right answer when a
  * metabox holds four unrelated groups of fields and the wrong one when it
  * holds six related ones, which is why it is a layout a caller chooses rather
@@ -50,7 +50,7 @@ final class PanelTabs {
 	 * Render a tabbed panel.
 	 *
 	 * @param string                                                            $id     Base id for the tabs and panels.
-	 * @param array<string, array{label?: string, icon?: string, content?: string}> $panels Panels, keyed by slug.
+	 * @param array<string, array{label?: string, content?: string}> $panels Panels, keyed by slug.
 	 *
 	 * @return string
 	 */
@@ -109,14 +109,16 @@ final class PanelTabs {
 		// reach the panel is what happens without this.
 		$button->set( 'tabindex', $selected ? '0' : '-1' );
 
-		$icon = (string) ( $panel['icon'] ?? '' );
-
+		/*
+		 * No icon. A tab always has a label -- that is what makes it a tab
+		 * rather than a toolbar button -- and WordPress puts no glyph on
+		 * .nav-tab anywhere in its own admin. A row of icons above a row of
+		 * words is the same list twice, and it is the icons that make the
+		 * row look like a toolbar from some other application.
+		 */
 		return sprintf(
-			'<button%s>%s<span class="field-kit__panel-tab-label">%s</span></button>',
+			'<button%s><span class="field-kit__panel-tab-label">%s</span></button>',
 			$button->render(),
-			'' === $icon
-				? ''
-				: sprintf( '<span class="dashicons dashicons-%s" aria-hidden="true"></span>', esc_attr( $icon ) ),
 			esc_html( (string) ( $panel['label'] ?? '' ) )
 		);
 	}

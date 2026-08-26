@@ -119,8 +119,10 @@ final class MergeTags {
 		$button->set( 'data-modal', $modal_id );
 		$button->set( 'aria-haspopup', 'dialog' );
 
+		// No glyph: the button says what it does, and core puts none in front
+		// of its own button text anywhere in the admin.
 		return sprintf(
-			'<button%s><span class="dashicons dashicons-shortcode" aria-hidden="true"></span> %s</button>',
+			'<button%s>%s</button>',
 			$button->render(),
 			esc_html__( 'Add Tag', 'arraypress' )
 		);

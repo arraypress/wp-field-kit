@@ -208,16 +208,10 @@ final class PageHeader {
 			// how it is drawn.
 			$link->set_if( $active, 'aria-current', 'true' );
 
-			$icon = (string) ( $tab['icon'] ?? '' );
-
+			// No icon: a tab has a label, and core draws none on its own.
 			$links .= sprintf(
-				'<a%s>%s%s</a>',
+				'<a%s>%s</a>',
 				$link->render(),
-				// Decorative: the label beside it is the tab's name, and a
-				// dashicon announced as well would read as a second one.
-				'' === $icon
-					? ''
-					: sprintf( '<span class="dashicons dashicons-%s" aria-hidden="true"></span>', esc_attr( $icon ) ),
 				esc_html( (string) ( $tab['label'] ?? $slug ) )
 			);
 		}

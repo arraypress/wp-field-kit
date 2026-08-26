@@ -73,7 +73,7 @@ abstract class AbstractNestedType extends AbstractType {
 	 *
 	 * @return string
 	 */
-	protected function render_children( Field $owner, array $values, string $prefix, string $scope = '', ?array $fields = null ): string {
+	protected function render_children( Field $owner, array $values, string $prefix, string $scope = '', ?array $fields = null, bool $with_labels = true ): string {
 		$renderer = new Renderer();
 		$markup   = '';
 
@@ -84,7 +84,7 @@ abstract class AbstractNestedType extends AbstractType {
 			$child = $this->child( $owner, (string) $key, (array) $config, $values[ $key ] ?? null, $prefix, $scope );
 
 			if ( null !== $child ) {
-				$markup .= $renderer->render( $child );
+				$markup .= $renderer->render( $child, '', $with_labels );
 			}
 		}
 

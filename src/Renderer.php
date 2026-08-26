@@ -57,6 +57,28 @@ final class Renderer {
 		}
 
 		$attributes = $this->control_attributes( $field, $error );
+
+		/*
+		 * A caller drawing its own heading suppresses the label — a table
+		 * repeater puts it in the column header, a one-column repeater has
+		 * the parent field's label above the whole list. Neither is a
+		 * <label>, and dropping the element left the control with no
+		 * accessible name whatsoever: a screen reader announced the cells of
+		 * a rates table as "edit text", "edit text", "edit text".
+		 *
+		 * Not applied to a grouped control, whose legend is never dropped,
+		 * only hidden; nor to a self-labelling one, which carries its text
+		 * inside its own label already.
+		 */
+		if (
+			! $with_label
+			&& ! $type->is_grouped()
+			&& ! $type->is_self_labelling()
+			&& '' !== $field->label()
+		) {
+			$attributes->set( 'aria-label', $field->label() );
+		}
+
 		$control    = $type->render( $field, $attributes );
 		$describers = $this->describer_markup( $field, $error );
 

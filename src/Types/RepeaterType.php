@@ -154,11 +154,38 @@ class RepeaterType extends AbstractNestedType {
 			esc_html( $position ),
 			// Scoped by row: without it every row reuses the same child ids
 			// and each label after the first points at the wrong control.
-			$this->render_children( $field, $row, $field->input_name() . '[' . $index . ']', 'row' . $index ),
+			$this->render_children(
+				$field,
+				$row,
+				$field->input_name() . '[' . $index . ']',
+				'row' . $index,
+				null,
+				$this->labels_rows( $field )
+			),
 			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
 			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
 			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
 		);
+	}
+
+	/**
+	 * Whether a row's fields carry their own visible labels.
+	 *
+	 * They do when a row holds several — a name, a price and a limit need
+	 * telling apart. They do not when a row holds one, because that label is
+	 * the same word on every row and the field already has a heading above
+	 * the whole list: a three-entry feature list drew "Item" three times,
+	 * one line each, above three identical inputs.
+	 *
+	 * The control keeps the label as its accessible name either way; the
+	 * renderer moves it to an aria-label when it is not drawn.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function labels_rows( Field $field ): bool {
+		return count( $field->sub_fields() ) > 1;
 	}
 
 	/**
