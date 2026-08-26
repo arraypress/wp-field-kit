@@ -99,7 +99,7 @@ final class CodeGeneratorType extends AbstractInputType {
 		$format = (string) $field->get( 'format', 'alphanumeric_upper' );
 
 		return sprintf(
-			'<div class="field-kit__code"><input%s />%s</div>',
+			'<div class="field-kit__code-generator"><input%s />%s</div>',
 			$attributes->render(),
 			Button::render(
 				[

@@ -362,18 +362,31 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 }
 
 /* A text field with a button that fills it in. Same shape as the clipboard
-   field: the control and its button on one line, the input taking what is
-   left. */
-.field-kit__code {
+   field: the control and its button on one line.
+ *
+ * `field-kit__code-generator`, not `field-kit__code`: the code *editor* puts
+ * that second name on its textarea, so this rule was making every code
+ * editor on the site a flex container as well. Two different things had the
+ * same class, and only one of them was ever meant to be styled. */
+.field-kit__code-generator {
 	display: flex;
 	align-items: center;
 	gap: .5rem;
+	max-width: 100%;
+	width: fit-content;
 }
 
+/* Not flex: 1. A settings page's cell is as wide as the page, so growing to
+   fill it stretched an eight-character code across the whole screen with the
+   Generate button stranded at the far end. `regular-text` is core's own 25em
+   -- and its own 100% below 782px -- so the width is already decided; this
+   only has to stop the flex line overriding it. */
 .field-kit__code-value {
-	flex: 1;
+	flex: 0 1 auto;
 	min-width: 0;
 }
+
+
 
 /* A provider that answers with a script rather than an iframe cannot be shown
    inline — innerHTML never executes one — so what was found is shown instead.
@@ -1538,7 +1551,7 @@ li.field-kit__repeater-row {
 	.field-kit__range-pair,
 	.field-kit__clipboard,
 	.field-kit__license-control,
-	.field-kit__code,
+	.field-kit__code-generator,
 	.field-kit__media-actions {
 		flex-direction: column;
 		align-items: stretch;
@@ -1549,7 +1562,7 @@ li.field-kit__repeater-row {
 	.field-kit__range-pair > *,
 	.field-kit__clipboard > *,
 	.field-kit__license-control > *,
-	.field-kit__code > * {
+	.field-kit__code-generator > * {
 		width: 100%;
 	}
 

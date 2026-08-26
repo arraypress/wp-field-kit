@@ -405,7 +405,7 @@
 				button.dataset.fkBound = '1';
 
 				button.addEventListener( 'click', function () {
-					var wrap = button.closest( '.field-kit__code' );
+					var wrap = button.closest( '.field-kit__code-generator' );
 					var input = wrap && wrap.querySelector( '.field-kit__code-value' );
 
 					if ( ! input ) {
