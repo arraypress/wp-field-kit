@@ -148,6 +148,48 @@ final class StylesheetTest extends TestCase {
 	}
 
 	/**
+	 * A notice on a full-bleed page keeps a gutter on both sides.
+	 *
+	 * These screens remove #wpcontent's left padding so the header can span
+	 * the width, which leaves admin notices -- printed after the header and
+	 * outside .wrap -- with nothing supplying one. A horizontal margin of 0
+	 * is what that looks like when it is forgotten: the notice runs edge to
+	 * edge while the form beneath it sits inset, and it has been forgotten
+	 * more than once.
+	 */
+	public function test_a_full_bleed_notice_is_not_flush_to_the_edges(): void {
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Comments discuss margins in prose.
+		$css = (string) preg_replace( '#/\*.*?\*/#s', '', $css );
+
+		preg_match(
+			'/\.field-kit__page-screen \.notice,\s*\.field-kit__page-screen \.update-nag\s*\{([^}]*)\}/',
+			$css,
+			$match
+		);
+
+		$this->assertNotEmpty( $match, 'Nothing positions a notice on these screens.' );
+
+		preg_match( '/margin:\s*([^;]+);/', $match[1], $margin );
+
+		$this->assertNotEmpty( $margin, 'The notice rule sets no margin.' );
+
+		$parts = preg_split( '/\s+/', trim( $margin[1] ) );
+
+		// One value is all four sides, two is vertical then horizontal.
+		$horizontal = match ( count( $parts ) ) {
+			1       => [ $parts[0], $parts[0] ],
+			2, 3    => [ $parts[1], $parts[1] ],
+			default => [ $parts[1], $parts[3] ],
+		};
+
+		foreach ( $horizontal as $side ) {
+			$this->assertNotSame( '0', $side, 'A notice is flush against the edge.' );
+		}
+	}
+
+	/**
 	 * Every styled class is one something actually renders.
 	 */
 	public function test_no_rule_targets_a_class_nothing_emits(): void {

@@ -36,17 +36,17 @@ class FileType extends AbstractMediaType {
 	}
 
 	/**
-	 * Render the stored id, the chosen file's name, and the controls.
+	 * Render the field.
 	 *
-	 * The value is an attachment id and an id is not worth showing anyone,
-	 * so it stays in a hidden input and a readonly text input carries the
-	 * file name. That gives this field the same shape as `file_url` — one
-	 * input with its controls inside the right-hand end — instead of a bare
-	 * line of text above two full-width buttons.
+	 * Standalone, this is what every other media field is: the file name,
+	 * then a labelled "Choose file" and a labelled "Remove" beneath it. On a
+	 * settings or term screen there is a whole column of space for that, and
+	 * two words are easier to act on than two glyphs.
 	 *
-	 * Readonly rather than disabled: a disabled input is skipped by the
-	 * keyboard entirely, so the file name could not be read or copied by
-	 * anyone tabbing through the form.
+	 * Inside a repeater row there is one line and no column of space, and
+	 * the labelled pair wrapped below the input and doubled the height of
+	 * every row. There the picker moves inside the input, the way EDD draws
+	 * a download's file row.
 	 *
 	 * @param Field      $field      The field.
 	 * @param Attributes $attributes Prepared attributes.
@@ -54,6 +54,27 @@ class FileType extends AbstractMediaType {
 	 * @return string
 	 */
 	public function render( Field $field, Attributes $attributes ): string {
+		if ( ! $field->get( 'inline', false ) ) {
+			return parent::render( $field, $attributes );
+		}
+
+		return $this->render_inline( $field, $attributes );
+	}
+
+	/**
+	 * The one-line form: an id in a hidden input, a name in a readonly one.
+	 *
+	 * An attachment id is nothing to show anyone, so the visible input
+	 * carries the file name. Readonly rather than disabled: a disabled input
+	 * is skipped by the keyboard entirely, so the name could not be read or
+	 * copied by anyone tabbing through the form.
+	 *
+	 * @param Field      $field      The field.
+	 * @param Attributes $attributes Prepared attributes.
+	 *
+	 * @return string
+	 */
+	protected function render_inline( Field $field, Attributes $attributes ): string {
 		$attributes->set( 'type', 'hidden' );
 		$attributes->set( 'value', (string) $field->value() );
 		$attributes->add_class( 'field-kit__media-value' );
@@ -63,8 +84,6 @@ class FileType extends AbstractMediaType {
 		$wrapper->set( 'data-frame-title', $this->frame_title() );
 		$wrapper->set_if( '' !== $this->mime_type(), 'data-mime-type', $this->mime_type() );
 		$wrapper->set_if( $field->has( 'library' ), 'data-library', $field->get( 'library' ) );
-
-		$has_value = $this->has_selection( $field );
 
 		$name = new Attributes();
 		$name->set( 'type', 'text' );
@@ -93,7 +112,7 @@ class FileType extends AbstractMediaType {
 			$attributes->render(),
 			$this->input_group(
 				sprintf( '<input%s />', $name->render() ),
-				$this->choose_button( $field ) . $this->clear_button( $field, $has_value ),
+				$this->choose_button( $field ) . $this->clear_button( $field, $this->has_selection( $field ) ),
 				2
 			)
 		);
@@ -119,17 +138,26 @@ class FileType extends AbstractMediaType {
 	}
 
 	/**
-	 * Nothing above the input.
+	 * The file name, above the controls.
 	 *
-	 * The file name is in the input itself, so a preview block would be a
-	 * second copy of it.
+	 * Only the standalone form draws this: the inline one puts the name in
+	 * the input itself, where a preview block would be a second copy of it.
 	 *
 	 * @param Field $field The field.
 	 *
 	 * @return string
 	 */
 	protected function render_preview( Field $field ): string {
-		return '';
+		$name = $this->filename( $field );
+
+		if ( '' === $name ) {
+			return '<div class="field-kit__media-preview" data-empty="true"></div>';
+		}
+
+		return sprintf(
+			'<div class="field-kit__media-preview"><span class="field-kit__media-filename">%s</span></div>',
+			esc_html( $name )
+		);
 	}
 
 	/**
@@ -139,5 +167,22 @@ class FileType extends AbstractMediaType {
 	 */
 	public function supports_placeholder(): bool {
 		return true;
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * `inline` is set by a repeater on every child it builds, not by a
+	 * caller, but it is still configuration this type reads — and an
+	 * undeclared key warns under WP_DEBUG. Declared here rather than on the
+	 * media base, because an image or a gallery does nothing with it.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge(
+			parent::config_keys(),
+			[ 'inline' ]
+		);
 	}
 }

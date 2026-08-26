@@ -54,6 +54,7 @@ abstract class AbstractNestedType extends AbstractType {
 		$config = array_merge(
 			$resolved->defaults(),
 			$config,
+			$this->child_config_extras(),
 			[
 				'input_name' => $prefix . '[' . $key . ']',
 				'input_id'   => sanitize_key( $owner->input_id() . ( '' === $scope ? '' : '_' . $scope ) . '_' . $key ),
@@ -61,6 +62,23 @@ abstract class AbstractNestedType extends AbstractType {
 		);
 
 		return new Field( $key, $resolved, $config, $value );
+	}
+
+	/**
+	 * Configuration every child of this type receives.
+	 *
+	 * Nothing by default. A repeater adds `inline`, because a control in a
+	 * row has one line to fit in and some types draw differently when that
+	 * is true — a file field puts its picker inside the input rather than
+	 * on labelled buttons beneath it.
+	 *
+	 * A group is not a row: its children are a normal stack of fields with
+	 * normal labels, so it inherits the empty list.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function child_config_extras(): array {
+		return [];
 	}
 
 	/**

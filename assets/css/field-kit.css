@@ -1353,6 +1353,15 @@ li.field-kit__repeater-row {
  * tab count is whatever the consumer configured.
  * -------------------------------------------------------------------- */
 
+/* Core gives .privacy-settings-header a 1rem bottom margin, which on that
+   screen separates it from a page of cards. Here the header is a bar with a
+   bottom border and whatever follows it -- a controls bar, a notice, a form
+   -- brings its own top spacing, so the margin only showed as a strip of
+   page background between two surfaces that should meet. */
+.field-kit__page-header {
+	margin-bottom: 0;
+}
+
 /* Left-aligned, for a screen that is mostly a list.
 
    core's .privacy-settings-header is text-align:center and its title section
@@ -1427,12 +1436,19 @@ li.field-kit__repeater-row {
 }
 
 /* Admin notices land after the header, outside .wrap, where nothing else
-   supplies a gutter — so they carry their own, lined up with the content
+   supplies a gutter -- so they carry their own, lined up with the content
    below rather than with core's figures for a page whose wrap sits
-   elsewhere. */
+   elsewhere.
+ *
+ * Both gutters, which is the part this got wrong: a horizontal margin of 0
+ * is not a gutter, and on a page whose #wpcontent padding has been removed
+ * it left every notice running edge to edge while the form beneath it sat
+ * inset. The figures are .wrap's own on this screen -- 22px from the menu,
+ * core's 20px on the right -- so the notice lines up with the content it is
+ * about rather than with the viewport. */
 .field-kit__page-screen .notice,
 .field-kit__page-screen .update-nag {
-	margin: 25px 0 15px;
+	margin: 25px 20px 15px 22px;
 }
 
 /* Not the ones inside .wrap. `settings_errors()` prints "Settings saved."
@@ -1469,9 +1485,11 @@ li.field-kit__repeater-row {
 		margin-left: 12px;
 	}
 
+	/* Core drops .wrap to margin-right: 12px, margin-left: 0 here, and the
+	   notice follows it. */
 	.field-kit__page-screen .notice,
 	.field-kit__page-screen .update-nag {
-		margin: 5px 0 15px;
+		margin: 5px 12px 15px;
 	}
 
 	.field-kit__page-screen .wrap .notice,
@@ -1479,6 +1497,7 @@ li.field-kit__repeater-row {
 	.field-kit__page-screen .wrap div.error {
 		margin: 5px 0 15px;
 	}
+
 
 	/* Core's tab margin is 1rem a side, which on a phone leaves two tabs to
 	   a line and a lot of nothing between them. */

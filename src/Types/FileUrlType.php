@@ -22,7 +22,17 @@ use ArrayPress\FieldKit\Field;
 final class FileUrlType extends FileType {
 
 	/**
-	 * Render an editable URL input with the picker inside it.
+	 * Render an editable URL input and its picker.
+	 *
+	 * Standalone, the picker is a labelled button beneath the input, beside
+	 * a labelled Remove — which is what every other media field on a
+	 * settings or term screen looks like, and what those screens have room
+	 * for.
+	 *
+	 * Inside a repeater row the picker moves into the input, the way EDD
+	 * draws a download's file row. A row has one line: the labelled pair
+	 * wrapped below the input and doubled the height of every row, and in
+	 * the table layout it did it in a cell a few characters wide.
 	 *
 	 * @param Field      $field      The field.
 	 * @param Attributes $attributes Prepared attributes.
@@ -40,16 +50,24 @@ final class FileUrlType extends FileType {
 		$wrapper->set( 'data-frame-title', $this->frame_title() );
 		$wrapper->set( 'data-returns', 'url' );
 
-		// No clear button. The input is a real, editable URL field — it can
-		// be selected and deleted like any other — so a second control to
-		// empty it is a button that duplicates the keyboard.
+		$input = sprintf( '<input%s />', $attributes->render() );
+
+		if ( ! $field->get( 'inline', false ) ) {
+			return sprintf(
+				'<div%s>%s%s</div>',
+				$wrapper->render(),
+				$input,
+				$this->render_controls( $field )
+			);
+		}
+
+		// No clear button in a row. The input is a real, editable URL field
+		// — it can be selected and deleted like any other — so a second
+		// control to empty it costs a row's width to duplicate the keyboard.
 		return sprintf(
 			'<div%s>%s</div>',
 			$wrapper->render(),
-			$this->input_group(
-				sprintf( '<input%s />', $attributes->render() ),
-				$this->choose_button( $field )
-			)
+			$this->input_group( $input, $this->choose_button( $field ) )
 		);
 	}
 

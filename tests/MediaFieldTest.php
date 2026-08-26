@@ -1,6 +1,6 @@
 <?php
 /**
- * File and image field layout tests.
+ * File field layout tests.
  *
  * @package ArrayPress\FieldKit
  */
@@ -15,22 +15,27 @@ use ArrayPress\FieldKit\Renderer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The picker lives inside the input it fills in.
+ * A file field draws itself one of two ways, and the row is what decides.
  *
- * It used to be a labelled "Choose file" button and a labelled "Remove"
- * button on a line of their own beneath the input. One file therefore took
- * three lines, and in the table layout — where this field is a cell, and
- * where the shape is most used, because that is what a download's file list
- * is — the two buttons wrapped below the input and doubled the height of
- * every row.
+ * Standalone -- on a settings screen, a term form, a metabox -- it is what
+ * every other media field is: the current selection, then a labelled
+ * "Choose file" and a labelled "Remove" beneath it. There is a column of
+ * space for that, and two words are easier to act on than two glyphs.
  *
- * EDD draws the same field with the control at the right-hand end of the
- * input, and core draws its own search boxes that way. That is what this is.
+ * Inside a repeater there is one line and no column. The labelled pair
+ * wrapped below the input and doubled the height of every row, and in the
+ * table layout -- which is what a download's file list is -- it did that in
+ * a cell a few characters wide. There the picker moves inside the input,
+ * the way EDD draws a download's file row.
+ *
+ * The switch is the `inline` flag a repeater puts on every child it builds,
+ * so nothing has to be configured per field and a group -- which is a stack
+ * of fields, not a row -- is unaffected.
  */
 final class MediaFieldTest extends TestCase {
 
 	/**
-	 * Render a field and return the markup.
+	 * Render a standalone field.
 	 *
 	 * @param string               $type   Type id.
 	 * @param array<string, mixed> $config Field configuration.
@@ -50,56 +55,106 @@ final class MediaFieldTest extends TestCase {
 	}
 
 	/**
-	 * A URL field has one control, and it sits inside the input.
+	 * Render the same field as one column of a repeater row.
+	 *
+	 * Through the repeater rather than by setting `inline` directly, so this
+	 * also pins that a repeater is what supplies it.
+	 *
+	 * @param string $type  Sub-field type.
+	 * @param mixed  $value Stored value for the one row.
+	 *
+	 * @return string
 	 */
-	public function test_a_file_url_puts_its_picker_inside_the_input(): void {
+	private function render_in_row( string $type, $value = null ): string {
+		$field = new Field(
+			'files',
+			( new Registry() )->get( 'repeater' ),
+			[
+				'label'      => 'Files',
+				'input_name' => 'files',
+				'fields'     => [
+					'name' => [ 'type' => 'text', 'label' => 'Name' ],
+					'file' => [ 'type' => $type, 'label' => 'Manual' ],
+				],
+			],
+			null
+		);
+
+		return ( new Renderer() )->render( $field->with_value( [ [ 'file' => $value ] ] ) );
+	}
+
+	/**
+	 * Standalone, a URL field keeps its labelled buttons.
+	 */
+	public function test_a_standalone_file_url_uses_labelled_buttons(): void {
 		$html = $this->render( 'file_url', [], 'https://example.com/manual.pdf' );
+
+		$this->assertStringContainsString( 'field-kit__media-actions', $html );
+		$this->assertStringContainsString( '>Choose file</button>', $html );
+		$this->assertStringContainsString( '>Remove</button>', $html );
+		$this->assertStringNotContainsString( 'field-kit__media-input', $html );
+		$this->assertStringNotContainsString( 'dashicons', $html );
+	}
+
+	/**
+	 * Standalone, a file field shows the name above its buttons.
+	 */
+	public function test_a_standalone_file_shows_its_name_above_the_buttons(): void {
+		$html = $this->render( 'file', [], 42 );
+
+		$this->assertStringContainsString( 'field-kit__media-preview', $html );
+		$this->assertStringContainsString( '>file.pdf</span>', $html );
+		$this->assertStringContainsString( '>Choose file</button>', $html );
+		$this->assertStringNotContainsString( 'field-kit__media-input', $html );
+	}
+
+	/**
+	 * In a row, the picker sits inside the input.
+	 */
+	public function test_a_file_url_in_a_row_puts_its_picker_inside_the_input(): void {
+		$html = $this->render_in_row( 'file_url', 'https://example.com/manual.pdf' );
 
 		$this->assertStringContainsString( 'field-kit__media-input', $html );
 		$this->assertStringContainsString( 'field-kit__media-buttons', $html );
-		$this->assertStringContainsString( 'field-kit__media-choose', $html );
 
-		// The button is inside the group, not on a line of its own after it.
+		// Inside the group, not on a line of its own after it.
 		$this->assertMatchesRegularExpression(
 			'/<div class="field-kit__media-input">.*field-kit__media-choose.*<\/div>/s',
 			$html
 		);
 
-		// And it is not one of core's bordered buttons.
-		$this->assertStringNotContainsString( 'class="button field-kit__media-choose"', $html );
+		// And not one of core's bordered buttons.
+		$this->assertStringNotContainsString( 'field-kit__media-actions', $html );
+		$this->assertStringNotContainsString( '>Choose file</button>', $html );
 	}
 
 	/**
-	 * A URL field has no clear button.
+	 * A URL in a row has no clear button.
 	 *
 	 * The input is a real, editable URL field, so a control that empties it
-	 * only duplicates the keyboard.
+	 * costs a row's width to duplicate the keyboard.
 	 */
-	public function test_a_file_url_has_no_clear_button(): void {
-		$html = $this->render( 'file_url', [], 'https://example.com/manual.pdf' );
+	public function test_a_file_url_in_a_row_has_no_clear_button(): void {
+		$html = $this->render_in_row( 'file_url', 'https://example.com/manual.pdf' );
 
 		$this->assertStringNotContainsString( 'field-kit__media-clear', $html );
-		$this->assertStringNotContainsString( 'field-kit__media-actions', $html );
 	}
 
 	/**
-	 * The picker is icon-only, so it carries its own name.
-	 *
-	 * A screen with several file fields would otherwise present a list of
-	 * buttons whose accessible name is empty.
+	 * The inline picker is icon-only, so it carries its own name.
 	 */
-	public function test_the_picker_names_the_field_it_acts_on(): void {
-		$html = $this->render( 'file_url', [ 'label' => 'Manual' ] );
+	public function test_the_inline_picker_names_the_field_it_acts_on(): void {
+		$html = $this->render_in_row( 'file_url' );
 
 		$this->assertStringContainsString( 'aria-label="Choose a file for Manual"', $html );
 		$this->assertMatchesRegularExpression( '/dashicons-upload[^>]*aria-hidden="true"/', $html );
 	}
 
 	/**
-	 * A file field shows the file's name, not its attachment id.
+	 * A file field in a row shows the file's name, not its attachment id.
 	 */
-	public function test_a_file_field_shows_a_name_rather_than_an_id(): void {
-		$html = $this->render( 'file', [], 42 );
+	public function test_a_file_in_a_row_shows_a_name_rather_than_an_id(): void {
+		$html = $this->render_in_row( 'file', 42 );
 
 		// The id is still what gets submitted.
 		$this->assertMatchesRegularExpression(
@@ -116,13 +171,13 @@ final class MediaFieldTest extends TestCase {
 	}
 
 	/**
-	 * A file field has both controls, and says so for the padding rule.
+	 * Two controls, and the markup says so for the padding rule.
 	 *
 	 * The input's right-hand padding has to clear whatever sits on top of
 	 * it, and that depends on how many controls there are.
 	 */
-	public function test_a_file_field_marks_itself_as_having_two_controls(): void {
-		$html = $this->render( 'file', [], 42 );
+	public function test_a_file_in_a_row_marks_itself_as_having_two_controls(): void {
+		$html = $this->render_in_row( 'file', 42 );
 
 		$this->assertStringContainsString( 'field-kit__media-input--pair', $html );
 		$this->assertStringContainsString( 'field-kit__media-choose', $html );
@@ -132,13 +187,34 @@ final class MediaFieldTest extends TestCase {
 	/**
 	 * Nothing chosen means no clear button to press.
 	 */
-	public function test_an_empty_file_field_hides_its_clear_button(): void {
-		$html = $this->render( 'file' );
+	public function test_an_empty_file_in_a_row_hides_its_clear_button(): void {
+		$html = $this->render_in_row( 'file' );
 
 		$this->assertMatchesRegularExpression(
 			'/<button[^>]*field-kit__media-clear[^>]*hidden/',
 			$html
 		);
+	}
+
+	/**
+	 * A group is a stack of fields, not a row, so it changes nothing.
+	 */
+	public function test_a_group_does_not_make_its_children_inline(): void {
+		$field = new Field(
+			'block',
+			( new Registry() )->get( 'group' ),
+			[
+				'label'      => 'Block',
+				'input_name' => 'block',
+				'fields'     => [ 'file' => [ 'type' => 'file_url', 'label' => 'Manual' ] ],
+			],
+			null
+		);
+
+		$html = ( new Renderer() )->render( $field );
+
+		$this->assertStringContainsString( '>Choose file</button>', $html );
+		$this->assertStringNotContainsString( 'field-kit__media-input', $html );
 	}
 
 	/**
@@ -165,7 +241,7 @@ final class MediaFieldTest extends TestCase {
 	public function test_the_script_updates_the_name_input(): void {
 		$js = (string) file_get_contents( dirname( __DIR__ ) . '/assets/js/field-kit.js' );
 
-		$this->assertStringContainsString( "input.field-kit__media-filename", $js );
+		$this->assertStringContainsString( 'input.field-kit__media-filename', $js );
 		$this->assertMatchesRegularExpression( '/filenameInput\.value = attachment\.filename/', $js );
 	}
 }

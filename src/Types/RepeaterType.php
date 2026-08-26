@@ -169,6 +169,15 @@ class RepeaterType extends AbstractNestedType {
 	}
 
 	/**
+	 * A row's controls have one line to fit in.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function child_config_extras(): array {
+		return [ 'inline' => true ];
+	}
+
+	/**
 	 * Whether a row's fields carry their own visible labels.
 	 *
 	 * They do when a row holds several — a name, a price and a limit need
