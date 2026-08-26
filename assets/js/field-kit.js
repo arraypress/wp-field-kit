@@ -644,6 +644,58 @@
 	var t = kit.t;
 	var config = kit.config;
 
+	/**
+	 * Field Kit — the icon field's preview.
+	 *
+	 * The preview is rendered server-side from the stored value, so without
+	 * this it never changes: pick an icon and the swatch beside the control
+	 * keeps showing the old one until the page is saved and reloaded.
+	 */
+	var IconPreview = {
+
+		/**
+		 * Bind every icon field within a root.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__icon' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var select = wrap.querySelector( 'select' );
+				var preview = wrap.querySelector( '.field-kit__icon-preview' );
+
+				if ( ! select || ! preview ) {
+					return;
+				}
+
+				function paint() {
+					// Every dashicons-* class goes, whichever one is on it,
+					// so switching icons does not stack them up.
+					preview.className = preview.className
+						.split( /\s+/ )
+						.filter( function ( name ) {
+							return name && 0 !== name.indexOf( 'dashicons-' ) && 'field-kit__icon-preview--empty' !== name;
+						} )
+						.join( ' ' );
+
+					if ( select.value ) {
+						preview.classList.add( select.value );
+					} else {
+						preview.classList.add( 'dashicons-art', 'field-kit__icon-preview--empty' );
+					}
+				}
+
+				select.addEventListener( 'change', paint );
+				paint();
+			} );
+		}
+	};
+
 	var Combobox = {
 
 		/**
@@ -1390,6 +1442,7 @@
 	};
 
 	window.ArrayPressFieldKitModules.Combobox = Combobox;
+	window.ArrayPressFieldKitModules.IconPreview = IconPreview;
 } )();
 
 /**
@@ -3224,7 +3277,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

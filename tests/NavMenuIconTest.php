@@ -183,6 +183,23 @@ final class NavMenuIconTest extends TestCase {
 	}
 
 	/**
+	 * With nothing chosen the preview shows a muted placeholder.
+	 *
+	 * class="dashicons " renders nothing at all, so the control came up with
+	 * an invisible gap where the swatch should be and read as broken before
+	 * it had been touched.
+	 *
+	 * @return void
+	 */
+	public function test_the_empty_preview_is_visible(): void {
+		$markup = $this->render( 'icon' );
+
+		$this->assertStringContainsString( 'field-kit__icon-preview--empty', $markup );
+		$this->assertStringContainsString( 'dashicons-art', $markup );
+		$this->assertDoesNotMatchRegularExpression( '/class="[^"]*dashicons "/', $markup );
+	}
+
+	/**
 	 * The preview is hidden from assistive technology.
 	 *
 	 * It repeats the select's own value, so announcing it says everything
@@ -191,10 +208,8 @@ final class NavMenuIconTest extends TestCase {
 	 * @return void
 	 */
 	public function test_the_preview_is_decorative(): void {
-		$this->assertStringContainsString(
-			'field-kit__icon-preview dashicons " aria-hidden="true"',
-			str_replace( '  ', ' ', $this->render( 'icon' ) )
-		);
+		$this->assertStringContainsString( 'aria-hidden="true"', $this->render( 'icon' ) );
+		$this->assertStringContainsString( 'aria-hidden="true"', $this->render( 'icon', [], 'dashicons-cart' ) );
 	}
 
 	/**

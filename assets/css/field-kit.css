@@ -2737,3 +2737,7 @@ select.field-kit__select[multiple] {
 .field-kit__flexible-orphan {
 	margin: 0 0 8px;
 }
+
+.field-kit__icon-preview--empty {
+	opacity: 0.4;
+}

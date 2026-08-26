@@ -128,9 +128,16 @@ final class IconType extends SelectType {
 
 		$value = (string) $field->value();
 
+		/*
+		 * The empty state gets its own class rather than an empty dashicon.
+		 * `class="dashicons "` renders nothing at all, so the control came up
+		 * with an invisible gap where the preview should be and read as
+		 * broken before it had been touched.
+		 */
 		$preview = sprintf(
-			'<span class="field-kit__icon-preview dashicons %s" aria-hidden="true"></span>',
-			esc_attr( $value )
+			'<span class="field-kit__icon-preview dashicons %s%s" aria-hidden="true"></span>',
+			'' === $value ? 'dashicons-art field-kit__icon-preview--empty' : esc_attr( $value ),
+			''
 		);
 
 		return sprintf(
