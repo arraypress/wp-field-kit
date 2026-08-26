@@ -69,6 +69,13 @@ interface FieldType {
 	public function supports_placeholder(): bool;
 
 	/**
+	 * Whether this field opens a new section, and of what kind.
+	 *
+	 * @return string '', 'tab' or 'accordion'.
+	 */
+	public function opens_section(): string;
+
+	/**
 	 * Whether the control can live in a quick edit or a bulk edit row.
 	 *
 	 * Those two screens are not simply smaller versions of an edit screen.

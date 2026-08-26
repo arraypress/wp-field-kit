@@ -45,7 +45,7 @@ final class SpanningRowTest extends TestCase {
 		sort( $spanning );
 
 		$this->assertSame(
-			[ 'email_editor', 'heading', 'html', 'message', 'separator' ],
+			[ 'accordion', 'email_editor', 'heading', 'html', 'message', 'separator', 'tab' ],
 			$spanning
 		);
 	}

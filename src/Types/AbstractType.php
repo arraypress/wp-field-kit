@@ -148,6 +148,24 @@ abstract class AbstractType implements FieldType {
 	}
 
 	/**
+	 * Whether this field opens a new section, and of what kind.
+	 *
+	 * A tab and an accordion are markers rather than controls: they store
+	 * nothing and render nothing of their own. What they do is divide the
+	 * fields that follow them, up to the next marker of the same kind. The
+	 * field set groups on this, because the grouping cannot be expressed by a
+	 * field that only knows about itself.
+	 *
+	 * An empty string -- almost every type -- means the field is just a field.
+	 *
+	 * @return string '', 'tab' or 'accordion'.
+	 * @since 1.1.0
+	 */
+	public function opens_section(): string {
+		return '';
+	}
+
+	/**
 	 * The shape this type stores.
 	 *
 	 * A string, which is what most controls sanitize to. Anything else says

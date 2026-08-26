@@ -105,6 +105,8 @@ final class Registry {
 		// Layout — these render and store nothing.
 		'heading'         => Types\HeadingType::class,
 		'separator'       => Types\SeparatorType::class,
+		'tab'             => Types\TabType::class,
+		'accordion'       => Types\AccordionType::class,
 		'message'         => Types\MessageType::class,
 		'html'            => Types\HtmlType::class,
 	];
