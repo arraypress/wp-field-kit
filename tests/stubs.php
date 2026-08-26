@@ -440,3 +440,43 @@ if ( ! function_exists( 'wp_get_global_settings' ) ) {
 		return $GLOBALS['fk_global_settings'] ?? [];
 	}
 }
+
+if ( ! function_exists( 'wp_get_nav_menus' ) ) {
+	/**
+	 * The site's navigation menus.
+	 *
+	 * No return type, because core has none: it returns
+	 * apply_filters( 'wp_get_nav_menus', get_terms( ... ) ), so a plugin can
+	 * make it return anything, and get_terms() itself returns a WP_Error for
+	 * a taxonomy that is not registered. A stub that promises an array cannot
+	 * exercise the guard that exists for exactly that.
+	 *
+	 * @param array $args Unused.
+	 *
+	 * @return mixed
+	 */
+	function wp_get_nav_menus( array $args = [] ) {
+		return $GLOBALS['fk_nav_menus'] ?? [];
+	}
+}
+
+if ( ! function_exists( 'sanitize_html_class' ) ) {
+	/**
+	 * Copied from core: the value is printed into a class attribute.
+	 *
+	 * @param string $class_name Class name.
+	 * @param string $fallback   Fallback.
+	 *
+	 * @return string
+	 */
+	function sanitize_html_class( $class_name, $fallback = '' ): string {
+		$sanitized = preg_replace( '/%[a-f0-9]{2}/i', '', (string) $class_name );
+		$sanitized = preg_replace( '/[^A-Za-z0-9_-]/', '', $sanitized );
+
+		if ( '' === $sanitized && $fallback ) {
+			return sanitize_html_class( $fallback );
+		}
+
+		return $sanitized;
+	}
+}

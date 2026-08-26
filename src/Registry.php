@@ -74,6 +74,8 @@ final class Registry {
 		'page'            => Types\PageType::class,
 		'user'            => Types\UserType::class,
 		'taxonomy'        => Types\TaxonomyType::class,
+		'nav_menu'        => Types\NavMenuType::class,
+		'icon'            => Types\IconType::class,
 		'ajax'            => Types\AjaxType::class,
 
 		// Nested — children go through this same registry and renderer.

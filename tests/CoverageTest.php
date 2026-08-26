@@ -311,6 +311,8 @@ final class CoverageTest extends TestCase {
 		'date',
 		'datetime',
 		'email',
+		'icon',
+		'nav_menu',
 		'number',
 		'page',
 		'password',
