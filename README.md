@@ -107,13 +107,72 @@ Media
 : `image` `file` `file_url` `gallery` `files`
 
 Compound
-: `group` `repeater` `list` `key_value` `sortable` `dimensions` `amount_type`
+: `group` `repeater` `list` `key_value` `sortable` `providers` `dimensions` `amount_type`
 
 Layout and display
 : `heading` `separator` `message` `html` `link` `clipboard` `oembed` `custom`
 
 Purpose-built
 : `license` `email_editor` `action_button`
+
+### Providers
+
+A list of things another plugin registered: put in order, switched on, and
+each configured on its own. Payment gateways are the shape everybody
+recognises — the order is the order they appear at checkout — but nothing in
+the field knows the word, so shipping methods, tax providers and storage
+backends are the same list with different names in it.
+
+```php
+'gateways' => [
+    'type'      => 'providers',
+    'label'     => 'Payment gateways',
+
+    // An array, or a callable resolved when the field is drawn — which is
+    // what a registry that fills up on `init` needs.
+    'providers' => 'my_plugin_get_gateways',
+
+    // Where a provider's own settings go: 'inline' opens the row, 'flyout'
+    // opens a dialog. Inline suits two API keys; a flyout suits twenty.
+    'config'    => 'inline',
+],
+```
+
+Each provider is a label and, optionally, fields of its own:
+
+```php
+[
+    'stripe' => [
+        'label'       => 'Stripe',
+        'description' => 'Cards, wallets and local methods.',
+        'logo'        => plugins_url( 'stripe.svg', __FILE__ ),
+        'fields'      => [
+            'secret_key' => [ 'type' => 'password' ],
+        ],
+    ],
+
+    // A bare string is a provider with nothing to configure, and it gets no
+    // Configure button — a control that opens an empty panel is worse than
+    // no control.
+    'cod'    => 'Cash on delivery',
+]
+```
+
+It stores three keys, because the two questions asked of it at runtime are
+"which are on, in what order" and "what is this one's configuration", and
+both are a lookup in this shape and a scan in any other:
+
+```php
+[
+    'order'    => [ 'paypal', 'stripe' ],
+    'enabled'  => [ 'stripe' ],
+    'settings' => [ 'stripe' => [ 'secret_key' => '…' ] ],
+]
+```
+
+A provider registered after a value was stored is appended rather than
+dropped, so installing an add-on does not add a gateway nobody can find; and
+an id the form offers that nobody registered is refused on save.
 
 Older spellings still resolve: `select2`, `ajax_select`, `switch`, `colour`, `term`, `hr`, `notice`, `post_ajax`,
 `taxonomy_ajax`, `user_ajax`.

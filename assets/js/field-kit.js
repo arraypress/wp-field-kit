@@ -1488,7 +1488,7 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__gallery-items, .field-kit__sortable, .field-kit__repeater-rows, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
+			root.querySelectorAll( '.field-kit__gallery-items, .field-kit__sortable, .field-kit__repeater-rows, .field-kit__provider-list, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
 				if ( list.dataset.fkBound ) {
 					return;
 				}
@@ -1516,6 +1516,10 @@
 
 			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
 				return '.field-kit__combobox-chip';
+			}
+
+			if ( list.classList.contains( 'field-kit__provider-list' ) ) {
+				return '.field-kit__provider';
 			}
 
 			return '.field-kit__repeater-row';
@@ -1954,6 +1958,94 @@
 
 	window.ArrayPressFieldKitModules.Reorder = Reorder;
 	window.ArrayPressFieldKitModules.Gallery = Gallery;
+} )();
+
+/**
+ * Field Kit — provider lists.
+ *
+ * Ordering is Reorder's, which the list is registered with above; this is
+ * only the two ways a provider's own settings are reached.
+ */
+( function () {
+	'use strict';
+
+	var Providers = {
+
+		/**
+		 * Bind every provider list within a root.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__providers' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				wrap.addEventListener( 'click', function ( event ) {
+					var open = event.target.closest( '.field-kit__provider-configure' );
+
+					if ( open ) {
+						event.preventDefault();
+						Providers.open( wrap, open );
+
+						return;
+					}
+
+					if ( event.target.closest( '.field-kit__provider-dialog-close' ) ) {
+						event.preventDefault();
+						var dialog = event.target.closest( 'dialog' );
+
+						if ( dialog ) {
+							dialog.close();
+						}
+					}
+				} );
+			} );
+		},
+
+		/**
+		 * Reveal a provider's settings.
+		 *
+		 * @param {Element} wrap   The list.
+		 * @param {Element} button The button that was pressed.
+		 */
+		open: function ( wrap, button ) {
+			var target = wrap.querySelector( '#' + CSS.escape( button.dataset.target ) );
+
+			if ( ! target ) {
+				return;
+			}
+
+			if ( 'flyout' === wrap.dataset.config ) {
+				// showModal(), not show(): the backdrop, the focus trap and
+				// Esc all come with it, and none of the three is worth
+				// writing again.
+				if ( 'function' === typeof target.showModal && ! target.open ) {
+					target.showModal();
+				}
+
+				// Focus goes to the first control rather than being left on
+				// the dialog, which is announced as an empty group.
+				var first = target.querySelector( 'input, select, textarea, button' );
+
+				if ( first ) {
+					first.focus();
+				}
+
+				return;
+			}
+
+			var expanded = 'true' === button.getAttribute( 'aria-expanded' );
+
+			button.setAttribute( 'aria-expanded', expanded ? 'false' : 'true' );
+			target.hidden = expanded;
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Providers = Providers;
 } )();
 
 /**
@@ -3310,7 +3402,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

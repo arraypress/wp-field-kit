@@ -96,6 +96,7 @@ final class Registry {
 		'oembed'          => Types\OembedType::class,
 		'tags'            => Types\TagsType::class,
 		'sortable'        => Types\SortableType::class,
+		'providers'       => Types\ProvidersType::class,
 
 		'email_editor'    => Types\EmailEditorType::class,
 		'license'         => Types\LicenseType::class,

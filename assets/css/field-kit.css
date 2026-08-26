@@ -2893,3 +2893,209 @@ select.field-kit__select[multiple] {
 .field-kit__icon-preview--empty {
 	opacity: 0.4;
 }
+
+/* Provider list
+   -------------------------------------------------------------------------
+   A registered thing, switched on, put in order, configured. Drawn as one
+   row per provider rather than as a card, because the list is read down the
+   left-hand edge -- which is on, and in what order -- and only one row at a
+   time is being configured. */
+
+.field-kit__provider-list {
+	list-style: none;
+	margin: 0;
+	max-width: 42rem;
+	padding: 0;
+}
+
+.field-kit__provider {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	margin: 0 0 -1px;
+}
+
+.field-kit__provider:first-child {
+	border-radius: 2px 2px 0 0;
+}
+
+.field-kit__provider:last-child {
+	border-radius: 0 0 2px 2px;
+	margin-bottom: 0;
+}
+
+/* The row is one line; the settings body is not part of it, which is why the
+   flex is here rather than on the item. */
+.field-kit__provider-row {
+	align-items: center;
+	display: flex;
+	gap: .6rem;
+	padding: .6rem .75rem;
+}
+
+.field-kit__provider .field-kit__drag-handle {
+	color: #a7aaad;
+	cursor: grab;
+	float: left;
+	margin: .85rem 0 0 .5rem;
+}
+
+.field-kit__provider .field-kit__drag-handle:active {
+	cursor: grabbing;
+}
+
+.field-kit__provider.is-dragging {
+	opacity: .5;
+}
+
+.field-kit__provider.is-drop-target {
+	outline: 2px dashed var( --wp-admin-theme-color, #2271b1 );
+	outline-offset: -2px;
+}
+
+/* Takes the slack, so the controls sit against the right-hand edge whatever
+   the name's length. */
+.field-kit__provider-identity {
+	align-items: center;
+	display: flex;
+	flex: 1;
+	gap: .6rem;
+	min-width: 0;
+}
+
+.field-kit__provider-logo {
+	flex: 0 0 auto;
+	height: 24px;
+	object-fit: contain;
+	width: 24px;
+}
+
+/* A dashicon used as the mark rather than an image. */
+span.field-kit__provider-logo {
+	color: #50575e;
+	font-size: 24px;
+	line-height: 1;
+}
+
+.field-kit__provider-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.field-kit__provider-label {
+	font-weight: 600;
+}
+
+.field-kit__provider-text .description {
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.field-kit__provider-moves {
+	display: flex;
+	flex: 0 0 auto;
+}
+
+.wp-core-ui .field-kit__provider-move {
+	align-items: center;
+	border-radius: 2px;
+	display: inline-flex;
+	height: 1.75rem;
+	justify-content: center;
+	padding: 0;
+	text-decoration: none;
+	width: 1.75rem;
+}
+
+.wp-core-ui .field-kit__provider-move:hover {
+	background: #f0f0f1;
+	text-decoration: none;
+}
+
+.wp-core-ui .field-kit__provider-move:disabled {
+	background: none;
+	color: #c3c4c7;
+	cursor: default;
+}
+
+.field-kit__provider-move .dashicons {
+	font-size: 1rem;
+	height: 1rem;
+	line-height: 1;
+	width: 1rem;
+}
+
+/* Inside the row, so it reads as part of that provider rather than as a
+   separator between two of them. */
+.field-kit__provider-body {
+	background: #f6f7f7;
+	border-top: 1px solid #dcdcde;
+	padding: .75rem;
+}
+
+.field-kit__providers-empty {
+	margin: 0;
+}
+
+/* The dialog is the browser's, so the backdrop, the focus trap and Esc are
+   already handled; this is only how it is painted. */
+.field-kit__provider-dialog {
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	box-shadow: 0 4px 24px rgba( 0, 0, 0, .2 );
+	color: inherit;
+	max-height: 80vh;
+	max-width: min( 32rem, calc( 100vw - 2rem ) );
+	padding: 0;
+	width: 100%;
+}
+
+.field-kit__provider-dialog::backdrop {
+	background: rgba( 0, 0, 0, .4 );
+}
+
+.field-kit__provider-dialog-header {
+	align-items: center;
+	border-bottom: 1px solid #dcdcde;
+	display: flex;
+	justify-content: space-between;
+	padding: .75rem 1rem;
+}
+
+.field-kit__provider-dialog-header h2 {
+	font-size: 14px;
+	margin: 0;
+}
+
+.wp-core-ui .field-kit__provider-dialog-header .field-kit__provider-dialog-close {
+	background: none;
+	border: 0;
+	color: #50575e;
+	cursor: pointer;
+	padding: 0;
+}
+
+.field-kit__provider-dialog-body {
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 1rem;
+}
+
+.field-kit__provider-dialog-footer {
+	border-top: 1px solid #dcdcde;
+	display: flex;
+	justify-content: flex-end;
+	padding: .75rem 1rem;
+}
+
+@media ( max-width: 782px ) {
+	.field-kit__provider-row {
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.field-kit__provider-identity {
+		flex: 1 1 100%;
+		order: -1;
+	}
+}
