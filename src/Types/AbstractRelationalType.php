@@ -149,6 +149,20 @@ abstract class AbstractRelationalType extends SelectType {
 
 		$attributes->set_if( (bool) $field->get( 'creatable', false ), 'data-creatable', 'true' );
 
+		/*
+		 * Order is only meaningful when more than one thing can be chosen, and
+		 * it is only worth carrying when the caller says so -- a set of related
+		 * products has an order the editor cares about, a set of tags does not.
+		 */
+		$attributes->set_if(
+			$this->is_multiple( $field ) && (bool) $field->get( 'sortable', false ),
+			'data-sortable',
+			'true'
+		);
+
+		$attributes->set_if( $field->has( 'min' ), 'data-min', (int) $field->get( 'min', 0 ) );
+		$attributes->set_if( $field->has( 'max' ), 'data-max', (int) $field->get( 'max', 0 ) );
+
 		return parent::render( $field, $attributes );
 	}
 
@@ -215,11 +229,16 @@ abstract class AbstractRelationalType extends SelectType {
 			$values = array_map( 'sanitize_text_field', array_map( 'strval', (array) $value ) );
 			$values = array_values( array_filter( $values, static fn( $one ) => '' !== $one ) );
 
-			return $this->is_multiple( $field ) ? $values : ( $values[0] ?? '' );
+			return $this->is_multiple( $field )
+				? $this->apply_max( $values, $field )
+				: ( $values[0] ?? '' );
 		}
 
 		if ( $this->is_multiple( $field ) ) {
-			return array_values( array_filter( array_map( 'absint', (array) $value ) ) );
+			return $this->apply_max(
+				array_values( array_filter( array_map( 'absint', (array) $value ) ) ),
+				$field
+			);
 		}
 
 		$id = absint( is_array( $value ) ? reset( $value ) : $value );
@@ -261,9 +280,33 @@ abstract class AbstractRelationalType extends SelectType {
 	 * @return string[]
 	 */
 	public function config_keys(): array {
+		// 'creatable' is already declared by SelectType; repeating it here put
+		// it in the list twice.
 		return array_merge(
 			parent::config_keys(),
-			[ 'creatable', 'min_chars', 'search_callback' ]
+			[ 'min_chars', 'search_callback', 'sortable', 'min', 'max' ]
 		);
+	}
+
+	/**
+	 * Cut a selection down to the configured maximum.
+	 *
+	 * The control refuses to take more than `max`, but the control is JavaScript
+	 * and the value arrives over HTTP. A limit enforced only in the browser is
+	 * not a limit -- anything posting directly ignores it -- so the extra values
+	 * are dropped here as well.
+	 *
+	 * Extras are cut from the end, so the editor keeps what they chose first.
+	 *
+	 * @param array $values The sanitised selection.
+	 * @param Field $field  The field.
+	 *
+	 * @return array
+	 * @since 1.1.0
+	 */
+	protected function apply_max( array $values, Field $field ): array {
+		$max = (int) $field->get( 'max', 0 );
+
+		return $max > 0 ? array_slice( $values, 0, $max ) : $values;
 	}
 }

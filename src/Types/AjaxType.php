@@ -110,9 +110,10 @@ final class AjaxType extends AbstractRelationalType {
 	 * @return string[]
 	 */
 	public function config_keys(): array {
+		// 'search_callback' is already declared by AbstractRelationalType.
 		return array_merge(
 			parent::config_keys(),
-			[ 'label_callback', 'search_callback', 'search_source' ]
+			[ 'label_callback', 'search_source' ]
 		);
 	}
 }

@@ -647,6 +647,71 @@
 	var Combobox = {
 
 		/**
+		 * Put the select's options in the order its chips are now in.
+		 *
+		 * The chips are only a picture of what is chosen; the select is what
+		 * gets posted, and a multiple select posts in option order rather than
+		 * in the order things were picked. Dragging a chip therefore has to
+		 * move the option too, or the new order is lost on save.
+		 *
+		 * Unselected options are left where they are: they are not part of the
+		 * value and moving them would churn the DOM for nothing.
+		 *
+		 * @param {Element} chips The chip list.
+		 */
+		/**
+		 * A move control for a chip.
+		 *
+		 * Reorder.bindButtons() finds these by data-direction, so a chip gets
+		 * keyboard reordering for free and the drag path is the same code.
+		 *
+		 * @param {string} direction 'up' or 'down'.
+		 * @param {string} label     The chip's text, for the accessible name.
+		 * @return {HTMLElement} The button.
+		 */
+		moveButton: function ( direction, label ) {
+			var button = document.createElement( 'button' );
+
+			button.type = 'button';
+			button.className = 'field-kit__combobox-chip-move';
+			button.dataset.direction = direction;
+			button.setAttribute(
+				'aria-label',
+				t( 'up' === direction ? 'moveUp' : 'moveDown', 'up' === direction ? 'Move up' : 'Move down' ) + ': ' + label
+			);
+			button.innerHTML = '<span class="dashicons dashicons-arrow-' + direction + '-alt2" aria-hidden="true"></span>';
+
+			return button;
+		},
+
+		syncOrder: function ( chips ) {
+			var wrap = chips.closest( '.field-kit__combobox' ) || chips.parentElement;
+			var select = wrap ? wrap.querySelector( 'select' ) : null;
+
+			if ( ! select ) {
+				return;
+			}
+
+			var order = Array.prototype.slice.call(
+				chips.querySelectorAll( '.field-kit__combobox-chip' )
+			).map( function ( chip ) {
+				return chip.dataset.value;
+			} );
+
+			order.forEach( function ( value ) {
+				var option = Array.prototype.slice.call( select.options ).filter( function ( candidate ) {
+					return candidate.value === value;
+				} )[ 0 ];
+
+				if ( option ) {
+					select.appendChild( option );
+				}
+			} );
+
+			select.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+		},
+
+		/**
 		 * Upgrade every enhanced select within a root.
 		 *
 		 * @param {Element} root Container.
@@ -727,6 +792,13 @@
 			if ( multiple ) {
 				chips = document.createElement( 'ul' );
 				chips.className = 'field-kit__combobox-chips';
+
+				// Set here rather than when the chips are first drawn:
+				// Reorder.init() selects on this attribute and may have run
+				// already by then.
+				if ( 'true' === select.getAttribute( 'data-sortable' ) ) {
+					chips.setAttribute( 'data-sortable', 'true' );
+				}
 			}
 
 			var selected = multiple ? null : select.options[ select.selectedIndex ];
@@ -926,9 +998,19 @@
 
 				chips.innerHTML = '';
 
+				var sortable = 'true' === select.getAttribute( 'data-sortable' );
+
 				Array.prototype.slice.call( select.selectedOptions ).forEach( function ( option ) {
 					var chip = document.createElement( 'li' );
 					chip.className = 'field-kit__combobox-chip';
+
+					// syncOrder() matches chips back to options by value.
+					chip.dataset.value = option.value;
+
+					if ( sortable ) {
+						chip.appendChild( Combobox.moveButton( 'up', option.text ) );
+						chip.appendChild( Combobox.moveButton( 'down', option.text ) );
+					}
 
 					var label = document.createElement( 'span' );
 					label.textContent = option.text;
@@ -973,6 +1055,19 @@
 			 */
 			function take( value, text, created ) {
 				if ( multiple ) {
+					// A limit that is only enforced on save is a limit the
+					// editor discovers after losing their work.
+					var max = parseInt( select.getAttribute( 'data-max' ) || '0', 10 );
+
+					if ( max > 0 && select.selectedOptions.length >= max ) {
+						kit.announce(
+							status,
+							t( 'maxReached', 'You can choose at most %d.' ).replace( '%d', String( max ) )
+						);
+
+						return;
+					}
+
 					var option = optionFor( value, text );
 
 					if ( created ) {
@@ -1319,7 +1414,7 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			root.querySelectorAll( '.field-kit__gallery-items, .field-kit__sortable, .field-kit__repeater-rows' ).forEach( function ( list ) {
+			root.querySelectorAll( '.field-kit__gallery-items, .field-kit__sortable, .field-kit__repeater-rows, .field-kit__combobox-chips[data-sortable]' ).forEach( function ( list ) {
 				if ( list.dataset.fkBound ) {
 					return;
 				}
@@ -1343,6 +1438,10 @@
 
 			if ( list.classList.contains( 'field-kit__sortable' ) ) {
 				return '.field-kit__sortable-item';
+			}
+
+			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
+				return '.field-kit__combobox-chip';
 			}
 
 			return '.field-kit__repeater-row';
@@ -1483,6 +1582,10 @@
 
 				item.dataset.index = String( index );
 			} );
+
+			if ( list.classList.contains( 'field-kit__combobox-chips' ) ) {
+				Combobox.syncOrder( list );
+			}
 
 			if ( list.classList.contains( 'field-kit__gallery-items' ) ) {
 				Gallery.sync( list );
