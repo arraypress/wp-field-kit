@@ -175,7 +175,7 @@ class RepeaterType extends AbstractNestedType {
 		);
 
 		$actions = $this->row_handle( $index, $total )
-			. $this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false );
+			. $this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'trash', false );
 
 		if ( $this->is_collapsible( $field ) ) {
 			return $this->render_collapsible_row( $field, $index, $row, $position, $fields, $actions );
@@ -442,7 +442,7 @@ class RepeaterType extends AbstractNestedType {
 			$index,
 			$cells,
 			$this->row_handle( $index, $total ),
-			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
+			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'trash', false )
 		);
 	}
 
@@ -503,6 +503,10 @@ class RepeaterType extends AbstractNestedType {
 
 	/**
 	 * A per-row action button.
+	 *
+	 * A bin rather than a cross: in a collapsible header the cross sits
+	 * beside the control that folds the row away, and the two read as the
+	 * same thing. One of them destroys the row.
 	 *
 	 * @param string $action   Action name for the script.
 	 * @param string $position Human row position, for the accessible label.

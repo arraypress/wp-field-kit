@@ -383,15 +383,19 @@ final class RepeaterTest extends TestCase {
 	}
 
 	/**
-	 * Removing a row is still its own control.
+	 * Removing a row is still its own control, and says what it does.
+	 *
+	 * A cross beside the control that folds a row away reads as the same
+	 * thing, and one of the two destroys the row.
 	 *
 	 * @return void
 	 */
 	public function test_a_row_can_still_be_removed(): void {
-		$this->assertStringContainsString(
-			'data-action="remove"',
-			$this->render( 'stacked', [ [ 'country' => 'IE' ] ] )
-		);
+		$html = $this->render( 'stacked', [ [ 'country' => 'IE' ] ] );
+
+		$this->assertStringContainsString( 'data-action="remove"', $html );
+		$this->assertStringContainsString( 'dashicons-trash', $html );
+		$this->assertStringNotContainsString( 'dashicons-no-alt', $html );
 	}
 
 	/**

@@ -1836,6 +1836,14 @@ li.field-kit__repeater-row {
 	color: #b32d2e;
 }
 
+/* core's own darker destructive red, so pressing it looks like pressing
+   something rather than like nothing happening. */
+.wp-core-ui .field-kit__repeater-remove:hover,
+.wp-core-ui .field-kit__repeater-remove:focus {
+	background: #f6e9e9;
+	color: #8a2424;
+}
+
 /* The dashicon is the button's whole content, so it should not carry the
    line-height of surrounding text. */
 .field-kit__sortable-move .dashicons,
