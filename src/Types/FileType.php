@@ -168,21 +168,4 @@ class FileType extends AbstractMediaType {
 	public function supports_placeholder(): bool {
 		return true;
 	}
-
-	/**
-	 * The configuration keys this type reads.
-	 *
-	 * `inline` is set by a repeater on every child it builds, not by a
-	 * caller, but it is still configuration this type reads — and an
-	 * undeclared key warns under WP_DEBUG. Declared here rather than on the
-	 * media base, because an image or a gallery does nothing with it.
-	 *
-	 * @return string[]
-	 */
-	public function config_keys(): array {
-		return array_merge(
-			parent::config_keys(),
-			[ 'inline' ]
-		);
-	}
 }

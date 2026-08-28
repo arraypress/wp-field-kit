@@ -428,6 +428,44 @@ final class RepeaterTest extends TestCase {
 	}
 
 	/**
+	 * The kit does not warn about configuration it put there itself.
+	 *
+	 * A repeater sets `inline` on every child it builds. It was declared by
+	 * FileType alone, so a row of a text, a number and a select reported
+	 * three keys nothing reads -- from the caller's side, three complaints
+	 * about a key the caller never wrote.
+	 *
+	 * @return void
+	 */
+	public function test_a_row_reports_no_unknown_keys(): void {
+		$registry = new Registry();
+		$type     = $registry->get( 'repeater' );
+
+		$owner = new Field(
+			'rates',
+			$type,
+			[ 'label' => 'Rates', 'input_name' => 'rates', 'fields' => self::SUB_FIELDS ],
+			null
+		);
+
+		// The children as the repeater builds them, which is where the extras
+		// it adds to every row are merged in.
+		$child = new \ReflectionMethod( $type, 'child' );
+
+		$unknown = [];
+
+		foreach ( $owner->sub_fields() as $key => $config ) {
+			$built = $child->invoke( $type, $owner, (string) $key, (array) $config, null, 'rates[0]', 'row0' );
+
+			$this->assertNotNull( $built, (string) $key );
+
+			$unknown = array_merge( $unknown, $built->unknown_keys() );
+		}
+
+		$this->assertSame( [], array_values( array_unique( $unknown ) ) );
+	}
+
+	/**
 	 * Render a field through a set, which is where type defaults are applied.
 	 *
 	 * Building a Field directly skips them — the merge happens in FieldSet —

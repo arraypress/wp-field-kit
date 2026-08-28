@@ -46,6 +46,14 @@ final class Field {
 		'sub_fields',
 		'class',
 		'width',
+
+		// Set by a repeater on every child it builds rather than by a
+		// caller, so it is common whether or not the type in the row reads
+		// it. Declared on FileType alone, it warned on each of the other
+		// dozen types a row can hold: a product panel of three price tiers
+		// reported a hundred and thirty keys nothing reads, all of them put
+		// there by the kit itself.
+		'inline',
 		'data',
 		'input_id',
 		'input_name',
