@@ -3135,23 +3135,28 @@ span.field-kit__provider-logo {
 .field-kit__field--third,
 .field-kit__field--two-thirds,
 .field-kit__field--quarter {
-	flex: 1 1 auto;
+	flex-grow: 0;
+	flex-shrink: 1;
 	min-width: 8rem;
 }
 
 .field-kit__field--half {
+	flex-basis: calc( 50% - .375rem );
 	width: calc( 50% - .375rem );
 }
 
 .field-kit__field--third {
+	flex-basis: calc( 33.333% - .5rem );
 	width: calc( 33.333% - .5rem );
 }
 
 .field-kit__field--two-thirds {
+	flex-basis: calc( 66.666% - .25rem );
 	width: calc( 66.666% - .25rem );
 }
 
 .field-kit__field--quarter {
+	flex-basis: calc( 25% - .5625rem );
 	width: calc( 25% - .5625rem );
 }
 
@@ -3181,12 +3186,24 @@ span.field-kit__provider-logo {
 	width: 100%;
 }
 
-.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--half,
-.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--third,
-.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--two-thirds,
+/* The share is the basis, not a width flex is free to ignore. `flex-basis:
+   8rem` here meant four halves fitted on one line whenever the panel was wide
+   enough -- so a subscription's price, its compare-at, its interval and its
+   trial all ended up on the same row, and "half" meant nothing. */
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--half {
+	flex: 0 1 calc( 50% - .375rem );
+}
+
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--third {
+	flex: 0 1 calc( 33.333% - .5rem );
+}
+
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--two-thirds {
+	flex: 0 1 calc( 66.666% - .25rem );
+}
+
 .field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--quarter {
-	flex-grow: 1;
-	flex-basis: 8rem;
+	flex: 0 1 calc( 25% - .5625rem );
 }
 
 /* Controls fill the field they sit in. A 20rem default width inside a panel
