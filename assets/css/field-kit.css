@@ -2945,39 +2945,13 @@ select.field-kit__select[multiple] {
 	padding: .6rem .75rem;
 }
 
-/* A real button, at the right-hand edge: it is the grab handle and it is also
-   the keyboard's only way to reorder, since a drag cannot be performed from
-   one. It replaced a pair of chevrons that did the same job twice. */
+/* Sits at the right-hand edge, and wants a column of its own to sit in.
+   Everything else about it is .field-kit__drag-handle. */
 .wp-core-ui .field-kit__provider-handle {
-	align-items: center;
-	background: none;
-	border: 0;
-	box-shadow: none;
-	color: #a7aaad;
-	cursor: grab;
-	display: inline-flex;
-	flex: 0 0 auto;
-	justify-content: center;
-	padding: 0;
 	width: 1.75rem;
 }
 
-.wp-core-ui .field-kit__provider-handle:hover {
-	color: #50575e;
-}
-
-.wp-core-ui .field-kit__provider-handle:active {
-	cursor: grabbing;
-}
-
-.wp-core-ui .field-kit__provider-handle:focus {
-	box-shadow: none;
-	color: var( --wp-admin-theme-color, #2271b1 );
-	outline: 2px solid var( --wp-admin-theme-color, #2271b1 );
-	outline-offset: -2px;
-}
-
-.field-kit__provider-handle .dashicons {
+.field-kit__drag-handle .dashicons {
 	font-size: 20px;
 	height: 20px;
 	width: 20px;
@@ -3128,4 +3102,113 @@ span.field-kit__provider-logo {
 	.field-kit__provider-handle {
 		margin-left: auto;
 	}
+}
+
+/* A field may take a share of the line rather than all of it, so two short
+   controls -- a price and the price it is compared against -- read as the
+   pair they are instead of as two unrelated rows. Percentages minus the gap,
+   with a min-width so they stack rather than crush on a narrow flyout. */
+.field-kit__field--half,
+.field-kit__field--third,
+.field-kit__field--two-thirds,
+.field-kit__field--quarter {
+	flex: 1 1 auto;
+	min-width: 8rem;
+}
+
+.field-kit__field--half {
+	width: calc( 50% - .375rem );
+}
+
+.field-kit__field--third {
+	width: calc( 33.333% - .5rem );
+}
+
+.field-kit__field--two-thirds {
+	width: calc( 66.666% - .25rem );
+}
+
+.field-kit__field--quarter {
+	width: calc( 25% - .5625rem );
+}
+
+/* The repeater's own fields wrap, or a width is a suggestion the layout
+   ignores and the halves sit on their own lines anyway. */
+.field-kit__repeater--column .field-kit__repeater-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .75rem;
+}
+
+/* Anything without a width takes the whole line. Stated rather than left to
+   flex's own sizing, which shrinks a control to its content and left a text
+   input a third of the width of the panel holding it. */
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field {
+	flex: 1 1 100%;
+	width: 100%;
+}
+
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--half,
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--third,
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--two-thirds,
+.field-kit__repeater--column .field-kit__repeater-fields > .field-kit__field--quarter {
+	flex-grow: 1;
+	flex-basis: 8rem;
+}
+
+/* Controls fill the field they sit in. A 20rem default width inside a panel
+   narrower than that overflows it, and inside a wider one leaves the field
+   looking half-finished. */
+.field-kit__repeater-fields .field-kit__field input[type="text"],
+.field-kit__repeater-fields .field-kit__field input[type="url"],
+.field-kit__repeater-fields .field-kit__field input[type="email"],
+.field-kit__repeater-fields .field-kit__field input[type="number"],
+.field-kit__repeater-fields .field-kit__field select,
+.field-kit__repeater-fields .field-kit__field textarea {
+	max-width: 100%;
+	width: 100%;
+}
+
+/* The grab handle, shared by every list that has one. */
+.wp-core-ui .field-kit__drag-handle {
+	align-items: center;
+	background: none;
+	border: 0;
+	box-shadow: none;
+	color: #a7aaad;
+	cursor: grab;
+	display: inline-flex;
+	flex: 0 0 auto;
+	justify-content: center;
+	padding: 0;
+	touch-action: none;
+}
+
+.wp-core-ui .field-kit__drag-handle:hover {
+	color: #50575e;
+}
+
+.wp-core-ui .field-kit__drag-handle:active {
+	cursor: grabbing;
+}
+
+.wp-core-ui .field-kit__drag-handle:focus {
+	box-shadow: none;
+	color: var( --wp-admin-theme-color, #2271b1 );
+	outline: 2px solid var( --wp-admin-theme-color, #2271b1 );
+	outline-offset: -2px;
+}
+
+/* The handle sits at the top of a card whose fields it reorders, beside the
+   remove button rather than under it -- a column of two icons down the side
+   of a tall card puts the remove button level with nothing in particular. */
+.field-kit__repeater-actions {
+	align-items: center;
+	display: flex;
+	flex: 0 0 auto;
+	gap: .25rem;
+}
+
+.field-kit__repeater-row.is-dragging {
+	opacity: .5;
 }

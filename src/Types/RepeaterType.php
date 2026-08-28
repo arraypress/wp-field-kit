@@ -156,7 +156,7 @@ class RepeaterType extends AbstractNestedType {
 			'<li class="field-kit__repeater-row" data-index="%d">' .
 			'<span class="field-kit__repeater-position screen-reader-text">%s</span>' .
 			'<div class="field-kit__repeater-fields">%s</div>' .
-			'<div class="field-kit__repeater-actions">%s%s%s</div></li>',
+			'<div class="field-kit__repeater-actions">%s%s</div></li>',
 			$index,
 			esc_html( $position ),
 			// Scoped by row: without it every row reuses the same child ids
@@ -169,8 +169,7 @@ class RepeaterType extends AbstractNestedType {
 				null,
 				$this->labels_rows( $field )
 			),
-			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
-			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
+			$this->row_handle( $index, $total ),
 			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
 		);
 	}
@@ -292,12 +291,66 @@ class RepeaterType extends AbstractNestedType {
 		return sprintf(
 			'<tr class="field-kit__repeater-row" data-index="%d">' .
 			'%s' .
-			'<td class="field-kit__repeater-actions">%s%s%s</td></tr>',
+			'<td class="field-kit__repeater-actions">%s%s</td></tr>',
 			$index,
 			$cells,
-			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
-			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
+			$this->row_handle( $index, $total ),
 			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
+		);
+	}
+
+	/**
+	 * The grab handle, which is also the keyboard's way to reorder.
+	 *
+	 * One control rather than the pair of chevrons this replaced. Those were
+	 * two buttons doing one job, they took a click per position so moving a
+	 * row four places took four, and the top and bottom rows each had a
+	 * permanently disabled one sitting in the actions column.
+	 *
+	 * A button and not a decorative span: dragging cannot be done from a
+	 * keyboard at all, so a handle that is only draggable makes the list
+	 * unorderable without a pointer. Focus it and press the arrow keys.
+	 *
+	 * The position is in the accessible name because a handle that only says
+	 * "Reorder row" gives no feedback that anything happened; announcing
+	 * "3 of 4" is how a keyboard user knows the move landed. It is kept as a
+	 * template so the script can rewrite the numbers after a move without a
+	 * second copy of the wording to translate.
+	 *
+	 * @param int $index Zero-based row index.
+	 * @param int $total How many rows there are.
+	 *
+	 * @return string
+	 */
+	protected function row_handle( int $index, int $total ): string {
+		$handle = new Attributes();
+		$handle->set( 'type', 'button' );
+		$handle->add_class( 'field-kit__drag-handle', 'field-kit__repeater-handle' );
+		$handle->set( 'aria-roledescription', __( 'Sortable', 'arraypress' ) );
+		$handle->set( 'aria-keyshortcuts', 'ArrowUp ArrowDown' );
+
+		$template = sprintf(
+			/* translators: 1: row position, 2: how many rows there are */
+			__( 'Reorder row, %1$s of %2$s', 'arraypress' ),
+			'{position}',
+			'{total}'
+		);
+
+		$handle->set( 'data-label-template', $template );
+		$handle->set(
+			'aria-label',
+			strtr(
+				$template,
+				[
+					'{position}' => (string) ( $index + 1 ),
+					'{total}'    => (string) $total,
+				]
+			)
+		);
+
+		return sprintf(
+			'<button%s><span class="dashicons dashicons-menu" aria-hidden="true"></span></button>',
+			$handle->render()
 		);
 	}
 

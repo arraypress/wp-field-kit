@@ -328,6 +328,106 @@ final class RepeaterTest extends TestCase {
 	}
 
 	/**
+	 * Both layouts reorder from one handle rather than a pair of chevrons.
+	 *
+	 * The chevrons were two controls doing one job and cost a click per
+	 * position; the handle is also what makes the row draggable at all.
+	 *
+	 * @return void
+	 */
+	public function test_a_row_reorders_from_a_drag_handle(): void {
+		foreach ( [ 'stacked', 'table' ] as $layout ) {
+			$html = $this->render( $layout, [ [ 'country' => 'IE' ], [ 'country' => 'GB' ] ] );
+
+			$this->assertStringContainsString( 'field-kit__drag-handle', $html, $layout );
+			$this->assertStringContainsString( 'dashicons-menu', $html, $layout );
+			$this->assertStringNotContainsString( 'data-action="move-up"', $html, $layout );
+			$this->assertStringNotContainsString( 'data-action="move-down"', $html, $layout );
+		}
+	}
+
+	/**
+	 * The handle is reachable and operable without a pointer.
+	 *
+	 * A span with a grab cursor would look identical and leave the list
+	 * unorderable for anyone using a keyboard.
+	 *
+	 * @return void
+	 */
+	public function test_the_handle_is_a_button_that_announces_its_position(): void {
+		$html = $this->render( 'stacked', [ [ 'country' => 'IE' ], [ 'country' => 'GB' ] ] );
+
+		$this->assertMatchesRegularExpression(
+			'/<button[^>]*class="[^"]*field-kit__drag-handle/',
+			$html
+		);
+		$this->assertStringContainsString( 'aria-keyshortcuts="ArrowUp ArrowDown"', $html );
+		$this->assertStringContainsString( '1 of 2', $html );
+		$this->assertStringContainsString( '2 of 2', $html );
+	}
+
+	/**
+	 * The script rewrites the position after a move, from this template.
+	 *
+	 * Without it the announced position goes stale the moment a row is
+	 * dragged, and the handle reports where the row used to be.
+	 *
+	 * @return void
+	 */
+	public function test_the_handle_carries_a_template_for_the_script(): void {
+		$html = $this->render( 'stacked', [ [ 'country' => 'IE' ] ] );
+
+		$this->assertStringContainsString( 'data-label-template', $html );
+		$this->assertStringContainsString( '{position}', $html );
+		$this->assertStringContainsString( '{total}', $html );
+	}
+
+	/**
+	 * Removing a row is still its own control.
+	 *
+	 * @return void
+	 */
+	public function test_a_row_can_still_be_removed(): void {
+		$this->assertStringContainsString(
+			'data-action="remove"',
+			$this->render( 'stacked', [ [ 'country' => 'IE' ] ] )
+		);
+	}
+
+	/**
+	 * A width is a class on the wrapper, so two fields share a line.
+	 *
+	 * @return void
+	 */
+	public function test_a_width_reaches_the_field_wrapper(): void {
+		$html = $this->through_a_set(
+			[
+				'amount'     => [ 'type' => 'number', 'label' => 'Amount', 'width' => 'half' ],
+				'compare_at' => [ 'type' => 'number', 'label' => 'Compare at', 'width' => 'half' ],
+			]
+		);
+
+		$this->assertSame( 2, substr_count( $html, 'field-kit__field--half' ) );
+	}
+
+	/**
+	 * An unrecognised width is inert rather than emitting a dead class.
+	 *
+	 * A class no stylesheet defines renders full width, which reads as the
+	 * key having been ignored -- so it is, explicitly.
+	 *
+	 * @return void
+	 */
+	public function test_an_unknown_width_emits_no_class(): void {
+		$html = $this->through_a_set(
+			[ 'amount' => [ 'type' => 'number', 'label' => 'Amount', 'width' => 'two-fifths' ] ]
+		);
+
+		$this->assertStringNotContainsString( 'two-fifths', $html );
+		$this->assertStringContainsString( 'field-kit__field--number', $html );
+	}
+
+	/**
 	 * Render a field through a set, which is where type defaults are applied.
 	 *
 	 * Building a Field directly skips them — the merge happens in FieldSet —

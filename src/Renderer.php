@@ -36,6 +36,25 @@ use ArrayPress\FieldKit\Support\Markup;
 final class Renderer {
 
 	/**
+	 * The widths a field may take, as shares of the line it sits on.
+	 *
+	 * A list rather than free text so a typo is inert instead of emitting a
+	 * class no stylesheet defines -- which renders as full width and reads as
+	 * the key having been ignored.
+	 *
+	 * Spelled out rather than built from the key, so the class names appear
+	 * in the source as themselves and can be matched against the stylesheet.
+	 *
+	 * @var array<string, string>
+	 */
+	private const WIDTHS = [
+		'half'       => 'field-kit__field--half',
+		'third'      => 'field-kit__field--third',
+		'two-thirds' => 'field-kit__field--two-thirds',
+		'quarter'    => 'field-kit__field--quarter',
+	];
+
+	/**
 	 * Render one field, wrapper and all.
 	 *
 	 * @param Field  $field      The normalized field.
@@ -334,6 +353,15 @@ final class Renderer {
 
 		$attributes->add_class( 'field-kit__field', 'field-kit__field--' . $field->type()->id() );
 		$attributes->set( 'data-field-key', $field->key() );
+
+		// A width is a share of the line, not a measurement: the wrapper is a
+		// flex child and the class sets its basis, so two halves sit beside
+		// each other and wrap on a narrow screen instead of overflowing.
+		$width = (string) $field->get( 'width', '' );
+
+		if ( isset( self::WIDTHS[ $width ] ) ) {
+			$attributes->add_class( self::WIDTHS[ $width ] );
+		}
 
 		if ( Badge::locks( $field ) ) {
 			$attributes->add_class( 'field-kit__field--locked' );

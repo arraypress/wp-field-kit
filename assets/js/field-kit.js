@@ -1742,8 +1742,15 @@
 
 			list.addEventListener( 'pointerdown', function ( event ) {
 				// Never start a drag from a control: it would swallow the
-				// click that operates it.
-				if ( event.target.closest( 'button, input, select, textarea, a' ) ) {
+				// click that operates it. The drag handle is the exception --
+				// it is a button so that it can be focused and reordered from
+				// the keyboard, and excluding it along with the rest meant the
+				// one control drawn as a grab handle was the one control that
+				// could not be grabbed.
+				if (
+					event.target.closest( 'button, input, select, textarea, a' ) &&
+					! event.target.closest( 'button.field-kit__drag-handle' )
+				) {
 					return;
 				}
 

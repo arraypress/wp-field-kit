@@ -45,6 +45,7 @@ final class Field {
 		'fields',
 		'sub_fields',
 		'class',
+		'width',
 		'data',
 		'input_id',
 		'input_name',
