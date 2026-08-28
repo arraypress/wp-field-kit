@@ -247,13 +247,7 @@ class RepeaterType extends AbstractNestedType {
 			esc_html( $this->row_title( $field, $row, $index ) ),
 			$actions,
 			$fields,
-			esc_attr(
-				sprintf(
-					/* translators: %d: row number */
-					__( 'Row %d', 'arraypress' ),
-					$index + 1
-				)
-			)
+			esc_attr( $this->position_title( $index ) )
 		);
 	}
 
@@ -306,10 +300,24 @@ class RepeaterType extends AbstractNestedType {
 			return (string) $row[ $key ];
 		}
 
+		return $this->position_title( $index );
+	}
+
+	/**
+	 * A row's position, as a name for one with nothing to call it.
+	 *
+	 * Clamped, because the template the script clones is rendered at index
+	 * -1 and read literally that is a row titled "Row 0".
+	 *
+	 * @param int $index Zero-based row index.
+	 *
+	 * @return string
+	 */
+	private function position_title( int $index ): string {
 		return sprintf(
 			/* translators: %d: row number */
 			__( 'Row %d', 'arraypress' ),
-			$index + 1
+			max( 1, $index + 1 )
 		);
 	}
 
