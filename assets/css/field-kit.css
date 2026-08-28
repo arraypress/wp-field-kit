@@ -1432,10 +1432,13 @@ li.field-kit__repeater-row {
 	margin-right: 0;
 }
 
-/* Beside the heading, and on its baseline rather than the flex line's. */
+/* Beside the heading, and on its baseline rather than the flex line's. No
+   bottom margin: the row already carries a rem of bottom padding, and the
+   two together left the actions sitting a clear gap below the title they
+   belong to rather than on the line with it. */
 .field-kit__page-header--left .field-kit__page-actions {
 	justify-content: flex-start;
-	margin-bottom: 1rem;
+	margin-bottom: 0;
 }
 
 .field-kit__page-tabs {
