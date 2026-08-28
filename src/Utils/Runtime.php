@@ -13,33 +13,30 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Utils;
 
 /**
- * Class Runtime
+ * Every runtime string this library registers, derived from its own namespace.
  *
- * Derives every runtime string this library registers — REST namespace,
- * script handles, JS object names, transient keys — from its own PHP
- * namespace.
- *
- * Strauss rewrites class namespaces but leaves string literals alone. Two
+ * Strauss rewrites class namespaces and leaves string literals alone. Two
  * plugins each bundling a prefixed copy of this library therefore get
- * distinct classes but would otherwise register identical REST routes,
- * identical script handles and identical transient keys.
+ * distinct classes but would otherwise register the same REST routes and the
+ * same script handles.
  *
- * That is not merely wasteful:
+ * That is not merely untidy, and neither failure announces itself:
  *
- * - `WP_REST_Server::register_route()` merges same-path registrations with
- *   `array_merge()` over a numerically-indexed handler list, so handlers are
+ * - `WP_REST_Server::register_route()` keys endpoints by route path and, with
+ *   no `$override`, merges a second registration into the first with
+ *   `array_merge()`. The handler list is numerically indexed, so handlers are
  *   appended rather than replaced and dispatch runs the first whose methods
- *   match. The plugin that registered first answers the other's requests,
- *   under its own capability and its own report registry.
- * - Every callback on a shared `wp_ajax_*` action runs in turn, and the
- *   download handler `exit`s after `readfile()`. Whichever plugin registered
- *   second could never serve an export at all.
- * - A shared transient prefix lets one plugin read and delete the other's
- *   export session.
+ *   match. The plugin that registered first answers the other's requests --
+ *   resolving the source or action against its own registry, and checking
+ *   that registry's capability. The second plugin's own sources come back as
+ *   404 "unknown source" on an endpoint that is plainly there.
+ * - `wp_enqueue_script()` ignores a handle that is already registered, so the
+ *   plugin that enqueued second gets the other plugin's JavaScript -- from a
+ *   build whose field types may not be the ones its markup expects.
  *
- * The derivation exploits the one thing Strauss *does* rewrite: this file's
+ * The derivation exploits the one thing Strauss does rewrite: this file's
  * namespace. In a prefixed build `__NAMESPACE__` begins with the consumer's
- * prefix ("EDDFF\ArrayPress\FieldKit\Utils"), unique per plugin by
+ * prefix ("MyPlugin\ArrayPress\FieldKit\Utils"), unique per plugin by
  * construction, so every key comes out distinct with no configuration.
  */
 final class Runtime {
@@ -50,11 +47,11 @@ final class Runtime {
 	private const LIBRARY = 'field-kit';
 
 	/**
-	 * Get the per-build prefix.
+	 * The per-build prefix.
 	 *
-	 * Returns "reports" for a plain Composer install (development, or a
-	 * single consumer that does not use Strauss) and "{prefix}-reports"
-	 * for a prefixed build.
+	 * "field-kit" for a plain Composer install -- development, or a single
+	 * consumer that does not use Strauss -- and "{prefix}-field-kit" for a
+	 * prefixed build.
 	 *
 	 * @return string
 	 */
