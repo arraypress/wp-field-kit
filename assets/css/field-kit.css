@@ -294,12 +294,6 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .field-kit__dimensions,
 .field-kit__range-pair,
-.field-kit__amount {
-	display: flex;
-	align-items: flex-end;
-	gap: .5rem;
-}
-
 /* Gradient swatches. A radio group underneath, exactly like the cards — the
    input is hidden from sight but not from the accessibility tree or the tab
    order, and the swatch is what a checked one looks like. */
@@ -1713,6 +1707,17 @@ li.field-kit__repeater-row {
 	padding: 0 1rem 1rem;
 }
 
+/* The row is already spaced by its gap, so a control bringing its own bottom
+   margin lands off the line the rest of them sit on. core's .button has one,
+   and .page-title-action inherits it -- which is what tips a flyout trigger
+   out of alignment with the buttons beside it. */
+.field-kit__page-actions > .button,
+.field-kit__page-actions > .page-title-action,
+.field-kit__page-actions form .button {
+	margin-bottom: 0;
+	vertical-align: baseline;
+}
+
 /* Each control in the header is its own form, because these change state and
    a link that changes state can be followed by a prefetch. Inline-flex keeps
    them on one row inside the centred header. */
@@ -1829,11 +1834,12 @@ li.field-kit__repeater-row {
 	line-height: 1;
 }
 
-/* Clipboard, media and amount all put a control beside their input; without
-   this the button drops onto the next line. */
+/* Clipboard and media both put a control beside their input; without this
+   the button drops onto the next line. Amount is not in the list: it sets its
+   own display further down, and being named here as well meant two rules
+   disagreeing about a control that only ever obeys the later one. */
 .field-kit__clipboard,
-.field-kit__media-actions,
-.field-kit__amount {
+.field-kit__media-actions {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
