@@ -2152,8 +2152,86 @@
 						event.preventDefault();
 						Repeater.remove( wrap, remove.closest( '.field-kit__repeater-row' ) );
 					}
+
+					var toggle = event.target.closest( '.field-kit__repeater-toggle' );
+
+					if ( toggle ) {
+						event.preventDefault();
+						Repeater.toggle( toggle.closest( '.field-kit__repeater-row' ) );
+					}
 				} );
+
+				// A collapsed row is known by its title, so the title has to
+				// follow what is typed into the field it comes from --
+				// otherwise renaming a tier and folding it away shows the
+				// name it used to have until the page is reloaded.
+				var key = wrap.dataset.rowTitle;
+
+				if ( key ) {
+					wrap.addEventListener( 'input', function ( event ) {
+						var row = event.target.closest( '.field-kit__repeater-row' );
+
+						if ( ! row || ! Repeater.namesField( event.target, key ) ) {
+							return;
+						}
+
+						Repeater.retitle( row, event.target.value );
+					} );
+				}
 			} );
+		},
+
+		/**
+		 * Whether a control is the one a row is titled by.
+		 *
+		 * Matched on the last bracketed segment of the name rather than on
+		 * the id: a row's ids are scoped by index, and a nested repeater
+		 * inside the row has fields of its own whose keys can collide.
+		 *
+		 * @param {Element} input The control.
+		 * @param {string}  key   The sub-field key.
+		 * @return {boolean} Whether it matches.
+		 */
+		namesField: function ( input, key ) {
+			var name = input.getAttribute( 'name' );
+
+			return !! name && name.slice( -( key.length + 2 ) ) === '[' + key + ']';
+		},
+
+		/**
+		 * Write a row's header text.
+		 *
+		 * @param {Element} row   The row.
+		 * @param {string}  value What the title field holds.
+		 */
+		retitle: function ( row, value ) {
+			var title = row.querySelector( '.field-kit__repeater-title' );
+
+			if ( ! title ) {
+				return;
+			}
+
+			var fallback = title.dataset.fallback || '';
+
+			title.textContent = String( value ).trim() || fallback;
+		},
+
+		/**
+		 * Fold a row away, or open it.
+		 *
+		 * @param {Element} row The row.
+		 */
+		toggle: function ( row ) {
+			if ( ! row ) {
+				return;
+			}
+
+			var closed = row.classList.toggle( 'is-closed' );
+			var button = row.querySelector( '.field-kit__repeater-toggle' );
+
+			if ( button ) {
+				button.setAttribute( 'aria-expanded', closed ? 'false' : 'true' );
+			}
 		},
 
 		/**
@@ -2206,6 +2284,13 @@
 
 			if ( empty ) {
 				empty.hidden = true;
+			}
+
+			// Open, whatever the saved rows do. The template is rendered for
+			// a row with nothing in it, and folding away the fields somebody
+			// just asked for is the one thing adding a row must not do.
+			if ( row.classList.contains( 'is-closed' ) ) {
+				Repeater.toggle( row );
 			}
 
 			// Focus into the new row, or adding one is silent and leaves a
@@ -3441,6 +3526,89 @@
 	window.ArrayPressFieldKitModules.Media = Media;
 	window.ArrayPressFieldKitModules.Tags = Tags;
 
+	/* =================================================================
+	 * Money
+	 * ================================================================= */
+
+	var Money = {
+
+		/**
+		 * Keep each amount's symbol in step with the currency of its row.
+		 *
+		 * Only where there is more than one currency to be in: a store with
+		 * one gets static text from PHP and never reaches this.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__money[data-currency-key]' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var source = Money.source( wrap );
+
+				if ( ! source ) {
+					return;
+				}
+
+				Money.apply( wrap, source.value );
+
+				source.addEventListener( 'change', function () {
+					Money.apply( wrap, source.value );
+				} );
+			} );
+		},
+
+		/**
+		 * The control holding this amount's currency code.
+		 *
+		 * Scoped to the row rather than the document: a repeater has one per
+		 * row, and the first match in the form would give every row the
+		 * first row's currency.
+		 *
+		 * @param {Element} wrap The money field.
+		 * @return {Element|null} The control, if there is one.
+		 */
+		source: function ( wrap ) {
+			var scope = wrap.closest( '.field-kit__repeater-row' ) || wrap.closest( 'form' ) || document;
+			var key = wrap.dataset.currencyKey;
+
+			return scope.querySelector( '[name$="[' + key + ']"], [name="' + key + '"]' );
+		},
+
+		/**
+		 * Draw the symbol for a code.
+		 *
+		 * @param {Element} wrap The money field.
+		 * @param {string}  code The currency code.
+		 */
+		apply: function ( wrap, code ) {
+			var symbol = wrap.querySelector( '.field-kit__money-symbol' );
+
+			if ( ! symbol ) {
+				return;
+			}
+
+			var symbols = {};
+
+			try {
+				symbols = JSON.parse( wrap.dataset.symbols || '{}' );
+			} catch ( error ) {
+				return;
+			}
+
+			// The code itself when it is not one we know, which is what PHP
+			// draws too -- an empty affix is a control with a gap where its
+			// symbol should be.
+			symbol.textContent = symbols[ code ] || code || symbol.textContent;
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Money = Money;
+
 	/* ====================================================================
 	 * Bootstrap
 	 * ================================================================= */
@@ -3457,7 +3625,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

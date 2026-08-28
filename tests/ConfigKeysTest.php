@@ -128,7 +128,6 @@ final class ConfigKeysTest extends TestCase {
 			[ 'repeater', 'button_label', 'add_label' ],
 			[ 'repeater', 'max_items', 'max_rows' ],
 			[ 'select', 'display', null ],
-			[ 'repeater', 'row_title', null ],
 		];
 
 		foreach ( $cases as [ $type, $bad, $meant ] ) {

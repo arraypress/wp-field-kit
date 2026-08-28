@@ -93,6 +93,7 @@ final class Registry {
 		'date_range'      => Types\DateRangeType::class,
 		'time_range'      => Types\TimeRangeType::class,
 		'amount_type'     => Types\AmountType::class,
+		'money'           => Types\MoneyType::class,
 		'oembed'          => Types\OembedType::class,
 		'tags'            => Types\TagsType::class,
 		'sortable'        => Types\SortableType::class,

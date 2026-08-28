@@ -3134,9 +3134,19 @@ span.field-kit__provider-logo {
 
 /* The repeater's own fields wrap, or a width is a suggestion the layout
    ignores and the halves sit on their own lines anyway. */
+/* Row direction, stated because the rule above this one sets `column` for
+   the stacked layout and a later declaration does not undo an earlier
+   property it never mentions. Left as a column, `flex-basis: 100%` below
+   resolves against the container's HEIGHT rather than its width: every field
+   stretched to the full height of the card, which drew a licence toggle and
+   its two numbers spread down a screen of empty space, and put each pair of
+   halves on its own line into the bargain. */
 .field-kit__repeater--column .field-kit__repeater-fields {
 	display: flex;
+	flex-direction: row;
 	flex-wrap: wrap;
+	align-items: flex-start;
+	align-content: flex-start;
 	gap: .75rem;
 }
 
@@ -3211,4 +3221,118 @@ span.field-kit__provider-logo {
 
 .field-kit__repeater-row.is-dragging {
 	opacity: .5;
+}
+
+/* An amount and its symbol as one control. The symbol sits inside the border
+   as an affix, and the input reserves room for it -- the alternative is two
+   elements on a line, which is what amount_type does and what wrapped the
+   symbol onto a line of its own inside a narrow panel. */
+.field-kit__money {
+	display: block;
+	position: relative;
+	max-width: 100%;
+}
+
+.field-kit__money-symbol {
+	position: absolute;
+	top: 1px;
+	bottom: 1px;
+	left: 1px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.9rem;
+	padding: 0 .4rem;
+	border-right: 1px solid #dcdcde;
+	background: #f6f7f7;
+	border-radius: 3px 0 0 3px;
+	color: #50575e;
+	font-size: 13px;
+	line-height: 1;
+	pointer-events: none;
+}
+
+.wp-core-ui .field-kit__money input.field-kit__money-value,
+.field-kit__money input.field-kit__money-value {
+	width: 100%;
+	max-width: 100%;
+	margin: 0;
+	padding-left: 2.6rem;
+	text-align: left;
+	font-variant-numeric: tabular-nums;
+}
+
+/* A row folds away to its header. `li` on purpose: a <tr> given a display of
+   its own leaves the table's column geometry, and its cells stop lining up
+   under the headers at all. A table repeater is never collapsible, but the
+   selector must not be able to reach one. */
+li.field-kit__repeater-row--collapsible {
+	display: block;
+	padding: 0;
+}
+
+.field-kit__repeater-header {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+	padding: .35rem .5rem;
+	border-bottom: 1px solid #dcdcde;
+	background: #f6f7f7;
+	border-radius: 2px 2px 0 0;
+}
+
+.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-header {
+	border-bottom-color: transparent;
+	border-radius: 2px;
+}
+
+li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-fields {
+	display: none;
+}
+
+.field-kit__repeater-row--collapsible .field-kit__repeater-fields {
+	padding: .75rem;
+}
+
+/* The title takes the space, so the controls sit at the right-hand end and
+   the whole strip between them is the toggle's target. */
+.field-kit__repeater-title {
+	flex: 1 1 auto;
+	overflow: hidden;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.wp-core-ui .field-kit__repeater-toggle {
+	display: flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	color: #50575e;
+	cursor: pointer;
+}
+
+.wp-core-ui .field-kit__repeater-toggle:focus {
+	box-shadow: none;
+	outline: 2px solid var( --wp-admin-theme-color, #2271b1 );
+	outline-offset: -2px;
+}
+
+.field-kit__repeater-toggle .toggle-indicator::before {
+	content: "\f142";
+	display: inline-block;
+	font: normal 20px/1 dashicons;
+	speak: never;
+	-webkit-font-smoothing: antialiased;
+}
+
+.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .toggle-indicator::before {
+	content: "\f140";
 }

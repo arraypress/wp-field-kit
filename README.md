@@ -24,6 +24,8 @@ wherever the screen happens to be.
 * Search posts, users or terms from one endpoint, whatever the field type
 * Group fields into tabs or collapsible sections
 * Sit two short fields on one line with `'width' => 'half'`
+* Take an amount with its currency symbol inside the control
+* Fold a repeater's rows away, each titled by one of its own fields
 * Reorder a repeater by dragging its handle, or from the keyboard
 * Encrypt a value at rest, for an API key
 * Get told, under `WP_DEBUG`, when a config key does nothing

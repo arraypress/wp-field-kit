@@ -76,6 +76,17 @@ class RepeaterType extends AbstractNestedType {
 		$wrapper->set( 'data-min-rows', (int) $field->get( 'min_rows', 0 ) );
 		$wrapper->set( 'data-max-rows', (int) $field->get( 'max_rows', 0 ) );
 
+		// Which sub-field a collapsed row is named by, so the script can keep
+		// the header in step with what is typed into it.
+		if ( $this->is_collapsible( $field ) ) {
+			$wrapper->add_class( 'field-kit__repeater--collapsible' );
+			$wrapper->set_if(
+				'' !== (string) $field->get( 'row_title', '' ),
+				'data-row-title',
+				(string) $field->get( 'row_title', '' )
+			);
+		}
+
 		$markup = '';
 
 		foreach ( $rows as $index => $row ) {
@@ -152,25 +163,153 @@ class RepeaterType extends AbstractNestedType {
 			return $this->render_table_row( $field, $index, $row, $position );
 		}
 
+		// Scoped by row: without it every row reuses the same child ids and
+		// each label after the first points at the wrong control.
+		$fields = $this->render_children(
+			$field,
+			$row,
+			$field->input_name() . '[' . $index . ']',
+			'row' . $index,
+			null,
+			$this->labels_rows( $field )
+		);
+
+		$actions = $this->row_handle( $index, $total )
+			. $this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false );
+
+		if ( $this->is_collapsible( $field ) ) {
+			return $this->render_collapsible_row( $field, $index, $row, $position, $fields, $actions );
+		}
+
 		return sprintf(
 			'<li class="field-kit__repeater-row" data-index="%d">' .
 			'<span class="field-kit__repeater-position screen-reader-text">%s</span>' .
 			'<div class="field-kit__repeater-fields">%s</div>' .
-			'<div class="field-kit__repeater-actions">%s%s</div></li>',
+			'<div class="field-kit__repeater-actions">%s</div></li>',
 			$index,
 			esc_html( $position ),
-			// Scoped by row: without it every row reuses the same child ids
-			// and each label after the first points at the wrong control.
-			$this->render_children(
-				$field,
-				$row,
-				$field->input_name() . '[' . $index . ']',
-				'row' . $index,
-				null,
-				$this->labels_rows( $field )
-			),
-			$this->row_handle( $index, $total ),
-			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
+			$fields,
+			$actions
+		);
+	}
+
+	/**
+	 * A row that can be folded away, titled by one of its own fields.
+	 *
+	 * Three price tiers, each with a licence and its own files, is three
+	 * screens of form to scroll past to reach the third. Collapsed, the same
+	 * three are a list you can see at once -- which is also the only view
+	 * that makes reordering them mean anything.
+	 *
+	 * The header is a button so the whole strip is the target rather than a
+	 * chevron at the end of it, and the title doubles as the row's accessible
+	 * name: `aria-describedby` on a "Show or hide" button is what tells a
+	 * screen reader which row is being shown or hidden.
+	 *
+	 * @param Field                $field    The repeater.
+	 * @param int                  $index    Zero-based row index.
+	 * @param array<string, mixed> $row      The row's values.
+	 * @param string               $position Human row position.
+	 * @param string               $fields   The rendered children.
+	 * @param string               $actions  The rendered row controls.
+	 *
+	 * @return string
+	 */
+	private function render_collapsible_row(
+		Field $field,
+		int $index,
+		array $row,
+		string $position,
+		string $fields,
+		string $actions
+	): string {
+		$closed   = $this->starts_closed( $field, $row );
+		$title_id = $field->input_id() . '_row' . $index . '_title';
+
+		return sprintf(
+			'<li class="field-kit__repeater-row field-kit__repeater-row--collapsible%1$s" data-index="%2$d">' .
+			'<span class="field-kit__repeater-position screen-reader-text">%3$s</span>' .
+			'<div class="field-kit__repeater-header">' .
+			'<button type="button" class="field-kit__repeater-toggle" aria-expanded="%4$s" aria-describedby="%5$s">' .
+			'<span class="screen-reader-text">%6$s</span>' .
+			'<span class="toggle-indicator" aria-hidden="true"></span>' .
+			'</button>' .
+			'<span class="field-kit__repeater-title" id="%5$s" data-fallback="%10$s">%7$s</span>' .
+			'<span class="field-kit__repeater-actions">%8$s</span>' .
+			'</div>' .
+			'<div class="field-kit__repeater-fields">%9$s</div></li>',
+			$closed ? ' is-closed' : '',
+			$index,
+			esc_html( $position ),
+			$closed ? 'false' : 'true',
+			esc_attr( $title_id ),
+			esc_html__( 'Show or hide this row', 'arraypress' ),
+			esc_html( $this->row_title( $field, $row, $index ) ),
+			$actions,
+			$fields,
+			esc_attr(
+				sprintf(
+					/* translators: %d: row number */
+					__( 'Row %d', 'arraypress' ),
+					$index + 1
+				)
+			)
+		);
+	}
+
+	/**
+	 * Whether rows fold away.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function is_collapsible( Field $field ): bool {
+		return (bool) $field->get( 'collapsible', false ) && ! $this->is_table( $field );
+	}
+
+	/**
+	 * Whether a row is drawn closed.
+	 *
+	 * A row with nothing in it is drawn open whatever the setting says: one
+	 * just added is empty, and folding it away hides the fields somebody
+	 * added it to fill in.
+	 *
+	 * @param Field                $field The field.
+	 * @param array<string, mixed> $row   The row's values.
+	 *
+	 * @return bool
+	 */
+	private function starts_closed( Field $field, array $row ): bool {
+		return (bool) $field->get( 'collapsed', true ) && $this->has_content( $row );
+	}
+
+	/**
+	 * What a collapsed row says.
+	 *
+	 * The field named by `row_title` where it holds anything, since that is
+	 * what the row is called -- a price tier's name, a rate's country. The
+	 * position otherwise, because a list of rows all saying "Untitled" is a
+	 * list you cannot tell apart, and an empty header is a strip of nothing
+	 * to click.
+	 *
+	 * @param Field                $field The field.
+	 * @param array<string, mixed> $row   The row's values.
+	 * @param int                  $index Zero-based row index.
+	 *
+	 * @return string
+	 */
+	private function row_title( Field $field, array $row, int $index ): string {
+		$key = (string) $field->get( 'row_title', '' );
+
+		if ( '' !== $key && isset( $row[ $key ] ) && is_scalar( $row[ $key ] ) && '' !== (string) $row[ $key ] ) {
+			return (string) $row[ $key ];
+		}
+
+		return sprintf(
+			/* translators: %d: row number */
+			__( 'Row %d', 'arraypress' ),
+			$index + 1
 		);
 	}
 
@@ -583,7 +722,7 @@ class RepeaterType extends AbstractNestedType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'add_label', 'direction', 'empty_label', 'layout', 'max_rows', 'min_rows' ]
+			[ 'add_label', 'collapsed', 'collapsible', 'direction', 'empty_label', 'layout', 'max_rows', 'min_rows', 'row_title' ]
 		);
 	}
 }

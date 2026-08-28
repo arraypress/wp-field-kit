@@ -466,6 +466,101 @@ final class RepeaterTest extends TestCase {
 	}
 
 	/**
+	 * A collapsible row folds to a header naming itself.
+	 *
+	 * @return void
+	 */
+	public function test_a_collapsible_row_is_titled_by_one_of_its_fields(): void {
+		$html = $this->collapsible( [ [ 'country' => 'Ireland' ], [ 'country' => 'Britain' ] ] );
+
+		$this->assertStringContainsString( 'field-kit__repeater--collapsible', $html );
+		$this->assertStringContainsString( 'data-row-title="country"', $html );
+		$this->assertStringContainsString( '>Ireland<', $html );
+		$this->assertStringContainsString( '>Britain<', $html );
+		// Three: the two rows, and the blank template the script clones.
+		$this->assertSame( 3, substr_count( $html, 'field-kit__repeater-toggle' ) );
+	}
+
+	/**
+	 * A row with nothing in it is drawn open whatever `collapsed` says.
+	 *
+	 * The template the script clones is rendered from an empty row, so a
+	 * collapsed template would hand every newly added row to somebody with
+	 * its fields already folded away.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_row_is_never_drawn_closed(): void {
+		$html = $this->collapsible( [ [ 'country' => 'Ireland' ], [ 'country' => '' ] ] );
+
+		$this->assertSame( 1, substr_count( $html, 'is-closed' ) );
+		$this->assertSame( 1, substr_count( $html, 'aria-expanded="false"' ) );
+	}
+
+	/**
+	 * An untitled row still has something to click.
+	 *
+	 * @return void
+	 */
+	public function test_an_untitled_row_falls_back_to_its_position(): void {
+		$html = $this->collapsible( [ [ 'country' => '' ] ] );
+
+		$this->assertStringContainsString( 'data-fallback="Row 1"', $html );
+		$this->assertStringContainsString( '>Row 1<', $html );
+	}
+
+	/**
+	 * Collapsing is for cards. A table row that folded away would leave its
+	 * cells out of the table's column geometry entirely.
+	 *
+	 * @return void
+	 */
+	public function test_a_table_repeater_never_collapses(): void {
+		$field = new Field(
+			'rates',
+			( new Registry() )->get( 'repeater' ),
+			[
+				'label'       => 'Rates',
+				'input_name'  => 'rates',
+				'layout'      => 'table',
+				'collapsible' => true,
+				'row_title'   => 'country',
+				'fields'      => self::SUB_FIELDS,
+			],
+			null
+		);
+
+		$html = ( new Renderer() )->render( $field->with_value( [ [ 'country' => 'IE' ] ] ) );
+
+		$this->assertStringNotContainsString( 'field-kit__repeater-toggle', $html );
+		$this->assertStringNotContainsString( 'field-kit__repeater--collapsible', $html );
+	}
+
+	/**
+	 * Render a collapsible repeater.
+	 *
+	 * @param array<int, array<string, mixed>> $value Stored rows.
+	 *
+	 * @return string
+	 */
+	private function collapsible( array $value ): string {
+		$field = new Field(
+			'rates',
+			( new Registry() )->get( 'repeater' ),
+			[
+				'label'       => 'Rates',
+				'input_name'  => 'rates',
+				'collapsible' => true,
+				'row_title'   => 'country',
+				'fields'      => self::SUB_FIELDS,
+			],
+			null
+		);
+
+		return ( new Renderer() )->render( $field->with_value( $value ) );
+	}
+
+	/**
 	 * Render a field through a set, which is where type defaults are applied.
 	 *
 	 * Building a Field directly skips them — the merge happens in FieldSet —
