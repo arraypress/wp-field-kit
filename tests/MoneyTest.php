@@ -104,6 +104,21 @@ final class MoneyTest extends TestCase {
 	}
 
 	/**
+	 * A code standing in for a symbol needs the room a symbol does not, and
+	 * CSS cannot see how long the affix is.
+	 */
+	public function test_a_long_affix_gets_more_room(): void {
+		$this->assertStringContainsString(
+			'field-kit__money--wide',
+			$this->render( [ 'symbol' => 'CHF' ], '1' )
+		);
+		$this->assertStringNotContainsString(
+			'field-kit__money--wide',
+			$this->render( [ 'symbol' => '£' ], '1' )
+		);
+	}
+
+	/**
 	 * What was typed is what the caller parses: how many minor units a major
 	 * one holds is a property of the currency, and this field has no table.
 	 */

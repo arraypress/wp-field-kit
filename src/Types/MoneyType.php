@@ -84,6 +84,12 @@ final class MoneyType extends AbstractType {
 		$wrapper = new Attributes();
 		$wrapper->add_class( 'field-kit__money' );
 
+		// A three-letter code needs more room than "£". Measured here rather
+		// than in CSS, which cannot see how long the affix is.
+		if ( mb_strlen( $symbol ) > 1 ) {
+			$wrapper->add_class( 'field-kit__money--wide' );
+		}
+
 		// Only when there is something to switch between. A single-currency
 		// store gets static text and no script.
 		$currencies = (array) $field->get( 'currencies', [] );

@@ -115,6 +115,8 @@ final class CallbackSource implements Source {
 
 		foreach ( $results as $key => $result ) {
 			if ( is_array( $result ) && isset( $result['id'] ) ) {
+				self::warn_about_label_key( $result );
+
 				$normalized[] = [
 					'id'   => (string) $result['id'],
 					'text' => (string) ( $result['text'] ?? $result['id'] ),
@@ -131,5 +133,46 @@ final class CallbackSource implements Source {
 		}
 
 		return $normalized;
+	}
+
+	/**
+	 * Say so when a result names its label something this does not read.
+	 *
+	 * The key is `text`. A result carrying `label` or `name` instead is not
+	 * an error: the id is used in its place, so the field renders and every
+	 * entry in it is a number. That is indistinguishable from a callback
+	 * returning nothing useful, and it is the mistake this contract invites,
+	 * because `label` is what the rest of the kit calls the same idea.
+	 *
+	 * @param array<string, mixed> $result One result.
+	 *
+	 * @return void
+	 */
+	public static function warn_about_label_key( array $result ): void {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG || ! function_exists( '_doing_it_wrong' ) ) {
+			return;
+		}
+
+		if ( isset( $result['text'] ) ) {
+			return;
+		}
+
+		foreach ( [ 'label', 'name', 'title' ] as $wrong ) {
+			if ( ! isset( $result[ $wrong ] ) ) {
+				continue;
+			}
+
+			_doing_it_wrong(
+				__METHOD__,
+				sprintf(
+					/* translators: %s: the key that was used instead of `text` */
+					esc_html__( 'A search result named its label "%s". The key is "text"; every result will show its id instead.', 'arraypress' ),
+					esc_html( $wrong )
+				),
+				'1.0.0'
+			);
+
+			return;
+		}
 	}
 }

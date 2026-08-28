@@ -593,6 +593,16 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	max-width: 30rem;
 }
 
+/* Except in a flyout, which is already as narrow as it is going to get. The
+   cap is there so a repeater on a settings screen does not run the width of
+   a desktop; inside a panel it just leaves a column of dead space down the
+   right of every row. */
+.wp-flyout .field-kit__gallery-items,
+.wp-flyout .field-kit__repeater-rows,
+.wp-flyout .field-kit__sortable {
+	max-width: none;
+}
+
 .field-kit__gallery-items {
 	display: flex;
 	flex-wrap: wrap;
@@ -1781,8 +1791,6 @@ li.field-kit__repeater-row {
    Matching the prefix is what makes these win. */
 .wp-core-ui .field-kit__gallery-move,
 .wp-core-ui .field-kit__gallery-remove,
-.wp-core-ui .field-kit__repeater-move-up,
-.wp-core-ui .field-kit__repeater-move-down,
 .wp-core-ui .field-kit__repeater-remove,
 .wp-core-ui .field-kit__sortable-move {
 	display: inline-flex;
@@ -1796,16 +1804,12 @@ li.field-kit__repeater-row {
 }
 
 .wp-core-ui .field-kit__gallery-move:hover,
-.wp-core-ui .field-kit__repeater-move-up:hover,
-.wp-core-ui .field-kit__repeater-move-down:hover,
 .wp-core-ui .field-kit__sortable-move:hover {
 	background: #f0f0f1;
 	text-decoration: none;
 }
 
 .wp-core-ui .field-kit__gallery-move:disabled,
-.wp-core-ui .field-kit__repeater-move-up:disabled,
-.wp-core-ui .field-kit__repeater-move-down:disabled,
 .wp-core-ui .field-kit__sortable-move:disabled {
 	color: #c3c4c7;
 	cursor: default;
@@ -1822,8 +1826,6 @@ li.field-kit__repeater-row {
 .field-kit__sortable-move .dashicons,
 .field-kit__gallery-move .dashicons,
 .field-kit__gallery-remove .dashicons,
-.field-kit__repeater-move-up .dashicons,
-.field-kit__repeater-move-down .dashicons,
 .field-kit__repeater-remove .dashicons {
 	width: 1rem;
 	height: 1rem;
@@ -3233,20 +3235,22 @@ span.field-kit__provider-logo {
 	max-width: 100%;
 }
 
+/* The symbol is part of the value, not a control attached to the front of
+   it. Boxed with its own background and divider it read as a button you
+   could press to change the currency -- which is the one thing it does not
+   do, since the currency is a setting. Muted text in the input's own left
+   padding instead. */
 .field-kit__money-symbol {
 	position: absolute;
-	top: 1px;
-	bottom: 1px;
-	left: 1px;
+	top: 0;
+	bottom: 0;
+	left: 0;
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	min-width: 1.9rem;
-	padding: 0 .4rem;
-	border-right: 1px solid #dcdcde;
-	background: #f6f7f7;
-	border-radius: 3px 0 0 3px;
-	color: #50575e;
+	justify-content: flex-end;
+	width: 2rem;
+	padding-right: .1rem;
+	color: #646970;
 	font-size: 13px;
 	line-height: 1;
 	pointer-events: none;
@@ -3257,9 +3261,20 @@ span.field-kit__provider-logo {
 	width: 100%;
 	max-width: 100%;
 	margin: 0;
-	padding-left: 2.6rem;
+	padding-left: 2.2rem;
 	text-align: left;
 	font-variant-numeric: tabular-nums;
+}
+
+/* A longer symbol -- "CHF", or a code standing in for one we have no symbol
+   for -- needs the room, and the input needs to know how much. */
+.field-kit__money--wide .field-kit__money-symbol {
+	width: 3.1rem;
+}
+
+.wp-core-ui .field-kit__money--wide input.field-kit__money-value,
+.field-kit__money--wide input.field-kit__money-value {
+	padding-left: 3.3rem;
 }
 
 /* A row folds away to its header. `li` on purpose: a <tr> given a display of
@@ -3325,14 +3340,36 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-fields {
 	outline-offset: -2px;
 }
 
+
+
+/* A hidden input has no height, but its wrapper is a flex child like any
+   other -- so it took a full line and a gap either side of it, and a row
+   carrying two of them had two bands of nothing in the middle. */
+.field-kit__field--hidden {
+	display: none;
+}
+
+/* The same chevron the accordion uses, rotated, rather than a pair of
+   dashicons that swap. One glyph that turns reads as one thing moving. */
 .field-kit__repeater-toggle .toggle-indicator::before {
-	content: "\f142";
+	content: "\f345";
 	display: inline-block;
 	font: normal 20px/1 dashicons;
 	speak: never;
+	transform: rotate( 90deg );
+	transition: transform .15s ease;
 	-webkit-font-smoothing: antialiased;
 }
 
-.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .toggle-indicator::before {
-	content: "\f140";
+li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .toggle-indicator::before {
+	transform: rotate( 0deg );
+}
+
+/* The whole strip is the target, not the chevron at the end of it. */
+.field-kit__repeater-header {
+	cursor: pointer;
+}
+
+.field-kit__repeater-header .field-kit__repeater-actions {
+	cursor: default;
 }

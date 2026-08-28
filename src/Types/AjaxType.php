@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Types;
 
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Search\CallbackSource;
 
 /**
  * A searchable field backed by the consumer's own callback.
@@ -75,6 +76,12 @@ final class AjaxType extends AbstractRelationalType {
 		$results = $callback( '', $ids, $field );
 
 		foreach ( (array) $results as $result ) {
+			if ( ! is_array( $result ) ) {
+				continue;
+			}
+
+			CallbackSource::warn_about_label_key( $result );
+
 			$id = (string) ( $result['id'] ?? '' );
 
 			if ( '' !== $id && in_array( (int) $id, $ids, true ) ) {

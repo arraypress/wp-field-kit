@@ -2153,11 +2153,15 @@
 						Repeater.remove( wrap, remove.closest( '.field-kit__repeater-row' ) );
 					}
 
-					var toggle = event.target.closest( '.field-kit__repeater-toggle' );
+					// The whole header, not just the chevron on it. A title
+					// that says which row this is, next to a control that
+					// opens it, and only the control opening it, is a target
+					// the width of an icon on a strip the width of the panel.
+					var header = event.target.closest( '.field-kit__repeater-header' );
 
-					if ( toggle ) {
+					if ( header && ! event.target.closest( '.field-kit__repeater-actions' ) ) {
 						event.preventDefault();
-						Repeater.toggle( toggle.closest( '.field-kit__repeater-row' ) );
+						Repeater.toggle( header.closest( '.field-kit__repeater-row' ) );
 					}
 				} );
 

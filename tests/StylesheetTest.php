@@ -39,8 +39,6 @@ final class StylesheetTest extends TestCase {
 		'field-kit__checkbox-group',
 
 		// RepeaterType: 'field-kit__repeater-' . $action
-		'field-kit__repeater-move-up',
-		'field-kit__repeater-move-down',
 		'field-kit__repeater-remove',
 
 		// AbstractType / Renderer: 'field-kit__field--' . $type->id()
@@ -50,6 +48,7 @@ final class StylesheetTest extends TestCase {
 		// type, built from the id at render time. Only the ones the stylesheet
 		// actually targets need listing.
 		'field-kit__field--heading',
+		'field-kit__field--hidden',
 		'field-kit__field--locked',
 
 		// LicenseType: 'field-kit__license-state--' . ( active ? 'active' : 'inactive' )
