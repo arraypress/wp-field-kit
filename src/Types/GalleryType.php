@@ -15,11 +15,15 @@ use ArrayPress\FieldKit\Field;
 /**
  * An ordered set of attachments.
  *
- * Reordering is offered two ways. Dragging is the fast path, but a drag-only
- * control cannot be operated from a keyboard at all, so every item also
- * carries move-back and move-forward buttons. That is not a fallback for when
- * the script fails — it is the only way some people can reorder anything, and
- * it is the half that reordering UIs usually omit.
+ * Images by default, because that is what a gallery usually is, but `mime_type`
+ * widens it: a set of audio previews is the same control with a different
+ * picker and nothing to show a thumbnail of. An item that is not an image is
+ * drawn as its name, since wp_get_attachment_image() returns an empty string
+ * for an MP3 and the alternative is a row with nothing in it.
+ *
+ * Reordering is a drag handle, which is also what operates it from a keyboard:
+ * focus it and press the arrow keys. It replaced a pair of chevrons that did
+ * the same job twice and cost a click per position.
  *
  * Each item is a list item inside an ordered list, so position is conveyed
  * structurally rather than only by where it sits on screen.
@@ -36,12 +40,61 @@ final class GalleryType extends AbstractMediaType {
 	}
 
 	/**
+	 * The media frame's title, for a field that may not hold images.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function frame_title_for( Field $field ): string {
+		$title = (string) $field->get( 'frame_title', '' );
+
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		return 'image' === $this->mime_type_for( $field )
+			? $this->frame_title()
+			: __( 'Choose files', 'arraypress' );
+	}
+
+	/**
+	 * What this field actually accepts.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function mime_type_for( Field $field ): string {
+		return (string) $field->get( 'mime_type', $this->mime_type() );
+	}
+
+	/**
 	 * The button that opens the picker.
 	 *
 	 * @return string
 	 */
 	protected function choose_label(): string {
 		return __( 'Add images', 'arraypress' );
+	}
+
+	/**
+	 * The button that opens the picker, for a field that may not hold images.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	private function choose_label_for( Field $field ): string {
+		$label = (string) $field->get( 'add_label', '' );
+
+		if ( '' !== $label ) {
+			return $label;
+		}
+
+		return 'image' === $this->mime_type_for( $field )
+			? $this->choose_label()
+			: __( 'Add files', 'arraypress' );
 	}
 
 	/**
@@ -70,8 +123,12 @@ final class GalleryType extends AbstractMediaType {
 
 		$wrapper = new Attributes();
 		$wrapper->add_class( 'field-kit__media', 'field-kit__gallery' );
-		$wrapper->set( 'data-frame-title', $this->frame_title() );
-		$wrapper->set( 'data-mime-type', 'image' );
+		$wrapper->set( 'data-frame-title', $this->frame_title_for( $field ) );
+
+		// From the field, not a literal. This was hardcoded to `image` while
+		// mime_type() sat beside it unread, so a subclass could change what
+		// the field accepted everywhere except in the picker it opens.
+		$wrapper->set( 'data-mime-type', $this->mime_type_for( $field ) );
 		$wrapper->set( 'data-max-items', (int) $field->get( 'max_items', 0 ) );
 
 		return sprintf(
@@ -134,12 +191,26 @@ final class GalleryType extends AbstractMediaType {
 		$name = (string) get_the_title( $id );
 		$name = '' === $name ? (string) $id : $name;
 
+		$image = wp_get_attachment_image( $id, (string) $field->get( 'preview_size', 'medium' ), false, [ 'alt' => '' ] );
+
+		// An MP3 has no thumbnail, and wp_get_attachment_image() says so by
+		// returning an empty string -- which drew an item with nothing in it
+		// but its buttons.
+		$body = '' !== $image
+			? $image
+			: sprintf(
+				'<span class="field-kit__gallery-name">%s</span>',
+				esc_html( $name )
+			);
+
 		return sprintf(
-			'<li class="field-kit__gallery-item" data-id="%d">%s' .
-			'<span class="field-kit__gallery-position screen-reader-text">%s</span>' .
-			'<span class="field-kit__gallery-actions">%s%s%s</span></li>',
+			'<li class="field-kit__gallery-item%1$s" data-id="%2$d">%3$s%4$s' .
+			'<span class="field-kit__gallery-position screen-reader-text">%5$s</span>' .
+			'<span class="field-kit__gallery-actions">%6$s</span></li>',
+			'' !== $image ? '' : ' field-kit__gallery-item--file',
 			$id,
-			wp_get_attachment_image( $id, (string) $field->get( 'preview_size', 'medium' ), false, [ 'alt' => '' ] ),
+			$this->handle( $name, $position, $total ),
+			$body,
 			esc_html(
 				sprintf(
 					/* translators: 1: item position, 2: total items, 3: item name */
@@ -149,40 +220,58 @@ final class GalleryType extends AbstractMediaType {
 					$name
 				)
 			),
-			$this->move_button( $name, 'up', $position < 1 ),
-			$this->move_button( $name, 'down', $position >= $total - 1 ),
 			$this->remove_button( $name )
 		);
 	}
 
 	/**
-	 * A reorder button.
+	 * The grab handle, which is also the keyboard's way to reorder.
 	 *
-	 * @param string $name     Item name, for the accessible label.
-	 * @param string $direction Either "up" or "down".
-	 * @param bool   $disabled Whether the move is possible.
+	 * One control rather than the pair of chevrons this replaced: those were
+	 * two buttons doing one job, took a click per position, and left a
+	 * permanently disabled one on the first and last items.
+	 *
+	 * A button and not a decorative span, because a drag cannot be performed
+	 * from a keyboard at all. The position is in the accessible name so a
+	 * move announces where the item landed, kept as a template the script
+	 * rewrites rather than a second string to translate.
+	 *
+	 * @param string $name     The item's name.
+	 * @param int    $position Zero-based position.
+	 * @param int    $total    How many there are.
 	 *
 	 * @return string
 	 */
-	private function move_button( string $name, string $direction, bool $disabled ): string {
-		$button = new Attributes();
-		$button->set( 'type', 'button' );
-		$button->add_class( 'button-link', 'field-kit__gallery-move' );
-		$button->set( 'data-direction', $direction );
-		$button->set_if( $disabled, 'disabled', true );
-		$button->set(
+	private function handle( string $name, int $position, int $total ): string {
+		$handle = new Attributes();
+		$handle->set( 'type', 'button' );
+		$handle->add_class( 'field-kit__drag-handle', 'field-kit__gallery-handle' );
+		$handle->set( 'aria-roledescription', __( 'Sortable', 'arraypress' ) );
+		$handle->set( 'aria-keyshortcuts', 'ArrowUp ArrowDown' );
+
+		$template = sprintf(
+			/* translators: 1: item name, 2: its position, 3: how many there are */
+			__( 'Reorder %1$s, %2$s of %3$s', 'arraypress' ),
+			$name,
+			'{position}',
+			'{total}'
+		);
+
+		$handle->set( 'data-label-template', $template );
+		$handle->set(
 			'aria-label',
-			'up' === $direction
-				/* translators: %s: item name */
-				? sprintf( __( 'Move %s earlier', 'arraypress' ), $name )
-				/* translators: %s: item name */
-				: sprintf( __( 'Move %s later', 'arraypress' ), $name )
+			strtr(
+				$template,
+				[
+					'{position}' => (string) ( $position + 1 ),
+					'{total}'    => (string) $total,
+				]
+			)
 		);
 
 		return sprintf(
-			'<button%s><span class="dashicons dashicons-arrow-%s-alt2" aria-hidden="true"></span></button>',
-			$button->render(),
-			'up' === $direction ? 'up' : 'down'
+			'<button%s><span class="dashicons dashicons-menu" aria-hidden="true"></span></button>',
+			$handle->render()
 		);
 	}
 
@@ -286,7 +375,7 @@ final class GalleryType extends AbstractMediaType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'max_items', 'preview_size' ]
+			[ 'add_label', 'frame_title', 'max_items', 'mime_type', 'preview_size' ]
 		);
 	}
 }

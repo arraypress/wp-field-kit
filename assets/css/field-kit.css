@@ -1789,7 +1789,6 @@ li.field-kit__repeater-row {
 /* Core defines .wp-core-ui .button-link at specificity 0,2,0 and underlines
    it, so a bare class here loses and every chevron carries a line under it.
    Matching the prefix is what makes these win. */
-.wp-core-ui .field-kit__gallery-move,
 .wp-core-ui .field-kit__gallery-remove,
 .wp-core-ui .field-kit__repeater-remove,
 .wp-core-ui .field-kit__sortable-move {
@@ -1803,13 +1802,11 @@ li.field-kit__repeater-row {
 	border-radius: 2px;
 }
 
-.wp-core-ui .field-kit__gallery-move:hover,
 .wp-core-ui .field-kit__sortable-move:hover {
 	background: #f0f0f1;
 	text-decoration: none;
 }
 
-.wp-core-ui .field-kit__gallery-move:disabled,
 .wp-core-ui .field-kit__sortable-move:disabled {
 	color: #c3c4c7;
 	cursor: default;
@@ -1824,7 +1821,6 @@ li.field-kit__repeater-row {
 /* The dashicon is the button's whole content, so it should not carry the
    line-height of surrounding text. */
 .field-kit__sortable-move .dashicons,
-.field-kit__gallery-move .dashicons,
 .field-kit__gallery-remove .dashicons,
 .field-kit__repeater-remove .dashicons {
 	width: 1rem;
@@ -2294,8 +2290,7 @@ select.field-kit__select[multiple] {
 	color: #50575e;
 }
 
-.wp-core-ui .field-kit__sortable-move,
-.wp-core-ui .field-kit__gallery-move {
+.wp-core-ui .field-kit__sortable-move {
 	position: absolute;
 	width: 1px;
 	height: 1px;
@@ -2309,8 +2304,7 @@ select.field-kit__select[multiple] {
 
 /* Painted again the moment it takes focus, so a keyboard user can see what
    they are operating. */
-.wp-core-ui .field-kit__sortable-move:focus-visible,
-.wp-core-ui .field-kit__gallery-move:focus-visible {
+.wp-core-ui .field-kit__sortable-move:focus-visible {
 	position: static;
 	width: 1.75rem;
 	height: 1.75rem;
@@ -3372,4 +3366,46 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .t
 
 .field-kit__repeater-header .field-kit__repeater-actions {
 	cursor: default;
+}
+
+/* A gallery of things that are not images is a list, not a grid of tiles:
+   there is nothing to show, so the name is the item and a row is the right
+   shape for it. */
+.field-kit__gallery-item--file {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+	width: 100%;
+	padding: .35rem .5rem;
+	cursor: default;
+}
+
+.field-kit__gallery-name {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* On a tile the handle sits over the image; in a row it sits beside the name.
+   Either way it is the thing you grab, so the item itself stops claiming to
+   be. */
+.field-kit__gallery-item .field-kit__gallery-handle {
+	position: absolute;
+	top: .25rem;
+	left: .25rem;
+	z-index: 1;
+	border-radius: 2px;
+	background: rgba( 255, 255, 255, .85 );
+}
+
+.field-kit__gallery-item--file .field-kit__gallery-handle {
+	position: static;
+	background: none;
+}
+
+.field-kit__gallery-items:has( .field-kit__gallery-item--file ) {
+	display: flex;
+	flex-direction: column;
+	gap: .25rem;
 }
