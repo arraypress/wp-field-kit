@@ -68,15 +68,6 @@ final class Renderer {
 	 * @return string
 	 */
 	public function render( Field $field, string $error = '', bool $with_label = true ): string {
-		// A field whose label is redundant beside what surrounds it -- a
-		// billing chooser under a heading that already says Pricing -- can
-		// ask for the label to be kept for assistive technology and not
-		// drawn. Dropping the label instead leaves a group of radios with no
-		// name at all, which is a different thing from one whose name is
-		// obvious on screen.
-		if ( $field->get( 'hide_label', false ) ) {
-			$with_label = false;
-		}
 
 		$type = $field->type();
 
@@ -250,6 +241,27 @@ final class Renderer {
 		// beside the control.
 		$tooltip = $with_label ? Tooltip::for_field( $field ) : '';
 
+		// A label the caller wants kept for assistive technology and not
+		// drawn. Unlike $with_label, which means somebody else is drawing the
+		// heading and owns the badge and tooltip with it, this leaves the
+		// tooltip where it is -- there is no other heading for it to sit
+		// beside.
+		if ( $field->get( 'hide_label', false ) ) {
+			$badge = '';
+
+			return $this->wrapper(
+				$field,
+				sprintf(
+					'<label class="screen-reader-text" for="%s">%s</label>%s%s%s',
+					esc_attr( $field->input_id() ),
+					esc_html( $field->label() ),
+					$tooltip,
+					$control,
+					$describers
+				)
+			);
+		}
+
 		// A self-labelling control already carries its text; a second label
 		// above it would announce the field twice.
 		if ( $with_label && ! $field->type()->is_self_labelling() && '' !== $field->label() ) {
@@ -302,6 +314,20 @@ final class Renderer {
 		$tooltip   = $with_label ? Tooltip::for_field( $field ) : '';
 		$in_legend = $badge . $tooltip;
 
+		// A field whose name is obvious from what surrounds it -- a billing
+		// chooser on the Pricing tab -- can keep its legend for assistive
+		// technology without drawing it. That is not the same as a caller
+		// drawing its own heading, which is what $with_label means and why
+		// that one takes the badge and tooltip with it: here nobody draws a
+		// heading, so the tooltip has to stay or it goes nowhere at all.
+		$show_label = $with_label && ! $field->get( 'hide_label', false );
+
+		if ( ! $show_label ) {
+			$badge     = '';
+			$tooltip   = $with_label ? Tooltip::for_field( $field ) : '';
+			$in_legend = '';
+		}
+
 		$legend = '' === $field->label()
 			? ''
 			: sprintf(
@@ -309,7 +335,7 @@ final class Renderer {
 				// options-discussion.php both write it this way — and exists
 				// because a legend cannot be positioned reliably on its own.
 				'<legend class="field-kit__legend%s"><span>%s%s%s</span></legend>',
-				$with_label ? '' : ' screen-reader-text',
+				$show_label ? '' : ' screen-reader-text',
 				esc_html( $field->label() ),
 				$this->required_marker( $field ),
 				$in_legend
