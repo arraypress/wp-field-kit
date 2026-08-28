@@ -1432,6 +1432,22 @@ li.field-kit__repeater-row {
 	margin-right: 0;
 }
 
+/* Sized against the heading it sits beside rather than the 40px a centred,
+   stacked header has room for. A mark twice the height of the word next to it
+   reads as a logo that has been dropped on the page rather than one that
+   belongs to the title. */
+.field-kit__page-header--left .field-kit__page-logo {
+	max-height: 1.6em;
+	margin-right: 0;
+	flex: 0 0 auto;
+}
+
+/* Centred on each other, so the mark, the heading and the button share a
+   line instead of each finding its own. */
+.field-kit__page-header--left .privacy-settings-title-section {
+	align-items: center;
+}
+
 /* Beside the heading, and on its baseline rather than the flex line's. No
    bottom margin: the row already carries a rem of bottom padding, and the
    two together left the actions sitting a clear gap below the title they
