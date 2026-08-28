@@ -1419,17 +1419,29 @@ li.field-kit__repeater-row {
    what this exists to stop. The padding matches the .wrap the table below it
    sits in, so the heading lines up with the list rather than starting a
    couple of pixels to its left. */
-.field-kit__page-header--left,
-.field-kit__page-header--left .privacy-settings-title-section {
-	justify-content: flex-start;
-	gap: .5rem;
+/* The indent is the header's, once. Applied to the header and the title
+   section alike it was counted twice, and the heading sat forty-four pixels
+   in from the table it belongs to. */
+.field-kit__page-header--left {
 	padding: 8px 20px 0 22px;
 	text-align: left;
 }
 
+.field-kit__page-header--left .privacy-settings-title-section {
+	justify-content: flex-start;
+	align-items: center;
+	gap: .6rem;
+	padding: 0;
+	text-align: left;
+}
+
+/* core gives this h1 `margin: 0 .8rem 1rem` and `padding: 9px 0 4px` -- a box
+   noticeably taller than its text and weighted to the bottom. align-items
+   centres everything else against that box rather than against the word, which
+   is what dropped the mark below the baseline it is meant to share. */
 .field-kit__page-header--left h1 {
-	margin-left: 0;
-	margin-right: 0;
+	margin: 0;
+	padding: 0;
 }
 
 /* Sized against the heading it sits beside rather than the 40px a centred,
@@ -1437,15 +1449,14 @@ li.field-kit__repeater-row {
    reads as a logo that has been dropped on the page rather than one that
    belongs to the title. */
 .field-kit__page-header--left .field-kit__page-logo {
-	max-height: 1.6em;
-	margin-right: 0;
+	/* core's heading here is 23px, and the mark reads as its equal at 24.
+	   Not an em: the image inherits the section's 13px, not the h1's, so an
+	   em sized it against the wrong thing and came out too small. */
+	height: 24px;
+	max-height: none;
+	width: auto;
+	margin: 0;
 	flex: 0 0 auto;
-}
-
-/* Centred on each other, so the mark, the heading and the button share a
-   line instead of each finding its own. */
-.field-kit__page-header--left .privacy-settings-title-section {
-	align-items: center;
 }
 
 /* Beside the heading, and on its baseline rather than the flex line's. No
