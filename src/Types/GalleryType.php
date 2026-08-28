@@ -35,26 +35,15 @@ final class GalleryType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function frame_title(): string {
-		return __( 'Choose images', 'arraypress' );
-	}
-
-	/**
-	 * The media frame's title, for a field that may not hold images.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function frame_title_for( Field $field ): string {
-		$title = (string) $field->get( 'frame_title', '' );
+	protected function frame_title( ?Field $field = null ): string {
+		$title = null === $field ? '' : (string) $field->get( 'frame_title', '' );
 
 		if ( '' !== $title ) {
 			return $title;
 		}
 
 		return 'image' === $this->mime_type_for( $field )
-			? $this->frame_title()
+			? __( 'Choose images', 'arraypress' )
 			: __( 'Choose files', 'arraypress' );
 	}
 
@@ -65,8 +54,8 @@ final class GalleryType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	private function mime_type_for( Field $field ): string {
-		return (string) $field->get( 'mime_type', $this->mime_type() );
+	private function mime_type_for( ?Field $field ): string {
+		return null === $field ? $this->mime_type() : (string) $field->get( 'mime_type', $this->mime_type() );
 	}
 
 	/**
@@ -74,26 +63,15 @@ final class GalleryType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function choose_label(): string {
-		return __( 'Add images', 'arraypress' );
-	}
-
-	/**
-	 * The button that opens the picker, for a field that may not hold images.
-	 *
-	 * @param Field $field The field.
-	 *
-	 * @return string
-	 */
-	private function choose_label_for( Field $field ): string {
-		$label = (string) $field->get( 'add_label', '' );
+	protected function choose_label( ?Field $field = null ): string {
+		$label = null === $field ? '' : (string) $field->get( 'add_label', '' );
 
 		if ( '' !== $label ) {
 			return $label;
 		}
 
 		return 'image' === $this->mime_type_for( $field )
-			? $this->choose_label()
+			? __( 'Add images', 'arraypress' )
 			: __( 'Add files', 'arraypress' );
 	}
 
@@ -123,7 +101,7 @@ final class GalleryType extends AbstractMediaType {
 
 		$wrapper = new Attributes();
 		$wrapper->add_class( 'field-kit__media', 'field-kit__gallery' );
-		$wrapper->set( 'data-frame-title', $this->frame_title_for( $field ) );
+		$wrapper->set( 'data-frame-title', $this->frame_title( $field ) );
 
 		// From the field, not a literal. This was hardcoded to `image` while
 		// mime_type() sat beside it unread, so a subclass could change what
@@ -196,12 +174,7 @@ final class GalleryType extends AbstractMediaType {
 		// An MP3 has no thumbnail, and wp_get_attachment_image() says so by
 		// returning an empty string -- which drew an item with nothing in it
 		// but its buttons.
-		$body = '' !== $image
-			? $image
-			: sprintf(
-				'<span class="field-kit__gallery-name">%s</span>',
-				esc_html( $name )
-			);
+		$body = '' !== $image ? $image : $this->render_file( $field, $id, $name );
 
 		return sprintf(
 			'<li class="field-kit__gallery-item%1$s" data-id="%2$d">%3$s%4$s' .
@@ -222,6 +195,87 @@ final class GalleryType extends AbstractMediaType {
 			),
 			$this->remove_button( $name )
 		);
+	}
+
+	/**
+	 * An item with no thumbnail, drawn as something you can actually check.
+	 *
+	 * A filename tells you which row is which and nothing else, and the point
+	 * of a preview is that somebody can play it before deciding it is the
+	 * right one. Audio and video get the browser's own player, which costs
+	 * nothing and is already keyboard-operable; anything else gets the icon
+	 * WordPress uses for its type, beside the name.
+	 *
+	 * `preview_callback` replaces all of it. A store with a waveform player,
+	 * a PDF thumbnailer or anything else worth showing hands one in and gets
+	 * the whole item body to itself -- which is the only way this can support
+	 * those without the kit taking a dependency on them.
+	 *
+	 * @param Field  $field The field.
+	 * @param int    $id    Attachment id.
+	 * @param string $name  Its name.
+	 *
+	 * @return string
+	 */
+	private function render_file( Field $field, int $id, string $name ): string {
+		$callback = $field->get( 'preview_callback' );
+
+		if ( is_callable( $callback ) ) {
+			$rendered = (string) $callback( $id, $field );
+
+			if ( '' !== $rendered ) {
+				return $rendered;
+			}
+		}
+
+		$url  = (string) wp_get_attachment_url( $id );
+		$mime = (string) get_post_mime_type( $id );
+		$kind = strtok( $mime, '/' );
+
+		$label = sprintf( '<span class="field-kit__gallery-name">%s</span>', esc_html( $name ) );
+
+		if ( '' === $url || ! in_array( $kind, [ 'audio', 'video' ], true ) ) {
+			return sprintf(
+				'<span class="field-kit__gallery-icon dashicons %s" aria-hidden="true"></span>%s',
+				esc_attr( $this->icon_for( $mime ) ),
+				$label
+			);
+		}
+
+		// preload="none" on purpose: a panel with a dozen previews would
+		// otherwise fetch a dozen files before anybody pressed anything.
+		// Positional throughout. Mixed with a bare %s, "%1$s" is the first
+		// argument rather than the tag -- which built an <audio> element out
+		// of the filename span.
+		return sprintf(
+			'%1$s<%2$s class="field-kit__gallery-player" controls preload="none" src="%3$s"></%2$s>',
+			$label,
+			'audio' === $kind ? 'audio' : 'video',
+			esc_url( $url )
+		);
+	}
+
+	/**
+	 * The dashicon WordPress uses for a mime type.
+	 *
+	 * @param string $mime The mime type.
+	 *
+	 * @return string
+	 */
+	private function icon_for( string $mime ): string {
+		$icons = [
+			'application/pdf' => 'dashicons-pdf',
+			'text'            => 'dashicons-text',
+			'audio'           => 'dashicons-format-audio',
+			'video'           => 'dashicons-format-video',
+			'image'           => 'dashicons-format-image',
+		];
+
+		if ( isset( $icons[ $mime ] ) ) {
+			return $icons[ $mime ];
+		}
+
+		return $icons[ (string) strtok( $mime, '/' ) ] ?? 'dashicons-media-default';
 	}
 
 	/**
@@ -375,7 +429,7 @@ final class GalleryType extends AbstractMediaType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'add_label', 'frame_title', 'max_items', 'mime_type', 'preview_size' ]
+			[ 'add_label', 'frame_title', 'max_items', 'mime_type', 'preview_callback', 'preview_size' ]
 		);
 	}
 }

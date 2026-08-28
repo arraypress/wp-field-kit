@@ -201,7 +201,9 @@ if ( ! function_exists( 'wp_create_nonce' ) ) {
 
 if ( ! function_exists( 'get_the_title' ) ) {
 	function get_the_title( $post = 0 ) {
-		return 'Item ' . (int) $post;
+		$attachment = $GLOBALS['fk_attachments'][ (int) $post ] ?? null;
+
+		return null === $attachment ? 'Item ' . (int) $post : (string) ( $attachment['name'] ?? 'Item ' . (int) $post );
 	}
 }
 
@@ -229,15 +231,54 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 	}
 }
 
+/**
+ * An attachment a test has described, if it described one.
+ *
+ * Registered in $GLOBALS rather than passed, because these are functions the
+ * code under test calls directly. Absent, every stub behaves as it always
+ * did -- an image with a thumbnail -- so nothing that predates this changes.
+ */
+if ( ! function_exists( 'fk_test_attachment' ) ) {
+	function fk_test_attachment( $attachment_id ) {
+		return $GLOBALS['fk_attachments'][ (int) $attachment_id ] ?? null;
+	}
+}
+
 if ( ! function_exists( 'wp_get_attachment_image' ) ) {
 	function wp_get_attachment_image( $attachment_id, $size = 'thumbnail', $icon = false, $attr = '' ) {
+		$attachment = fk_test_attachment( $attachment_id );
+
+		// What core does for anything that is not an image, and the reason
+		// the gallery needs something else to draw.
+		if ( null !== $attachment && 0 !== strpos( (string) ( $attachment['mime'] ?? 'image/png' ), 'image/' ) ) {
+			return '';
+		}
+
 		return sprintf( '<img src="test.png" alt="%s" />', htmlspecialchars( (string) ( is_array( $attr ) ? ( $attr['alt'] ?? '' ) : '' ), ENT_QUOTES ) );
+	}
+}
+
+if ( ! function_exists( 'esc_url' ) ) {
+	function esc_url( $url, $protocols = null, $_context = 'display' ) {
+		return htmlspecialchars( (string) $url, ENT_QUOTES );
+	}
+}
+
+if ( ! function_exists( 'get_post_mime_type' ) ) {
+	function get_post_mime_type( $post = null ) {
+		$attachment = fk_test_attachment( $post );
+
+		return null === $attachment ? 'image/png' : (string) ( $attachment['mime'] ?? 'image/png' );
 	}
 }
 
 if ( ! function_exists( 'wp_get_attachment_url' ) ) {
 	function wp_get_attachment_url( $attachment_id ) {
-		return 'https://example.test/uploads/file.pdf';
+		$attachment = fk_test_attachment( $attachment_id );
+
+		return null === $attachment
+			? 'https://example.test/uploads/file.pdf'
+			: (string) ( $attachment['url'] ?? '' );
 	}
 }
 

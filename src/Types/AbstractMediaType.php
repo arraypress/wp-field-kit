@@ -27,14 +27,14 @@ abstract class AbstractMediaType extends AbstractType {
 	 *
 	 * @return string
 	 */
-	abstract protected function frame_title(): string;
+	abstract protected function frame_title( ?Field $field = null ): string;
 
 	/**
 	 * The button that opens the picker.
 	 *
 	 * @return string
 	 */
-	abstract protected function choose_label(): string;
+	abstract protected function choose_label( ?Field $field = null ): string;
 
 	/**
 	 * Mime types the picker offers, or an empty string for all.
@@ -60,8 +60,8 @@ abstract class AbstractMediaType extends AbstractType {
 
 		$wrapper = new Attributes();
 		$wrapper->add_class( 'field-kit__media', 'field-kit__media--' . $this->id() );
-		$wrapper->set( 'data-frame-title', $this->frame_title() );
-		$wrapper->set( 'data-choose-label', $this->choose_label() );
+		$wrapper->set( 'data-frame-title', $this->frame_title( $field ) );
+		$wrapper->set( 'data-choose-label', $this->choose_label( $field ) );
 		$wrapper->set_if( '' !== $this->mime_type(), 'data-mime-type', $this->mime_type() );
 		$wrapper->set_if( $field->has( 'library' ), 'data-library', $field->get( 'library' ) );
 
@@ -126,7 +126,7 @@ abstract class AbstractMediaType extends AbstractType {
 			return sprintf(
 				'<p class="field-kit__media-actions"><button%s>%s</button></p>',
 				$choose->render(),
-				esc_html( $this->choose_label() )
+				esc_html( $this->choose_label( $field ) )
 			);
 		}
 
@@ -166,7 +166,7 @@ abstract class AbstractMediaType extends AbstractType {
 		return sprintf(
 			'<p class="field-kit__media-actions"><button%s>%s</button> <button%s>%s</button></p>',
 			$choose->render(),
-			esc_html( $this->choose_label() ),
+			esc_html( $this->choose_label( $field ) ),
 			$clear->render(),
 			esc_html__( 'Remove', 'arraypress' )
 		);

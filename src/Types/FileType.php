@@ -22,7 +22,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function frame_title(): string {
+	protected function frame_title( ?Field $field = null ): string {
 		return __( 'Choose a file', 'arraypress' );
 	}
 
@@ -31,7 +31,7 @@ class FileType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function choose_label(): string {
+	protected function choose_label( ?Field $field = null ): string {
 		return __( 'Choose file', 'arraypress' );
 	}
 

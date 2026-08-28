@@ -37,6 +37,7 @@ final class Field {
 		// Identity and rendering.
 		'type',
 		'label',
+		'hide_label',
 		'description',
 		'default',
 		'placeholder',

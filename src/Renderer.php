@@ -68,6 +68,16 @@ final class Renderer {
 	 * @return string
 	 */
 	public function render( Field $field, string $error = '', bool $with_label = true ): string {
+		// A field whose label is redundant beside what surrounds it -- a
+		// billing chooser under a heading that already says Pricing -- can
+		// ask for the label to be kept for assistive technology and not
+		// drawn. Dropping the label instead leaves a group of radios with no
+		// name at all, which is a different thing from one whose name is
+		// obvious on screen.
+		if ( $field->get( 'hide_label', false ) ) {
+			$with_label = false;
+		}
+
 		$type = $field->type();
 
 		if ( ! $type->stores_value() && ! $field->has( 'label' ) ) {

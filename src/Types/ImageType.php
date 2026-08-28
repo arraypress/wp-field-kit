@@ -21,7 +21,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function frame_title(): string {
+	protected function frame_title( ?Field $field = null ): string {
 		return __( 'Choose an image', 'arraypress' );
 	}
 
@@ -30,7 +30,7 @@ final class ImageType extends AbstractMediaType {
 	 *
 	 * @return string
 	 */
-	protected function choose_label(): string {
+	protected function choose_label( ?Field $field = null ): string {
 		return __( 'Choose image', 'arraypress' );
 	}
 

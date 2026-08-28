@@ -24,6 +24,60 @@ use PHPUnit\Framework\TestCase;
  */
 final class CardChoiceTest extends TestCase {
 
+
+	/**
+	 * The card is the control, so the radio inside it is not drawn.
+	 *
+	 * It stays in the markup: it is still what receives focus and what the
+	 * arrow keys move between, and the card paints checked and focus from it.
+	 * A radio dot inside a card that is itself the selected state says the
+	 * same thing twice.
+	 *
+	 * @return void
+	 */
+	public function test_the_radio_is_present_but_not_drawn(): void {
+		$html = $this->render();
+
+		$this->assertStringContainsString( 'type="radio"', $html );
+
+		// The icon beside a card is decorative and says so; the input must
+		// not, or the control is hidden from the people who need it most.
+		$this->assertDoesNotMatchRegularExpression(
+			'/<input[^>]*field-kit__card-input[^>]*(aria-hidden|hidden=)/',
+			$html
+		);
+
+		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
+
+		// Hidden by clipping, not by display:none, which would take it out of
+		// the tab order and leave the group unusable without a pointer.
+		$this->assertMatchesRegularExpression( '/\.field-kit__card-input \{[^}]*clip-path/s', $css );
+		$this->assertDoesNotMatchRegularExpression( '/\.field-kit__card-input \{[^}]*display:\s*none/s', $css );
+	}
+
+	/**
+	 * A label obvious from what surrounds it can be kept for assistive
+	 * technology without being drawn -- which is not the same as dropping it,
+	 * since that leaves the group with no name at all.
+	 *
+	 * @return void
+	 */
+	public function test_a_hidden_label_is_still_a_legend(): void {
+		$html = $this->render( [ 'hide_label' => true ] );
+
+		$this->assertStringContainsString( 'field-kit__legend screen-reader-text', $html );
+		$this->assertStringContainsString( 'Plan', $html );
+	}
+
+	/**
+	 * And without it the legend is drawn as usual.
+	 *
+	 * @return void
+	 */
+	public function test_a_label_is_drawn_by_default(): void {
+		$this->assertStringNotContainsString( 'screen-reader-text', $this->render() );
+	}
+
 	/**
 	 * Render a card choice.
 	 *

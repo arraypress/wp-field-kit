@@ -110,4 +110,133 @@ final class GalleryTest extends TestCase {
 			'The gallery limit must be checked as items arrive and again when the list settles.'
 		);
 	}
+
+	/**
+	 * A preview you can play, since checking it is the point.
+	 *
+	 * A filename says which row is which and nothing else.
+	 *
+	 * @return void
+	 */
+	public function test_audio_gets_a_player(): void {
+		$html = $this->with_attachment( 'audio/mpeg', 'demo.mp3' );
+
+		$this->assertStringContainsString( '<audio', $html );
+		$this->assertStringContainsString( 'controls', $html );
+
+		// Or a panel of a dozen previews fetches a dozen files before
+		// anybody presses anything.
+		$this->assertStringContainsString( 'preload="none"', $html );
+	}
+
+	/**
+	 * Anything with nothing to play gets the icon for its type.
+	 *
+	 * @return void
+	 */
+	public function test_a_pdf_gets_its_icon_and_its_name(): void {
+		$html = $this->with_attachment( 'application/pdf', 'sleeve-notes.pdf' );
+
+		$this->assertStringContainsString( 'dashicons-pdf', $html );
+		$this->assertStringContainsString( 'sleeve-notes.pdf', $html );
+		$this->assertStringNotContainsString( '<audio', $html );
+	}
+
+	/**
+	 * A gallery that is not of images does not say "images" on its button.
+	 *
+	 * @return void
+	 */
+	public function test_the_wording_follows_the_mime_type(): void {
+		$html = $this->with_attachment( 'audio/mpeg', 'demo.mp3' );
+
+		$this->assertStringContainsString( 'Add files', $html );
+		$this->assertStringNotContainsString( 'Add images', $html );
+		$this->assertStringContainsString( 'data-frame-title="Choose files"', $html );
+	}
+
+	/**
+	 * And a caller can say exactly what it wants instead.
+	 *
+	 * @return void
+	 */
+	public function test_the_wording_can_be_given_outright(): void {
+		$html = $this->with_attachment(
+			'audio/mpeg',
+			'demo.mp3',
+			[ 'add_label' => 'Add a preview', 'frame_title' => 'Choose previews' ]
+		);
+
+		$this->assertStringContainsString( 'Add a preview', $html );
+		$this->assertStringContainsString( 'data-frame-title="Choose previews"', $html );
+	}
+
+	/**
+	 * A consumer with something better to show gets the item body.
+	 *
+	 * The only way this can support a waveform player or a PDF thumbnailer
+	 * without the kit taking a dependency on either.
+	 *
+	 * @return void
+	 */
+	public function test_a_callback_replaces_the_preview(): void {
+		$html = $this->with_attachment(
+			'audio/mpeg',
+			'demo.mp3',
+			[ 'preview_callback' => static fn( int $id ): string => '<div class="waveform" data-id="' . $id . '"></div>' ]
+		);
+
+		$this->assertStringContainsString( 'class="waveform"', $html );
+		$this->assertStringNotContainsString( '<audio', $html );
+	}
+
+	/**
+	 * A callback that returns nothing falls back rather than drawing a hole.
+	 *
+	 * @return void
+	 */
+	public function test_an_empty_callback_falls_back(): void {
+		$html = $this->with_attachment(
+			'audio/mpeg',
+			'demo.mp3',
+			[ 'preview_callback' => static fn (): string => '' ]
+		);
+
+		$this->assertStringContainsString( '<audio', $html );
+	}
+
+	/**
+	 * Render a gallery holding one attachment of a given type.
+	 *
+	 * @param string               $mime   Its mime type.
+	 * @param string               $name   Its filename.
+	 * @param array<string, mixed> $config Extra field configuration.
+	 *
+	 * @return string
+	 */
+	private function with_attachment( string $mime, string $name, array $config = [] ): string {
+		$GLOBALS['fk_attachments'] = [
+			7 => [
+				'mime' => $mime,
+				'url'  => 'https://example.test/' . $name,
+				'name' => $name,
+			],
+		];
+
+		$field = new Field(
+			'previews',
+			( new Registry() )->get( 'gallery' ),
+			array_merge(
+				[ 'label' => 'Previews', 'input_name' => 'previews', 'mime_type' => 'audio' ],
+				$config
+			),
+			null
+		);
+
+		$html = ( new Renderer() )->render( $field->with_value( [ 7 ] ) );
+
+		unset( $GLOBALS['fk_attachments'] );
+
+		return $html;
+	}
 }
