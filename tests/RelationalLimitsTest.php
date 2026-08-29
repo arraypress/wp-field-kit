@@ -243,4 +243,41 @@ final class RelationalLimitsTest extends TestCase {
 		$this->assertSame( array_values( array_unique( $keys ) ), $keys, "{$type} repeats a config key" );
 	}
 
+	/**
+	 * A callback source can be told something the search term does not carry.
+	 *
+	 * `search_args` reaches the endpoint, which passes it to the callback as
+	 * its third argument. The usual reason is which record the picker is
+	 * sitting in, so it can leave that one out of the results -- a product's
+	 * "also suggest" offering the product itself is a choice that looks
+	 * available and is thrown away on save.
+	 *
+	 * The attribute existed before this and nothing could fill it.
+	 */
+	public function test_search_args_reach_the_page(): void {
+		$markup = $this->render( 'ajax', [ 'search_args' => [ 'exclude' => 12 ] ] );
+
+		$this->assertStringContainsString( 'data-search-args', $markup );
+		$this->assertStringContainsString( '&quot;exclude&quot;:12', $markup );
+	}
+
+	/**
+	 * A field that declares none gets no attribute at all.
+	 */
+	public function test_no_search_args_means_no_attribute(): void {
+		$this->assertStringNotContainsString( 'data-search-args', $this->render( 'ajax' ) );
+	}
+
+	/**
+	 * Only scalars, because the endpoint reduces them to scalars anyway.
+	 *
+	 * A nested array would arrive as the string "Array" and read as a filter
+	 * that had been applied.
+	 */
+	public function test_search_args_drop_anything_that_is_not_scalar(): void {
+		$markup = $this->render( 'ajax', [ 'search_args' => [ 'ok' => 1, 'bad' => [ 1, 2 ] ] ] );
+
+		$this->assertStringContainsString( '&quot;ok&quot;:1', $markup );
+		$this->assertStringNotContainsString( 'bad', $markup );
+	}
 }

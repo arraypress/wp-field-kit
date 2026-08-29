@@ -74,12 +74,29 @@ abstract class AbstractRelationalType extends SelectType {
 	/**
 	 * Query arguments forwarded to the endpoint.
 	 *
+	 * Whatever the field declares under `search_args`, so a callback source
+	 * can be told something the search term does not carry -- which record
+	 * the picker is sitting in, most often, so it can leave that one out.
+	 * Without this the attribute existed and nothing could ever fill it.
+	 *
+	 * They reach the callback as its third argument, and the endpoint
+	 * reduces them to scalars before they get there.
+	 *
+	 * Subclasses that build their own arguments override this; a post picker
+	 * has a post type to send and no use for anything a caller invents.
+	 *
 	 * @param Field $field The field.
 	 *
 	 * @return array<string, scalar>
 	 */
 	protected function search_args( Field $field ): array {
-		return [];
+		$args = $field->get( 'search_args', [] );
+
+		if ( ! is_array( $args ) ) {
+			return [];
+		}
+
+		return array_filter( $args, 'is_scalar' );
 	}
 
 	/**
@@ -284,7 +301,7 @@ abstract class AbstractRelationalType extends SelectType {
 		// it in the list twice.
 		return array_merge(
 			parent::config_keys(),
-			[ 'min_chars', 'search_callback', 'sortable', 'min', 'max' ]
+			[ 'min_chars', 'search_callback', 'search_args', 'sortable', 'min', 'max' ]
 		);
 	}
 
