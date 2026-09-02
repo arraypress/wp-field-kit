@@ -282,16 +282,35 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	private static function key(): string {
 		$salt = '';
 
+		$weak = false;
+
 		foreach ( [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ] as $constant ) {
 			$part = defined( $constant ) ? (string) constant( $constant ) : '';
 
-			// The phrase wp-config-sample.php ships with is public, and a key
-			// derived from it is no key at all.
-			if ( '' === $part || 'put your unique phrase here' === $part ) {
+			if ( '' === $part ) {
 				continue;
 			}
 
+			// The phrase wp-config-sample.php ships with is public, and a key
+			// derived from it is no key at all. It is still used: refusing
+			// to store anything left a Stripe key blank on every site and
+			// every test suite that never set its salts, with nothing on
+			// screen to say why. The site is warned instead, where warnings
+			// are shown, and its cookies are forgeable with those salts in
+			// any case.
+			if ( 'put your unique phrase here' === $part ) {
+				$weak = true;
+			}
+
 			$salt .= $part;
+		}
+
+		if ( $weak && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			_doing_it_wrong(
+				__METHOD__,
+				esc_html__( 'The salts in wp-config.php are the placeholders from wp-config-sample.php, so the key that encrypts these fields is public. Set unique salts.', 'arraypress' ),
+				'1.0.0'
+			);
 		}
 
 		return '' === $salt ? '' : hash( 'sha256', $salt, true );
