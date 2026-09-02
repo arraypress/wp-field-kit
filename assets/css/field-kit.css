@@ -2516,13 +2516,19 @@ select.field-kit__select[multiple] {
 	overflow-y: auto;
 }
 
-.field-kit__tag-search {
-	margin: 0 0 12px;
+/* The search is a paragraph, and on an edit screen the dialog sits in a
+   form-table cell whose paragraphs core spaces as 4px 0 0 -- a rule with
+   more specificity than a bare class, which left the search box touching
+   the list. Scoped to the frame so it wins; 16px is core's own spacing
+   inside the media modal. */
+.field-kit__tag-frame .field-kit__tag-search {
+	margin: 0 0 16px;
 }
 
-.field-kit__tag-search-input {
+.field-kit__tag-frame .field-kit__tag-search-input {
 	width: 100%;
 	max-width: 100%;
+	margin: 0;
 }
 
 .field-kit__tag-items {
