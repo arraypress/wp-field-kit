@@ -133,6 +133,13 @@ final class Sections {
 			// did the folding for free but looked like nothing else in the
 			// admin; this looks like the screen beside it, chevron at the
 			// end and turning as it opens.
+			//
+			// The panel is the one part that does not take core's class.
+			// edit.css styles the privacy guide's suggested text through it
+			// -- every child that is not a heading or a div gets padding and
+			// a left rule -- and a form's labels, inputs and descriptions
+			// are exactly those children. The panel is ours, painted to
+			// match, and nothing inside it inherits a quotation.
 			$markup .= '<div class="privacy-settings-accordion field-kit__accordion">';
 
 			foreach ( $layout['sections'] as $index => $section ) {
@@ -143,7 +150,7 @@ final class Sections {
 					'<h4 class="privacy-settings-accordion-heading">' .
 					'<button aria-expanded="%1$s" class="privacy-settings-accordion-trigger" aria-controls="%2$s" type="button">' .
 					'<span class="title">%3$s</span><span class="icon"></span></button></h4>' .
-					'<div id="%2$s" class="privacy-settings-accordion-panel field-kit__accordion-panel"%4$s>%5$s</div>',
+					'<div id="%2$s" class="field-kit__accordion-panel"%4$s>%5$s</div>',
 					$open ? 'true' : 'false',
 					esc_attr( $panel ),
 					esc_html( $section['field']->label() ),

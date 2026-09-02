@@ -159,7 +159,8 @@ final class SectionsTest extends TestCase {
 		] );
 
 		$this->assertSame( 2, substr_count( $markup, 'privacy-settings-accordion-trigger' ) );
-		$this->assertSame( 2, substr_count( $markup, 'privacy-settings-accordion-panel' ) );
+		$this->assertSame( 2, substr_count( $markup, 'class="field-kit__accordion-panel"' ) );
+		$this->assertStringNotContainsString( 'privacy-settings-accordion-panel', $markup );
 		$this->assertStringContainsString( '<div class="privacy-settings-accordion field-kit__accordion">', $markup );
 		$this->assertStringNotContainsString( '<details', $markup );
 		$this->assertStringNotContainsString( 'field-kit__panel-tabs', $markup );
@@ -251,20 +252,23 @@ final class SectionsTest extends TestCase {
 
 
 	/**
-	 * The accordion's look is core's, not this sheet's.
+	 * The accordion's frame and trigger are core's; the panel is ours.
 	 *
-	 * edit.css paints the heading, trigger, chevron and panel on every admin
+	 * edit.css paints the heading, trigger and chevron on every admin
 	 * screen; a second set of rules here would drift from it the next time
-	 * core changed. The sheet spaces the panel and nothing more, and the
-	 * old <details> styling is gone rather than left as dead weight.
+	 * core changed. The panel cannot take core's class -- it carries the
+	 * privacy guide's suggested-text quotation onto every child -- so the
+	 * sheet paints one to match, and the old <details> styling is gone
+	 * rather than left as dead weight.
 	 */
 	public function test_the_accordion_is_styled_by_core(): void {
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 
 		$this->assertMatchesRegularExpression(
-			'/\.field-kit__accordion \.privacy-settings-accordion-panel\s*\{[^}]*padding/',
+			'/\.field-kit__accordion-panel\s*\{[^}]*background:\s*#fff/',
 			$css
 		);
+		$this->assertMatchesRegularExpression( '/\.field-kit__accordion-panel\[hidden\]\s*\{[^}]*display:\s*none/', $css );
 		$this->assertStringNotContainsString( 'field-kit__accordion-body', $css );
 		$this->assertStringNotContainsString( 'field-kit__accordion-summary', $css );
 	}
