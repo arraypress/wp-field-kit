@@ -1549,6 +1549,14 @@ li.field-kit__repeater-row {
 	margin-inline-start: 22px;
 }
 
+/* The Help and Screen Options panel sits outside .wrap, in the padding
+   this screen removed, so it is given the 20px back: core's own figure,
+   and the far margin core already keeps. Without it the panel starts
+   flush against the menu on every screen that uses the header. */
+.field-kit__page-screen #screen-meta {
+	margin-inline-start: 20px;
+}
+
 /* Admin notices land after the header, outside .wrap, where nothing else
    supplies a gutter -- so they carry their own, lined up with the content
    below rather than with core's figures for a page whose wrap sits
