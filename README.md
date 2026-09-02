@@ -180,6 +180,34 @@ $set = new FieldSet(
 );
 ```
 
+## A country and its regions
+
+A `region` is a state, a province or a county. Given a fixed `country` it is
+a select over that country's subdivisions, storing the code the way `country`
+stores its own. Given `country_key` — the key of the country field beside it
+— it follows whatever is chosen there: a select where the country has
+subdivisions on file, a text input where it does not, swapped by the script
+on load and on every change.
+
+```php
+use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Context\OptionContext;
+
+$set = new FieldSet(
+	[
+		'country' => [ 'type' => 'country', 'label' => __( 'Country', 'my-plugin' ) ],
+		'region'  => [ 'type' => 'region', 'label' => __( 'State or province', 'my-plugin' ), 'country_key' => 'country' ],
+	],
+	new OptionContext( 'my_plugin' ),
+	'my_plugin'
+);
+```
+
+Without the script the text input is what submits, so a typed code still
+saves. Inside a repeater the lookup is scoped to the row, so each row's
+region follows that row's country. The subdivisions are WooCommerce's, by
+way of `arraypress/wp-countries`.
+
 ## Requirements
 
 * PHP 8.3 or later

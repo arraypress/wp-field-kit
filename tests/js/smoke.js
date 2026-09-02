@@ -1039,9 +1039,225 @@ function recorder() {
 	}
 } )();
 
-if ( failures ) {
-	console.error( `\n${ failures } failure(s)` );
-	process.exit( 1 );
+/*
+ * A region follows the country beside it.
+ *
+ * PHP draws a text input, live, and a select, empty and disabled, because
+ * it cannot know the country at render time. The script asks the endpoint
+ * for that country's regions and swaps to the select when there are some,
+ * and only then -- a hidden control still posts, so the one standing down
+ * has to be disabled, or both submit under one name. And a slow answer for
+ * the previous country must not land after the answer for the current one.
+ *
+ * Asynchronous, because fetch is, so the report waits for it.
+ */
+const regionChecks = ( async function () {
+	/**
+	 * An element that keeps the options and listeners given to it.
+	 *
+	 * @return {object} The element.
+	 */
+	function control() {
+		const element = makeElement();
+
+		element.children = [];
+		element.listeners = {};
+		element.appendChild = ( node ) => element.children.push( node );
+		element.addEventListener = ( type, handler ) => {
+			element.listeners[ type ] = handler;
+		};
+
+		// Setting textContent on a select empties it; the stub mirrors that.
+		Object.defineProperty( element, 'textContent', {
+			get: () => element.text || '',
+			set: ( value ) => {
+				element.text = value;
+				element.children = [];
+			},
+		} );
+
+		return element;
+	}
+
+	/**
+	 * A region field beside a country control holding the given code.
+	 *
+	 * @param {string} code The country's value.
+	 * @return {object} The parts.
+	 */
+	function makeRegion( code ) {
+		const country = Object.assign( control(), { value: code, name: 'country' } );
+		const row = Object.assign( makeElement(), { querySelector: () => country } );
+		const select = Object.assign( control(), { disabled: true, hidden: true } );
+		const text = Object.assign( control(), { value: 'CA' } );
+		const wrap = makeElement();
+
+		wrap.dataset = {
+			countryKey: 'country',
+			searchEndpoint: 'https://example.test/wp-json/field-kit/v1/search',
+			searchNonce: 'n',
+		};
+		wrap.closest = ( selector ) => ( selector.includes( 'repeater-row' ) ? row : null );
+		wrap.querySelector = ( selector ) => {
+			if ( selector.includes( 'region-select' ) ) {
+				return select;
+			}
+
+			if ( selector.includes( 'region-text' ) ) {
+				return text;
+			}
+
+			return null;
+		};
+
+		const root = Object.assign( makeElement(), {
+			querySelectorAll: ( selector ) => ( selector.includes( 'field-kit__region' ) ? [ wrap ] : [] ),
+		} );
+
+		return { country, select, text, wrap, root };
+	}
+
+	// Every request is held until the test answers it, so order can be
+	// chosen.
+	const requests = [];
+	const realFetch = context.fetch;
+
+	context.fetch = ( url ) => new Promise( ( resolve ) => {
+		requests.push( {
+			url: String( url ),
+			answer: ( results ) => resolve( { ok: true, json: () => Promise.resolve( { results } ) } ),
+		} );
+	} );
+
+	const settle = () => new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+	try {
+		// Regions come back: the select takes over, holding the stored value.
+		const one = makeRegion( 'US' );
+
+		modules.Region.init( one.root );
+
+		if ( 1 !== requests.length ) {
+			console.error( '  Region: nothing was asked for the country beside it' );
+			failures ++;
+		} else {
+			const url = requests[ 0 ].url;
+
+			if ( ! url.includes( 'source=region' ) || ! /args(%5B|\[)country(%5D|\])=US/.test( url ) ) {
+				console.error( `  Region: asked the endpoint the wrong question: ${ url }` );
+				failures ++;
+			}
+
+			requests[ 0 ].answer( [ { id: 'CA', text: 'California' }, { id: 'NY', text: 'New York' } ] );
+			await settle();
+
+			if ( one.select.disabled || one.select.hidden ) {
+				console.error( '  Region: the select is not live after regions arrived' );
+				failures ++;
+			}
+
+			if ( ! one.text.disabled || ! one.text.hidden ) {
+				console.error( '  Region: the text input still submits beside the select' );
+				failures ++;
+			}
+
+			const values = one.select.children.map( ( option ) => option.value );
+
+			if ( '["","CA","NY"]' !== JSON.stringify( values ) ) {
+				console.error( `  Region: the select holds ${ JSON.stringify( values ) }` );
+				failures ++;
+			}
+
+			const chosen = one.select.children.filter( ( option ) => option.selected ).map( ( option ) => option.value );
+
+			if ( '["CA"]' !== JSON.stringify( chosen ) ) {
+				console.error( `  Region: the stored value was not kept selected: ${ JSON.stringify( chosen ) }` );
+				failures ++;
+			}
+
+			if ( 'California' !== one.select.children[ 1 ].textContent ) {
+				console.error( '  Region: an option is not labelled with its name' );
+				failures ++;
+			}
+
+			// The country changes to one with no list: back to the text input.
+			one.country.value = 'GB';
+			one.country.listeners.change();
+			requests[ 1 ].answer( [] );
+			await settle();
+
+			if ( ! one.select.disabled || ! one.select.hidden || one.select.children.length ) {
+				console.error( '  Region: a country with no regions left the select live' );
+				failures ++;
+			}
+
+			if ( one.text.disabled || one.text.hidden ) {
+				console.error( '  Region: the text input did not come back' );
+				failures ++;
+			}
+		}
+
+		// No regions from the start: the text input stays as drawn.
+		const two = makeRegion( 'GB' );
+
+		modules.Region.init( two.root );
+		requests[ requests.length - 1 ].answer( [] );
+		await settle();
+
+		if ( two.text.disabled || two.text.hidden || ! two.select.disabled || ! two.select.hidden ) {
+			console.error( '  Region: a country with no regions did not stay on the text input' );
+			failures ++;
+		}
+
+		// A slow answer for the previous country arrives after the current
+		// one and must be ignored.
+		const three = makeRegion( 'US' );
+
+		modules.Region.init( three.root );
+		const stale = requests[ requests.length - 1 ];
+
+		three.country.value = 'GB';
+		three.country.listeners.change();
+		requests[ requests.length - 1 ].answer( [] );
+		await settle();
+		stale.answer( [ { id: 'CA', text: 'California' } ] );
+		await settle();
+
+		if ( ! three.select.disabled || three.text.disabled ) {
+			console.error( '  Region: a slow answer for the previous country replaced the current one' );
+			failures ++;
+		}
+
+		// No country control to be found: nothing is asked, text stays live.
+		const four = makeRegion( 'US' );
+		const asked = requests.length;
+
+		four.wrap.closest = () => null;
+		modules.Region.init( four.root );
+
+		if ( requests.length !== asked || four.text.disabled || ! four.select.disabled ) {
+			console.error( '  Region: a field with no country beside it did not leave the text input live' );
+			failures ++;
+		}
+	} finally {
+		context.fetch = realFetch;
+	}
+} )();
+
+/**
+ * The report, once the asynchronous checks have settled.
+ */
+function finish() {
+	if ( failures ) {
+		console.error( `\n${ failures } failure(s)` );
+		process.exit( 1 );
+	}
+
+	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country` );
 }
 
-console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts` );
+regionChecks.then( finish, ( error ) => {
+	console.error( `  Region: ${ error.message }` );
+	failures ++;
+	finish();
+} );

@@ -1642,6 +1642,7 @@ li.field-kit__repeater-row {
 	.field-kit__clipboard .field-kit__clipboard-value,
 	.field-kit__code-value,
 	.field-kit__select,
+	.field-kit__region,
 	.field-kit__combobox,
 	.field-kit__combobox-input {
 		min-width: 0;
@@ -3445,6 +3446,31 @@ span.field-kit__provider-logo {
 .field-kit__count--over {
 	color: #d63638;
 	font-weight: 600;
+}
+
+/* A region is drawn twice -- a text input for a country whose subdivisions
+   are not on file and a select for one whose are -- and only the script
+   knows which. The wrapper sits inline like the select it stands in for,
+   capped at core's own select width, so whichever control is live lines up
+   with the fields around it the same way. */
+.field-kit__region {
+	display: inline-block;
+	max-width: 25rem;
+	vertical-align: middle;
+}
+
+.field-kit__region .field-kit__region-select,
+.field-kit__region .field-kit__region-text {
+	max-width: 100%;
+}
+
+/* The swap is done with the hidden attribute, which the browser applies as
+   a bare element rule. Neither control here is given a display of its own,
+   but core gives inputs and selects one on some screens, so the attribute's
+   rule is restated where it cannot lose. */
+.field-kit__region-select[hidden],
+.field-kit__region-text[hidden] {
+	display: none;
 }
 
 /* A row folds away to its header. `li` on purpose: a <tr> given a display of

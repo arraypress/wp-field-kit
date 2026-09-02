@@ -243,6 +243,7 @@ final class Assets {
 				'embedOnSave'      => __( 'This will render once saved.', 'arraypress' ),
 				'showPassword'     => __( 'Show password', 'arraypress' ),
 				'hidePassword'     => __( 'Hide password', 'arraypress' ),
+				'selectRegion'     => __( 'Select a region', 'arraypress' ),
 			],
 		];
 	}

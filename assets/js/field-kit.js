@@ -93,6 +93,32 @@
 		}, 50 );
 	}
 
+	/**
+	 * A sibling control, found by its field key.
+	 *
+	 * Scoped to the repeater row the caller sits in, then the form, then the
+	 * document: a repeater has one of each key per row, and the first match
+	 * in the form would give every row the first row's value. The key is
+	 * matched as a bare name or as the last segment of a bracketed one,
+	 * which is how a row's inputs are named.
+	 *
+	 * Money reads its currency this way and region its country -- one lookup
+	 * rather than two copies of the same query, free to drift apart.
+	 *
+	 * @param {Element} wrap The control asking.
+	 * @param {string}  key  Field key of the sibling.
+	 * @return {Element|null} The control, if there is one.
+	 */
+	function sibling( wrap, key ) {
+		if ( ! key ) {
+			return null;
+		}
+
+		var scope = wrap.closest( '.field-kit__repeater-row' ) || wrap.closest( 'form' ) || document;
+
+		return scope.querySelector( '[name$="[' + key + ']"], [name="' + key + '"]' );
+	}
+
 	/* ====================================================================
 	 * Conditional logic
 	 * ================================================================= */
@@ -661,7 +687,7 @@
 		}
 	};
 
-	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, bound: bound, t: t, config: config };
+	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, bound: bound, sibling: sibling, t: t, config: config };
 } )();
 
 /**
@@ -3694,18 +3720,15 @@
 		/**
 		 * The control holding this amount's currency code.
 		 *
-		 * Scoped to the row rather than the document: a repeater has one per
-		 * row, and the first match in the form would give every row the
-		 * first row's currency.
+		 * The kit's sibling lookup, which is scoped to the row: a repeater
+		 * has one per row, and the first match in the form would give every
+		 * row the first row's currency.
 		 *
 		 * @param {Element} wrap The money field.
 		 * @return {Element|null} The control, if there is one.
 		 */
 		source: function ( wrap ) {
-			var scope = wrap.closest( '.field-kit__repeater-row' ) || wrap.closest( 'form' ) || document;
-			var key = wrap.dataset.currencyKey;
-
-			return scope.querySelector( '[name$="[' + key + ']"], [name="' + key + '"]' );
+			return kit.sibling( wrap, wrap.dataset.currencyKey );
 		},
 
 		/**
@@ -3737,6 +3760,172 @@
 	};
 
 	window.ArrayPressFieldKitModules.Money = Money;
+
+	/* =================================================================
+	 * Region
+	 * ================================================================= */
+
+	var Region = {
+
+		/**
+		 * Fit each region control to the country of its row.
+		 *
+		 * PHP drew two controls -- a text input, live, and a select, empty
+		 * and disabled -- because it could not know the country at render
+		 * time. This asks the server for that country's regions and keeps
+		 * whichever control fits: the select where there is a list, the text
+		 * input where there is not. Every step is guarded so that a field
+		 * with no country beside it, or a request that fails, is left as it
+		 * was drawn, with the text input live and submitting.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__region[data-country-key]' ).forEach( function ( wrap ) {
+				if ( wrap.dataset.fkBound ) {
+					return;
+				}
+
+				wrap.dataset.fkBound = '1';
+
+				var source = kit.sibling( wrap, wrap.dataset.countryKey );
+
+				if ( ! source ) {
+					return;
+				}
+
+				Region.load( wrap, source.value );
+
+				source.addEventListener( 'change', function () {
+					Region.load( wrap, source.value );
+				} );
+			} );
+		},
+
+		/**
+		 * Fetch a country's regions and fit the control to them.
+		 *
+		 * Numbered, as the combobox numbers its searches: a slow answer for
+		 * the previous country must not land after the answer for this one
+		 * and put the wrong list in the select.
+		 *
+		 * @param {Element} wrap    The region field.
+		 * @param {string}  country The country code.
+		 */
+		load: function ( wrap, country ) {
+			var endpoint = wrap.dataset.searchEndpoint || ( config.restUrl ? config.restUrl + 'search' : '' );
+			var ticket;
+			var url;
+
+			wrap.fieldKitTicket = ( wrap.fieldKitTicket || 0 ) + 1;
+			ticket = wrap.fieldKitTicket;
+
+			if ( ! country || ! endpoint || typeof fetch !== 'function' ) {
+				Region.apply( wrap, [] );
+
+				return;
+			}
+
+			try {
+				url = new URL( endpoint, window.location.origin );
+			} catch ( error ) {
+				Region.apply( wrap, [] );
+
+				return;
+			}
+
+			url.searchParams.set( 'source', 'region' );
+			url.searchParams.set( 'args[country]', country );
+
+			fetch( url, {
+				credentials: 'same-origin',
+				headers: { 'X-WP-Nonce': wrap.dataset.searchNonce || config.restNonce || '' }
+			} ).then( function ( response ) {
+				return response.ok ? response.json() : { results: [] };
+			} ).then( function ( data ) {
+				if ( ticket === wrap.fieldKitTicket ) {
+					Region.apply( wrap, data.results || [] );
+				}
+			} ).catch( function () {
+				if ( ticket === wrap.fieldKitTicket ) {
+					Region.apply( wrap, [] );
+				}
+			} );
+		},
+
+		/**
+		 * Make one control live and the other inert.
+		 *
+		 * Only one may submit, so the one standing down is disabled as well
+		 * as hidden: a hidden control still posts. Nothing is announced. A
+		 * select appearing where a text box was is a change of control, not
+		 * of state, and the label reads the same either way.
+		 *
+		 * @param {Element} wrap    The region field.
+		 * @param {Array}   regions Rows of {id, text}; empty for a country without any.
+		 */
+		apply: function ( wrap, regions ) {
+			var select = wrap.querySelector( '.field-kit__region-select' );
+			var text = wrap.querySelector( '.field-kit__region-text' );
+
+			if ( ! select || ! text ) {
+				return;
+			}
+
+			// Whichever control is live holds the current value: the stored
+			// one from the text input before the first swap, the chosen one
+			// from the select after it.
+			var current = select.disabled ? text.value : select.value;
+
+			select.textContent = '';
+
+			if ( ! regions.length ) {
+				select.disabled = true;
+				select.hidden = true;
+				text.disabled = false;
+				text.hidden = false;
+
+				return;
+			}
+
+			if ( ! select.hasAttribute( 'required' ) ) {
+				select.appendChild( Region.option( '', select.dataset.placeholder || t( 'selectRegion', 'Select a region' ) ) );
+			}
+
+			regions.forEach( function ( region ) {
+				var option = Region.option( String( region.id ), String( region.text ) );
+
+				if ( option.value === current ) {
+					option.selected = true;
+				}
+
+				select.appendChild( option );
+			} );
+
+			text.disabled = true;
+			text.hidden = true;
+			select.disabled = false;
+			select.hidden = false;
+		},
+
+		/**
+		 * One option.
+		 *
+		 * @param {string} value Its value.
+		 * @param {string} label Its text.
+		 * @return {Element} The option.
+		 */
+		option: function ( value, label ) {
+			var option = document.createElement( 'option' );
+
+			option.value = value;
+			option.textContent = label;
+
+			return option;
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Region = Region;
 
 	/* ====================================================================
 	 * Password reveal
@@ -3901,7 +4090,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money', 'PasswordReveal', 'Counter' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money', 'PasswordReveal', 'Counter', 'Region' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

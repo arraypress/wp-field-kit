@@ -65,6 +65,7 @@ final class Registry {
 		'button_group'    => Types\ButtonGroupType::class,
 		'country'         => Types\CountryType::class,
 		'currency'        => Types\CurrencyType::class,
+		'region'          => Types\RegionType::class,
 
 		// Media.
 		'image'           => Types\ImageType::class,

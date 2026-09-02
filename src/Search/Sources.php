@@ -121,7 +121,7 @@ final class Sources {
 
 		$this->booted = true;
 
-		foreach ( [ new PostSource(), new UserSource(), new TermSource() ] as $source ) {
+		foreach ( [ new PostSource(), new UserSource(), new TermSource(), new RegionSource() ] as $source ) {
 			if ( ! isset( $this->sources[ $source->name() ] ) ) {
 				$this->sources[ $source->name() ] = $source;
 			}
