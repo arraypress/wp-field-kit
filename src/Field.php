@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit;
 
 use ArrayPress\FieldKit\Contracts\FieldType;
+use ArrayPress\FieldKit\Support\Presets;
 
 /**
  * A single field, normalized once and then read-only.
@@ -425,12 +426,23 @@ final class Field {
 	 * Choice options as value => label.
 	 *
 	 * Accepts a callable so options can be resolved at render time rather
-	 * than at registration, which is what dynamic sources need.
+	 * than at registration, which is what dynamic sources need. Accepts a
+	 * name, too -- `'options' => 'roles'` -- which is a preset, built in or
+	 * registered by the consumer, and resolved the same way.
+	 *
+	 * The name is checked before the callable, because a string is a
+	 * callable too whenever a function of that name exists: a preset called
+	 * `pages` must not turn into a call to some plugin's `pages()`. A
+	 * function name that is not a preset still works as it always did.
 	 *
 	 * @return array<string, string>
 	 */
 	public function options(): array {
 		$options = $this->get( 'options', [] );
+
+		if ( is_string( $options ) && '' !== $options && ( Presets::has( $options ) || ! is_callable( $options ) ) ) {
+			return Presets::options( $options, $this );
+		}
 
 		if ( is_callable( $options ) ) {
 			$options = $options( $this );

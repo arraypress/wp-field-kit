@@ -544,3 +544,136 @@ if ( ! function_exists( 'sanitize_html_class' ) ) {
 		return $sanitized;
 	}
 }
+
+/*
+ * What the option presets read. Each one is driven by a global a test sets,
+ * and answers empty otherwise, so a preset asked for on a bare site is a
+ * preset with nothing in it rather than a fatal.
+ */
+
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $hook, $value, ...$args ) {
+		foreach ( $GLOBALS['fk_filters'][ $hook ] ?? [] as $callback ) {
+			$value = $callback( $value, ...$args );
+		}
+
+		return $value;
+	}
+}
+
+if ( ! function_exists( 'wp_roles' ) ) {
+	/**
+	 * The roles object, reduced to the one method the presets call.
+	 *
+	 * @return object
+	 */
+	function wp_roles() {
+		return new class() {
+			public function get_names(): array {
+				return $GLOBALS['fk_roles'] ?? [];
+			}
+		};
+	}
+}
+
+if ( ! function_exists( 'translate_user_role' ) ) {
+	function translate_user_role( $name, $domain = 'default' ) {
+		return $name;
+	}
+}
+
+/**
+ * Registered objects -- post types or taxonomies -- matching a query.
+ *
+ * Core's get_post_types() and get_taxonomies() both take an array of
+ * property => value and return the objects whose properties match every one,
+ * as names or as the objects themselves. That filtering is what the presets
+ * lean on to say "public only", so the stub does it rather than returning
+ * the lot.
+ *
+ * @param array  $objects Registered objects, keyed by name.
+ * @param array  $args    Property => value to match.
+ * @param string $output  'names' or 'objects'.
+ *
+ * @return array
+ */
+if ( ! function_exists( 'fk_test_matching_objects' ) ) {
+	function fk_test_matching_objects( array $objects, array $args, string $output ): array {
+		$matching = array_filter(
+			$objects,
+			static function ( $object ) use ( $args ): bool {
+				foreach ( $args as $property => $value ) {
+					if ( ( $object->$property ?? null ) !== $value ) {
+						return false;
+					}
+				}
+
+				return true;
+			}
+		);
+
+		return 'objects' === $output ? $matching : array_keys( $matching );
+	}
+}
+
+if ( ! function_exists( 'get_post_types' ) ) {
+	function get_post_types( $args = [], $output = 'names', $operator = 'and' ) {
+		return fk_test_matching_objects( $GLOBALS['fk_post_types'] ?? [], (array) $args, (string) $output );
+	}
+}
+
+if ( ! function_exists( 'get_taxonomies' ) ) {
+	function get_taxonomies( $args = [], $output = 'names', $operator = 'and' ) {
+		return fk_test_matching_objects( $GLOBALS['fk_taxonomies'] ?? [], (array) $args, (string) $output );
+	}
+}
+
+if ( ! function_exists( 'get_pages' ) ) {
+	/**
+	 * No return type, as with wp_get_nav_menus(): core's returns false as
+	 * well as an array, and the guard for that has to be reachable.
+	 *
+	 * @param array $args Unused.
+	 *
+	 * @return mixed
+	 */
+	function get_pages( $args = [] ) {
+		return $GLOBALS['fk_pages'] ?? [];
+	}
+}
+
+if ( ! function_exists( 'wp_get_registered_image_subsizes' ) ) {
+	function wp_get_registered_image_subsizes() {
+		return $GLOBALS['fk_image_sizes'] ?? [];
+	}
+}
+
+if ( ! function_exists( 'wp_get_theme' ) ) {
+	/**
+	 * The theme object, reduced to the one method the presets call.
+	 *
+	 * @return object
+	 */
+	function wp_get_theme() {
+		return new class() {
+			public function get_page_templates( $post = null, $post_type = 'page' ): array {
+				return $GLOBALS['fk_page_templates'] ?? [];
+			}
+		};
+	}
+}
+
+if ( ! function_exists( 'wp_get_schedules' ) ) {
+	function wp_get_schedules() {
+		return $GLOBALS['fk_schedules'] ?? [];
+	}
+}
+
+/*
+ * wp-money is suggested rather than required, so the currency type is tested
+ * against a stand-in with a handful of currencies in it. A namespaced class
+ * cannot live in this file of global functions, so it sits beside it.
+ */
+if ( ! class_exists( 'ArrayPress\Money\Currencies' ) ) {
+	require_once __DIR__ . '/stubs/Currencies.php';
+}
