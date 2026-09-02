@@ -201,24 +201,41 @@ final class FlexibleType extends RepeaterType {
 			? $this->render_children( $field, $row, $prefix, 'row' . $index, $layouts[ $slug ]['fields'] )
 			: $this->render_orphan( $slug, $row, $prefix );
 
+		// The same strip a collapsible repeater row wears: the layout's name
+		// as the title, the actions and the chevron at the end, the fields
+		// underneath. The layout name used to sit in a gutter beside the
+		// fields, so every row's controls started at a different column and
+		// the actions floated loose at the top corner.
+		$closed   = (bool) $field->get( 'collapsed', false ) && $index >= 0 && $this->has_content( $row );
+		$title_id = $field->input_id() . '_row' . $index . '_title';
+
 		return sprintf(
-			'<li class="field-kit__repeater-row field-kit__flexible-row" data-index="%d" data-layout="%s">' .
-			'<span class="field-kit__repeater-position screen-reader-text">%s</span>' .
-			'<span class="field-kit__flexible-label">%s</span>' .
-			'<input type="hidden" name="%s[%s]" value="%s" />' .
-			'<div class="field-kit__repeater-fields">%s</div>' .
-			'<div class="field-kit__repeater-actions">%s%s%s</div></li>',
+			'<li class="field-kit__repeater-row field-kit__repeater-row--collapsible field-kit__flexible-row%1$s" data-index="%2$d" data-layout="%3$s">' .
+			'<span class="field-kit__repeater-position screen-reader-text">%4$s</span>' .
+			'<input type="hidden" name="%5$s[%6$s]" value="%3$s" />' .
+			'<div class="field-kit__repeater-header">' .
+			'<span class="field-kit__repeater-title" id="%7$s">%8$s</span>' .
+			'<span class="field-kit__repeater-actions">%9$s%10$s%11$s</span>' .
+			'<button type="button" class="field-kit__repeater-toggle" aria-expanded="%12$s" aria-describedby="%7$s">' .
+			'<span class="screen-reader-text">%13$s</span>' .
+			'<span class="toggle-indicator" aria-hidden="true"></span>' .
+			'</button>' .
+			'</div>' .
+			'<div class="field-kit__repeater-fields">%14$s</div></li>',
+			$closed ? ' is-closed' : '',
 			$index,
 			esc_attr( $slug ),
 			esc_html( $position ),
-			esc_html( $known ? $layouts[ $slug ]['label'] : $slug ),
 			esc_attr( $prefix ),
 			esc_attr( self::LAYOUT_KEY ),
-			esc_attr( $slug ),
-			$body,
+			esc_attr( $title_id ),
+			esc_html( $known ? $layouts[ $slug ]['label'] : $slug ),
 			$this->row_button( 'move-up', $position, __( 'Move up', 'arraypress' ), 'arrow-up-alt2', $index < 1 ),
 			$this->row_button( 'move-down', $position, __( 'Move down', 'arraypress' ), 'arrow-down-alt2', $index >= $total - 1 ),
-			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'no-alt', false )
+			$this->row_button( 'remove', $position, __( 'Remove', 'arraypress' ), 'trash', false ),
+			$closed ? 'false' : 'true',
+			esc_html__( 'Show or hide this row', 'arraypress' ),
+			$body
 		);
 	}
 

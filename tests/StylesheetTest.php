@@ -40,6 +40,8 @@ final class StylesheetTest extends TestCase {
 
 		// RepeaterType: 'field-kit__repeater-' . $action
 		'field-kit__repeater-remove',
+		'field-kit__repeater-move-up',
+		'field-kit__repeater-move-down',
 
 		// AbstractType / Renderer: 'field-kit__field--' . $type->id()
 		'field-kit__field--conditional',
@@ -647,26 +649,20 @@ final class StylesheetTest extends TestCase {
 	}
 
 	/**
-	 * A range is capped on a settings page and nowhere else.
+	 * A range is capped everywhere.
 	 *
-	 * Both halves, because each one alone was wrong at some point. A settings
-	 * page cell is as wide as the screen, so an uncapped slider runs the
-	 * width of a monitor to pick a number between one and ten and reads as a
-	 * progress bar. A term or user screen cell is already narrow, and capping
-	 * it there makes the slider stop short of the field beside it.
+	 * It was capped on a settings page alone, on the theory that a term or
+	 * user cell is narrow enough; a meta box is not, and a slider the width
+	 * of one read as a progress bar. One rule, no screen-specific exception.
 	 */
-	public function test_a_range_is_capped_only_on_a_settings_page(): void {
+	public function test_a_range_is_capped_everywhere(): void {
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 
 		preg_match( '/\n\.field-kit__range\s*\{([^}]*)\}/', $css, $bare );
 
 		$this->assertNotEmpty( $bare, 'The range has no rule.' );
-		$this->assertStringNotContainsString( 'max-width', $bare[1] );
-
-		preg_match( '/\.field-kit__page-screen \.field-kit__range\s*\{([^}]*)\}/', $css, $scoped );
-
-		$this->assertNotEmpty( $scoped, 'Nothing caps the range on a settings page.' );
-		$this->assertStringContainsString( 'max-width', $scoped[1] );
+		$this->assertStringContainsString( 'max-width', $bare[1] );
+		$this->assertDoesNotMatchRegularExpression( '/\.field-kit__page-screen \.field-kit__range\s*\{/', $css );
 	}
 
 }

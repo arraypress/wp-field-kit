@@ -290,19 +290,13 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
  * Range
  * -------------------------------------------------------------------- */
 
-/* No max-width by default: on a term or user screen the cell already
-   constrains it, and capping it there makes the slider stop short of the
-   field beside it. */
+/* Capped everywhere. A slider the width of a meta box or a settings
+   screen chooses a number between one and ten with a control the width of
+   a monitor, which reads as a progress bar; 25rem is a slider. */
 .field-kit__range {
 	display: flex;
 	align-items: center;
 	gap: .75rem;
-}
-
-/* A settings page is the exception. Its cell is as wide as the screen, so an
-   uncapped slider runs the width of a monitor to choose a number between one
-   and ten — which reads as a progress bar rather than a control. */
-.field-kit__page-screen .field-kit__range {
 	max-width: 25rem;
 }
 
@@ -1882,6 +1876,8 @@ li.field-kit__repeater-row {
    it, so a bare class here loses and every chevron carries a line under it.
    Matching the prefix is what makes these win. */
 .wp-core-ui .field-kit__repeater-remove,
+.wp-core-ui .field-kit__repeater-move-up,
+.wp-core-ui .field-kit__repeater-move-down,
 .wp-core-ui .field-kit__sortable-move {
 	display: inline-flex;
 	align-items: center;
@@ -1893,12 +1889,23 @@ li.field-kit__repeater-row {
 	border-radius: 2px;
 }
 
-.wp-core-ui .field-kit__sortable-move:hover {
+/* The move buttons are grey and quiet like the sortable's, not blue links
+   with a line under an arrow. */
+.wp-core-ui .field-kit__repeater-move-up,
+.wp-core-ui .field-kit__repeater-move-down {
+	color: #50575e;
+}
+
+.wp-core-ui .field-kit__sortable-move:hover,
+.wp-core-ui .field-kit__repeater-move-up:hover,
+.wp-core-ui .field-kit__repeater-move-down:hover {
 	background: #f0f0f1;
 	text-decoration: none;
 }
 
-.wp-core-ui .field-kit__sortable-move:disabled {
+.wp-core-ui .field-kit__sortable-move:disabled,
+.wp-core-ui .field-kit__repeater-move-up:disabled,
+.wp-core-ui .field-kit__repeater-move-down:disabled {
 	color: #c3c4c7;
 	cursor: default;
 	background: none;
@@ -1919,6 +1926,8 @@ li.field-kit__repeater-row {
 /* The dashicon is the button's whole content, so it should not carry the
    line-height of surrounding text. */
 .field-kit__sortable-move .dashicons,
+.field-kit__repeater-move-up .dashicons,
+.field-kit__repeater-move-down .dashicons,
 .field-kit__repeater-remove .dashicons {
 	width: 1rem;
 	height: 1rem;
@@ -2701,6 +2710,17 @@ select.field-kit__select[multiple] {
 	margin-bottom: -12px;
 }
 
+/* On an edit screen core opens the box's body 6px below the header
+   (#poststuff .inside { margin: 6px 0 0 }), a gap the strip's top edge
+   showed as a hairline of background under the header's border. The
+   strip takes that back too when it is the first thing in the box. */
+#poststuff .inside > .field-kit__panel-tabs:first-child,
+#poststuff .inside > .field-kit__accordion:first-child,
+#poststuff .inside > div:first-child > .field-kit__panel-tabs:first-child,
+#poststuff .inside > div:first-child > .field-kit__accordion:first-child {
+	margin-top: -6px;
+}
+
 .postbox .inside > .field-kit__accordion .privacy-settings-accordion-heading:first-child,
 .postbox .inside > div > .field-kit__accordion .privacy-settings-accordion-heading:first-child {
 	border-top: 0;
@@ -2901,17 +2921,9 @@ body.term-php .field-kit__accordion {
 }
 
 /* Flexible content
-   ------------------------------------------------------------------------- */
-
-.field-kit__flexible-label {
-	color: #646970;
-	display: block;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 0.04em;
-	margin-bottom: 6px;
-	text-transform: uppercase;
-}
+   -------------------------------------------------------------------------
+   A row is a collapsible repeater row with the layout's name for a title,
+   so it shares that strip's rules. Only the add buttons are its own. */
 
 .field-kit__flexible-add {
 	display: flex;
@@ -3580,15 +3592,15 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-fields {
 /* The same chevron the accordion uses, rotated, rather than a pair of
    dashicons that swap. One glyph that turns reads as one thing moving. */
 .field-kit__repeater-toggle .toggle-indicator::before {
-	content: "\f142";
+	content: "\f343";
 	display: inline-block;
-	font: normal 20px/1 dashicons;
+	font: normal 18px/1 dashicons;
 	speak: never;
 	-webkit-font-smoothing: antialiased;
 }
 
 li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .toggle-indicator::before {
-	content: "\f140";
+	content: "\f347";
 }
 
 /* A gallery of things that are not images is a list, not a grid of tiles:
