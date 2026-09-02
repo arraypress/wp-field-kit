@@ -25,6 +25,7 @@ wherever the screen happens to be.
 * Group fields into tabs or collapsible sections
 * Sit two short fields on one line with `'width' => 'half'`
 * Take an amount with its currency symbol inside the control
+* Pick a country, then a state or province from the ones it has
 * Fill a select from a named preset — roles, timezones, countries — with one string
 * Fold a repeater's rows away, each titled by one of its own fields
 * Reorder a repeater by dragging its handle, or from the keyboard
@@ -108,7 +109,7 @@ Date, time and colour
 : `date` `time` `datetime` `color` `gradient` `date_range` `time_range`
 
 Choice
-: `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `currency`
+: `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `region` `currency`
 
 Relational — one search endpoint behind all of them
 : `post` `page` `user` `taxonomy` `ajax` `tags`
@@ -156,6 +157,34 @@ A preset is resolved when the field renders, not when it is declared, and its
 options pass through the `field_kit_preset_options` filter. Register your own
 with `Presets::register( 'products', fn() => $options )` and any field can say
 `'options' => 'products'`.
+
+## A country and its regions
+
+A `region` is a state, a province or a county. Given a fixed `country` it is
+a select over that country's subdivisions, storing the code the way `country`
+stores its own. Given `country_key` — the key of the country field beside it
+— it follows whatever is chosen there: a select where the country has
+subdivisions on file, a text input where it does not, swapped by the script
+on load and on every change.
+
+```php
+use ArrayPress\FieldKit\FieldSet;
+use ArrayPress\FieldKit\Context\OptionContext;
+
+$set = new FieldSet(
+	[
+		'country' => [ 'type' => 'country', 'label' => __( 'Country', 'my-plugin' ) ],
+		'region'  => [ 'type' => 'region', 'label' => __( 'State or province', 'my-plugin' ), 'country_key' => 'country' ],
+	],
+	new OptionContext( 'my_plugin' ),
+	'my_plugin'
+);
+```
+
+Without the script the text input is what submits, so a typed code still
+saves. Inside a repeater the lookup is scoped to the row, so each row's
+region follows that row's country. The subdivisions are WooCommerce's, by
+way of `arraypress/wp-countries`.
 
 ## Requirements
 

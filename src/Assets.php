@@ -241,6 +241,7 @@ final class Assets {
 				'embedResolving'   => __( 'Looking for an embed…', 'arraypress' ),
 				'embedFailed'      => __( 'That URL could not be embedded.', 'arraypress' ),
 				'embedOnSave'      => __( 'This will render once saved.', 'arraypress' ),
+				'selectRegion'     => __( 'Select a region', 'arraypress' ),
 			],
 		];
 	}
