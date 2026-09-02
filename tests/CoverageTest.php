@@ -316,6 +316,7 @@ final class CoverageTest extends TestCase {
 		'number',
 		'page',
 		'password',
+		'percentage',
 		'post',
 		'radio',
 		'range',

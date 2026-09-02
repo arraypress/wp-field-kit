@@ -3229,20 +3229,28 @@ span.field-kit__provider-logo {
    could press to change the currency -- which is the one thing it does not
    do, since the currency is a setting. Muted text in the input's own
    leading padding instead. */
-.field-kit__money-symbol {
+.field-kit__money-symbol,
+.field-kit__adornment {
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	inset-inline-start: 0;
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
 	width: 2rem;
-	padding-inline-end: .1rem;
 	color: #646970;
 	font-size: 13px;
 	line-height: 1;
 	pointer-events: none;
+}
+
+/* Leading: set against the start of the value, with a hair of space before
+   the first digit. The money symbol is always this; a prefix on any other
+   input is the same thing. */
+.field-kit__money-symbol,
+.field-kit__adornment--prefix {
+	inset-inline-start: 0;
+	justify-content: flex-end;
+	padding-inline-end: .1rem;
 }
 
 .wp-core-ui .field-kit__money input.field-kit__money-value,
@@ -3257,13 +3265,166 @@ span.field-kit__provider-logo {
 
 /* A longer symbol -- "CHF", or a code standing in for one we have no symbol
    for -- needs the room, and the input needs to know how much. */
-.field-kit__money--wide .field-kit__money-symbol {
+.field-kit__money--wide .field-kit__money-symbol,
+.field-kit__adorned--wide-prefix > .field-kit__adornment--prefix,
+.field-kit__adorned--wide-suffix > .field-kit__adornment--suffix {
 	width: 3.1rem;
 }
 
 .wp-core-ui .field-kit__money--wide input.field-kit__money-value,
 .field-kit__money--wide input.field-kit__money-value {
 	padding-inline-start: 3.3rem;
+}
+
+/* -----------------------------------------------------------------------
+ * Adornments
+ *
+ * A unit inside the box: "$" before a price, "%" after a discount, "days"
+ * after a number. Built the way the money symbol above is -- muted text in
+ * the input's own padding, sharing its rules -- and for the same reason: a
+ * unit set beside a full-width input wraps onto a line of its own inside a
+ * narrow panel, and boxed with a border of its own it reads as a button.
+ * -------------------------------------------------------------------- */
+
+/* Shrink-wrapped round the input, so a trailing affix sits at the input's
+   end rather than the row's. The input keeps whatever width class it has. */
+.field-kit__adorned {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+/* Except round a full-width one. A percentage width inside a shrink-wrapped
+   box has nothing to resolve against and the input collapses to its
+   intrinsic size, so the wrapper goes full width instead, takes a flex
+   line's spare room where it sits in one, and the input fills it -- core's
+   large-text is 99%, which would leave the suffix a sliver past the box. */
+.field-kit__adorned:has( > .large-text ) {
+	display: block;
+	flex: 1 1 auto;
+}
+
+.wp-core-ui .field-kit__adorned:has( > .large-text ) > input.field-kit__input,
+.field-kit__adorned:has( > .large-text ) > input.field-kit__input {
+	width: 100%;
+}
+
+/* Trailing: set against the end of the value. Narrower than the leading
+   one, because core gives a small number 65px and "100" beside a "%" has to
+   fit in it. */
+.field-kit__adornment--suffix {
+	inset-inline-end: 0;
+	justify-content: flex-start;
+	width: 1.6rem;
+	padding-inline-start: .1rem;
+}
+
+.wp-core-ui .field-kit__adorned > input.field-kit__input,
+.field-kit__adorned > input.field-kit__input {
+	max-width: 100%;
+	margin: 0;
+}
+
+.wp-core-ui .field-kit__adorned--prefix > input.field-kit__input,
+.field-kit__adorned--prefix > input.field-kit__input {
+	padding-inline-start: 2.2rem;
+}
+
+.wp-core-ui .field-kit__adorned--suffix > input.field-kit__input,
+.field-kit__adorned--suffix > input.field-kit__input {
+	padding-inline-end: 1.7rem;
+}
+
+/* A longer affix takes the room the money field gives a currency code, and
+   the input reserves the same. */
+.wp-core-ui .field-kit__adorned--wide-prefix > input.field-kit__input,
+.field-kit__adorned--wide-prefix > input.field-kit__input {
+	padding-inline-start: 3.3rem;
+}
+
+.wp-core-ui .field-kit__adorned--wide-suffix > input.field-kit__input,
+.field-kit__adorned--wide-suffix > input.field-kit__input {
+	padding-inline-end: 3.3rem;
+}
+
+/* A number's spinner lives exactly where a suffix does, and Firefox draws
+   it whether or not the pointer is near. The two cannot share the space,
+   so the spinner goes: the arrow keys still step the value, and the unit
+   is the thing worth seeing. */
+.field-kit__adorned--suffix > input[type="number"] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
+
+.field-kit__adorned--suffix > input[type="number"]::-webkit-inner-spin-button,
+.field-kit__adorned--suffix > input[type="number"]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* -----------------------------------------------------------------------
+ * Password reveal
+ *
+ * The input and its reveal button on one line. The button is core's own
+ * from the profile screen -- .wp-hide-pw, whose rule sizes the eye -- so it
+ * is the one people have already met, and hide-if-no-js keeps it off a page
+ * where nothing would work it.
+ * -------------------------------------------------------------------- */
+
+/* Centred rather than stretched: a flex line's default pulls the input up
+   to the button's height, and core sizes the two differently. The input
+   keeps its width class, and a full-width one gives way to the button
+   rather than pushing it onto the next line. */
+.field-kit__password {
+	display: flex;
+	align-items: center;
+	gap: .25rem;
+	max-width: 100%;
+}
+
+.field-kit__password > input.field-kit__input,
+.field-kit__password > .field-kit__adorned {
+	min-width: 0;
+	margin: 0;
+}
+
+.wp-core-ui .field-kit__password-toggle {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	padding: 0 6px;
+}
+
+/* -----------------------------------------------------------------------
+ * Character count
+ * -------------------------------------------------------------------- */
+
+/* Under the control, at its end -- which is why it borrows the control's
+   own width class: core's regular-text is 25em wherever it is written, so
+   the count is as wide as the input and its number sits under the input's
+   end rather than at the far edge of a settings-page cell. The field's
+   own .description rule supplies the spacing. */
+.field-kit__count {
+	display: block;
+	color: #646970;
+	font-size: 12px;
+	text-align: end;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Core scopes large-text to the input and the textarea, so on a span the
+   class does nothing until it is restated. */
+.field-kit__count.large-text {
+	width: 99%;
+}
+
+/* A value saved before the limit was lowered. The browser stops anyone
+   typing past a maxlength; it does not truncate what was there. */
+.field-kit__count--over {
+	color: #d63638;
+	font-weight: 600;
 }
 
 /* A row folds away to its header. `li` on purpose: a <tr> given a display of
