@@ -231,15 +231,60 @@ if ( ! function_exists( 'get_term' ) ) {
  * data, so the stub carries neither.
  */
 if ( ! class_exists( 'WP_Error' ) ) {
+	/*
+	 * Enough of core's WP_Error for a consumer's suite as well as this one:
+	 * the sibling libraries load these stubs first and skip their own, so a
+	 * method missing here is a method missing from every test that runs
+	 * after it.
+	 */
 	class WP_Error {
-		public string $message;
+		public $errors     = [];
+		public $error_data = [];
 
 		public function __construct( $code = '', $message = '', $data = '' ) {
-			$this->message = (string) $message;
+			if ( '' !== $code ) {
+				$this->add( $code, $message, $data );
+			}
+		}
+
+		public function add( $code, $message, $data = '' ) {
+			$this->errors[ $code ][] = $message;
+
+			if ( '' !== $data ) {
+				$this->error_data[ $code ] = $data;
+			}
+		}
+
+		public function add_data( $data, $code = '' ) {
+			$this->error_data[ '' === $code ? $this->get_error_code() : $code ] = $data;
+		}
+
+		public function has_errors() {
+			return [] !== $this->errors;
+		}
+
+		public function get_error_codes() {
+			return array_keys( $this->errors );
+		}
+
+		public function get_error_code() {
+			return $this->get_error_codes()[0] ?? '';
+		}
+
+		public function get_error_messages( $code = '' ) {
+			if ( '' === $code ) {
+				return array_merge( ...array_values( $this->errors ) ?: [ [] ] );
+			}
+
+			return $this->errors[ $code ] ?? [];
 		}
 
 		public function get_error_message( $code = '' ) {
-			return $this->message;
+			return $this->get_error_messages( $code )[0] ?? '';
+		}
+
+		public function get_error_data( $code = '' ) {
+			return $this->error_data[ '' === $code ? $this->get_error_code() : $code ] ?? null;
 		}
 	}
 }
