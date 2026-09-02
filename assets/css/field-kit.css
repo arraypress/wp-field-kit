@@ -2682,20 +2682,27 @@ select.field-kit__select[multiple] {
 /* Inside a meta box the strip or the accordion is the box's whole body,
    so it takes the box's edges. Its own frame doubled the box's, and a
    strip inset by the box's padding read as a box inside a box. The
-   negative margins are core's .inside padding (0 12px 12px). */
-.postbox .inside > .field-kit__metabox > .field-kit__panel-tabs,
-.postbox .inside > .field-kit__metabox > .field-kit__accordion {
+   negative margins are core's .inside padding (0 12px 12px). The div in
+   between is whatever wrapper the consumer drew round its fields; a
+   strip nested deeper than that sits inside a field and keeps its frame. */
+.postbox .inside > .field-kit__panel-tabs,
+.postbox .inside > .field-kit__accordion,
+.postbox .inside > div > .field-kit__panel-tabs,
+.postbox .inside > div > .field-kit__accordion {
 	margin: 0 -12px;
 	border-width: 0;
 	border-radius: 0;
 }
 
-.postbox .inside > .field-kit__metabox > .field-kit__panel-tabs:last-child,
-.postbox .inside > .field-kit__metabox > .field-kit__accordion:last-child {
+.postbox .inside > .field-kit__panel-tabs:last-child,
+.postbox .inside > .field-kit__accordion:last-child,
+.postbox .inside > div > .field-kit__panel-tabs:last-child,
+.postbox .inside > div > .field-kit__accordion:last-child {
 	margin-bottom: -12px;
 }
 
-.postbox .inside > .field-kit__metabox > .field-kit__accordion .privacy-settings-accordion-heading:first-child {
+.postbox .inside > .field-kit__accordion .privacy-settings-accordion-heading:first-child,
+.postbox .inside > div > .field-kit__accordion .privacy-settings-accordion-heading:first-child {
 	border-top: 0;
 }
 
