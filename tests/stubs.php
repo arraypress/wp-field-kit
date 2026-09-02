@@ -476,6 +476,17 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_salt' ) ) {
+	/*
+	 * Deterministic within a run, like core's, so the encryption tests can
+	 * round-trip without salt constants in the bootstrap -- which is also
+	 * how the WordPress test suite itself runs.
+	 */
+	function wp_salt( $scheme = 'auth' ) {
+		return 'fk-test-salt-' . $scheme;
+	}
+}
+
 if ( ! function_exists( 'is_user_logged_in' ) ) {
 	function is_user_logged_in() {
 		return true;

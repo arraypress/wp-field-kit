@@ -313,6 +313,15 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 			);
 		}
 
+		// No constants at all is how core itself runs when wp-config.php
+		// leaves them out, and how every test suite runs: wp_salt() then
+		// generates salts once and keeps them in the database. Used only
+		// when the constants are absent, so a value encrypted under them
+		// stays readable on a site that has them.
+		if ( '' === $salt && function_exists( 'wp_salt' ) ) {
+			$salt = wp_salt( 'auth' ) . wp_salt( 'secure_auth' ) . wp_salt( 'logged_in' );
+		}
+
 		return '' === $salt ? '' : hash( 'sha256', $salt, true );
 	}
 
