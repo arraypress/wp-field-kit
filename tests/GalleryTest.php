@@ -239,4 +239,25 @@ final class GalleryTest extends TestCase {
 
 		return $html;
 	}
+
+	/**
+	 * The tile the script clones is the tile the server draws.
+	 *
+	 * The script built its own when the list was empty, with a pair of
+	 * chevrons and no handle. Now the server ships one, and it carries a
+	 * drag handle and a cross and nothing else.
+	 */
+	public function test_a_template_tile_ships_with_the_gallery(): void {
+		$registry = new Registry();
+		$html     = ( new Renderer() )->render(
+			new Field( 'demo', $registry->get( 'gallery' ), [ 'label' => 'Demo', 'input_name' => 'demo' ], [] )
+		);
+
+		$this->assertStringContainsString( '<template class="field-kit__gallery-template">', $html );
+		$this->assertStringContainsString( 'field-kit__gallery-handle', $html );
+		$this->assertStringContainsString( 'field-kit__gallery-remove', $html );
+		$this->assertStringContainsString( '{name}', $html );
+		$this->assertStringNotContainsString( 'gallery-move', $html );
+		$this->assertStringNotContainsString( 'dashicons-arrow-up', $html );
+	}
 }

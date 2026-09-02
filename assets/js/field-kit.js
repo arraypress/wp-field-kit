@@ -2007,23 +2007,19 @@
 				return;
 			}
 
-			var template = list.querySelector( '.field-kit__gallery-item' );
-			var item;
+			// The server ships the tile to clone, so what the script adds is
+			// the tile it draws: a drag handle, the picture, a cross. The
+			// tile the script once built for itself had chevrons instead
+			// and no handle. A gallery from an older render has no
+			// template, and its first tile is the next best copy.
+			var template = wrap.querySelector( '.field-kit__gallery-template' );
+			var source = template && template.content ? template.content.firstElementChild : list.querySelector( '.field-kit__gallery-item' );
 
-			if ( template ) {
-				// Cloning an existing item keeps the markup — and so the
-				// labelling — identical to what the server rendered.
-				item = template.cloneNode( true );
-			} else {
-				item = document.createElement( 'li' );
-				item.className = 'field-kit__gallery-item';
-				item.innerHTML = '<img alt="" /><span class="field-kit__gallery-position screen-reader-text"></span>' +
-					'<span class="field-kit__gallery-actions">' +
-					'<button type="button" class="button-link field-kit__gallery-move" data-direction="up"><span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span></button>' +
-					'<button type="button" class="button-link field-kit__gallery-move" data-direction="down"><span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span></button>' +
-					'<button type="button" class="button-link field-kit__gallery-remove"><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>' +
-					'</span>';
+			if ( ! source ) {
+				return;
 			}
+
+			var item = source.cloneNode( true );
 
 			item.dataset.id = attachment.id;
 
@@ -2042,8 +2038,17 @@
 
 			var name = attachment.title || attachment.filename || String( attachment.id );
 
-			item.querySelectorAll( '[aria-label]' ).forEach( function ( button ) {
-				button.setAttribute( 'aria-label', button.getAttribute( 'aria-label' ).replace( /—.*$/, '' ) + name );
+			// The template names its item {name}; a cloned tile names the
+			// one it was cloned from. Either way the label ends up naming
+			// this attachment.
+			item.querySelectorAll( '[aria-label], [data-label-template]' ).forEach( function ( button ) {
+				[ 'aria-label', 'data-label-template' ].forEach( function ( attribute ) {
+					var value = button.getAttribute( attribute );
+
+					if ( null !== value ) {
+						button.setAttribute( attribute, value.split( '{name}' ).join( name ).replace( /—.*$/, '' ) );
+					}
+				} );
 			} );
 
 			list.appendChild( item );

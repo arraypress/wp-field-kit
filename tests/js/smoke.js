@@ -472,6 +472,70 @@ try {
 } )();
 
 /*
+ * An added gallery tile is the server's tile.
+ *
+ * The script cloned the first tile when there was one and built its own
+ * when there was not -- a tile with chevrons and no drag handle. It clones
+ * the template the server ships now, and names the attachment in the
+ * labels the template left as {name}.
+ */
+( function () {
+	const handle = Object.assign( makeElement(), { attributes: {} } );
+	handle.getAttribute = ( name ) => handle.attributes[ name ] ?? null;
+	handle.setAttribute = ( name, value ) => { handle.attributes[ name ] = value; };
+	handle.setAttribute( 'aria-label', 'Reorder {name}, 1 of 1' );
+	handle.setAttribute( 'data-label-template', 'Reorder {name}, {position} of {total}' );
+
+	const tile = makeElement();
+	tile.querySelectorAll = ( selector ) => ( selector.includes( 'aria-label' ) ? [ handle ] : [] );
+	tile.cloneNode = () => tile;
+
+	const template = makeElement();
+	template.content = { firstElementChild: tile };
+
+	const list = makeElement();
+	list.children = [];
+	list.querySelector = () => null;
+	list.appendChild = ( node ) => list.children.push( node );
+
+	const wrap = makeElement();
+	wrap.dataset = {};
+	wrap.querySelector = ( selector ) => {
+		if ( selector.includes( 'template' ) ) {
+			return template;
+		}
+
+		if ( selector.includes( 'items' ) ) {
+			return list;
+		}
+
+		return null;
+	};
+
+	try {
+		modules.Gallery.append( wrap, { id: 7, title: 'Kick drum', sizes: {} } );
+	} catch ( error ) {
+		console.error( `  Gallery.append threw: ${ error.message }` );
+		failures ++;
+	}
+
+	if ( 1 !== list.children.length ) {
+		console.error( '  Gallery: no tile was added from the template' );
+		failures ++;
+	}
+
+	if ( 'Reorder Kick drum, 1 of 1' !== handle.getAttribute( 'aria-label' ) ) {
+		console.error( `  Gallery: the template's {name} was not filled in: ${ handle.getAttribute( 'aria-label' ) }` );
+		failures ++;
+	}
+
+	if ( source.includes( 'field-kit__gallery-move' ) ) {
+		console.error( '  Gallery: the script still builds a tile with chevrons' );
+		failures ++;
+	}
+} )();
+
+/*
  * The email panel stands aside where core already toggles postboxes.
  *
  * core's postboxes.js binds '.postbox .hndle, .postbox .handlediv' across the

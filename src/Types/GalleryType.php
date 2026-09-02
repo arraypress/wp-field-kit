@@ -149,9 +149,32 @@ final class GalleryType extends AbstractMediaType {
 		}
 
 		return sprintf(
-			'<ol class="field-kit__gallery-items" data-empty="%s">%s</ol>',
+			'<ol class="field-kit__gallery-items" data-empty="%s">%s</ol>%s',
 			$total > 0 ? 'false' : 'true',
-			$items
+			$items,
+			$this->render_template()
+		);
+	}
+
+	/**
+	 * The tile the script clones for an attachment it adds.
+	 *
+	 * The script used to build its own tile when the list was empty, and
+	 * that tile drifted from the one the server draws: it grew a pair of
+	 * move buttons and lost the drag handle, so a gallery started from
+	 * nothing looked unlike one that came from the database. One tile,
+	 * rendered here, cloned there. The name is a placeholder the script
+	 * fills in.
+	 *
+	 * @return string
+	 */
+	private function render_template(): string {
+		return sprintf(
+			'<template class="field-kit__gallery-template"><li class="field-kit__gallery-item" data-id="0">%s<img alt="" />' .
+			'<span class="field-kit__gallery-position screen-reader-text"></span>' .
+			'<span class="field-kit__gallery-actions">%s</span></li></template>',
+			$this->handle( '{name}', 0, 0 ),
+			$this->remove_button( '{name}' )
 		);
 	}
 
