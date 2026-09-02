@@ -536,75 +536,40 @@ try {
 } )();
 
 /*
- * The email panel stands aside where core already toggles postboxes.
+ * The email panel binds its merge tags; folding it is the accordion's job.
  *
- * core's postboxes.js binds '.postbox .hndle, .postbox .handlediv' across the
- * whole document on any screen that calls add_postbox_toggles(). The email
- * editor renders as a postbox with a .handlediv, so inside a metabox both
- * handlers fired, the panel toggled twice, and the collapse appeared to do
- * nothing at all.
+ * It used to carry a toggle of its own, and on a metabox screen core's
+ * postboxes.js bound the same button, so the panel toggled twice and never
+ * moved. The header is now core's accordion trigger, which core never binds,
+ * and the Accordion module folds it once like every collapsible section.
  */
 ( function () {
 	const panel = makeElement();
-	const button = makeElement();
-	const header = makeElement();
-
-	let expanded = 'true';
-	button.getAttribute = () => expanded;
-	button.setAttribute = ( name, value ) => {
-		if ( 'aria-expanded' === name ) {
-			expanded = value;
-		}
-	};
-
+	const tag = makeElement();
 	const clicks = [];
-	button.addEventListener = ( type, handler ) => clicks.push( handler );
-	header.addEventListener = () => {};
 
-	panel.querySelector = ( selector ) => {
-		if ( selector.includes( 'email-toggle' ) ) {
-			return button;
-		}
-
-		if ( selector.includes( 'hndle' ) ) {
-			return header;
-		}
-
-		return null;
-	};
+	tag.dataset = { tag: '{name}' };
+	tag.addEventListener = ( type, handler ) => clicks.push( handler );
+	panel.querySelectorAll = ( selector ) => ( selector.includes( 'email-tag' ) ? [ tag ] : [] );
+	panel.querySelector = () => null;
 
 	const root = Object.assign( makeElement(), {
 		querySelectorAll: ( selector ) =>
 			( selector.includes( 'field-kit__email' ) ? [ panel ] : [] ),
 	} );
 
+	// Twice, because init() runs twice on a normal page load.
+	modules.EmailPanel.init( root );
 	modules.EmailPanel.init( root );
 
-	if ( ! clicks.length ) {
-		console.error( '  EmailPanel: nothing was bound to the toggle' );
+	if ( 1 !== clicks.length ) {
+		console.error( `  EmailPanel: expected one click handler on a merge tag, got ${ clicks.length }` );
 		failures ++;
-	} else {
-		// On its own, it toggles.
-		delete context.window.postboxes;
-		clicks[ 0 ]();
+	}
 
-		if ( 'false' !== expanded ) {
-			console.error( '  EmailPanel: the toggle does not collapse the panel' );
-			failures ++;
-		}
-
-		// With core handling postboxes, it must not — core's handler is
-		// already doing it, and doing it twice is doing nothing.
-		expanded = 'true';
-		context.window.postboxes = { page: 'post' };
-		clicks[ 0 ]();
-
-		if ( 'true' !== expanded ) {
-			console.error( '  EmailPanel: toggles as well as core, so the panel never moves' );
-			failures ++;
-		}
-
-		delete context.window.postboxes;
+	if ( 'function' === typeof modules.EmailPanel.bindToggle ) {
+		console.error( '  EmailPanel: still carries a toggle of its own; folding is the Accordion module\'s' );
+		failures ++;
 	}
 } )();
 

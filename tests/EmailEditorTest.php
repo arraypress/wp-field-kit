@@ -54,13 +54,13 @@ final class EmailEditorTest extends TestCase {
 	/**
 	 * It renders core's panel, not a bare stack of inputs.
 	 */
-	public function test_it_renders_a_core_postbox(): void {
+	public function test_it_renders_cores_accordion(): void {
 		$html = ( new Renderer() )->render( $this->field() );
 
-		$this->assertStringContainsString( 'class="postbox field-kit__email"', $html );
-		$this->assertStringContainsString( '<div class="postbox-header">', $html );
-		$this->assertStringContainsString( 'class="hndle"', $html );
-		$this->assertStringContainsString( '<div class="inside">', $html );
+		$this->assertStringContainsString( 'class="privacy-settings-accordion field-kit__accordion field-kit__email"', $html );
+		$this->assertStringContainsString( 'privacy-settings-accordion-trigger', $html );
+		$this->assertStringContainsString( 'class="field-kit__accordion-panel"', $html );
+		$this->assertStringNotContainsString( 'postbox', $html );
 	}
 
 	/**
@@ -75,7 +75,7 @@ final class EmailEditorTest extends TestCase {
 		$this->assertStringContainsString( 'role="region"', $html );
 		$this->assertStringContainsString( 'aria-labelledby="receipt__title"', $html );
 		$this->assertStringContainsString( 'id="receipt__title"', $html );
-		$this->assertStringContainsString( '>Purchase receipt</h2>', $html );
+		$this->assertStringContainsString( '<span class="title">Purchase receipt</span>', $html );
 		$this->assertStringNotContainsString( '<label for="receipt"', $html );
 	}
 
@@ -130,44 +130,33 @@ final class EmailEditorTest extends TestCase {
 	}
 
 	/**
-	 * The collapse control carries the arrow core draws on a metabox.
+	 * The collapse control is core's accordion chevron.
 	 *
-	 * The glyph is a ::before on .toggle-indicator, and core scopes it to
-	 * .meta-box-sortables — the sortable container an edit screen's
-	 * metaboxes live in. A panel outside one is not inside it, so the button
-	 * rendered with nothing in it and there was no way to see the panel could
-	 * be collapsed at all.
+	 * The same trigger the collapsible sections draw, so the two fold the
+	 * same way and edit.css styles the chevron; nothing here has to restate
+	 * a glyph core scopes to some other screen.
 	 */
-	public function test_the_collapse_control_has_an_arrow(): void {
+	public function test_the_collapse_control_is_cores_chevron(): void {
 		$html = ( new Renderer() )->render( $this->field() );
 
-		$this->assertStringContainsString( 'toggle-indicator', $html );
-
-		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
-
-		// Both states, since the closed one is a different glyph.
-		$this->assertStringContainsString( '.field-kit__email .toggle-indicator::before', $css );
-		$this->assertStringContainsString( '.field-kit__email.closed .toggle-indicator::before', $css );
+		$this->assertStringContainsString( '<span class="icon"></span>', $html );
+		$this->assertStringContainsString( 'aria-expanded="true"', $html );
+		$this->assertMatchesRegularExpression( '/aria-controls="([^"]+)".*<div id="\\1" class="field-kit__accordion-panel">/s', $html );
 	}
 
 	/**
 	 * The panel has room at the top.
 	 *
-	 * Core's .postbox .inside has no top padding: on a metabox screen the
-	 * first thing inside brings its own margin. A field does not, so the
-	 * first control sat against the header's border.
+	 * The first control used to sit against the header's border; the
+	 * accordion panel the sections share pads on every side.
 	 */
 	public function test_the_panel_has_padding_at_the_top(): void {
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 
-		preg_match( '/\.field-kit__email \.inside \{([^}]*)\}/', $css, $rule );
+		preg_match( '/\.field-kit__accordion-panel \{([^}]*)\}/', $css, $rule );
 
 		$this->assertNotEmpty( $rule, 'The panel body has no rule.' );
-		$this->assertDoesNotMatchRegularExpression(
-			'/padding:\s*0\s/',
-			$rule[1],
-			'The panel body has no top padding, so the first control touches the header.'
-		);
+		$this->assertDoesNotMatchRegularExpression( '/padding:\s*0\s/', $rule[1] );
 	}
 
 	/**
@@ -340,7 +329,7 @@ final class EmailEditorTest extends TestCase {
 	public function test_a_panel_can_start_closed(): void {
 		$html = ( new Renderer() )->render( $this->field( [ 'collapsed' => true ] ) );
 
-		$this->assertStringContainsString( 'closed', $html );
+		$this->assertStringContainsString( 'class="field-kit__accordion-panel" hidden>', $html );
 		$this->assertStringContainsString( 'aria-expanded="false"', $html );
 	}
 

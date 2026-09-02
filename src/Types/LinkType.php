@@ -42,34 +42,40 @@ final class LinkType extends AbstractType {
 		$url = $this->part_attributes( $attributes, 'url', true );
 		$url->set( 'type', 'url' );
 		$url->set( 'value', $value['url'] );
-		$url->add_class( 'regular-text' );
-		$url->set( 'placeholder', 'https://' );
+		$url->set( 'placeholder', 'https://example.com' );
 
 		$text = $this->part_attributes( $attributes, 'text' );
 		$text->set( 'type', 'text' );
 		$text->set( 'value', $value['text'] );
-		$text->add_class( 'regular-text' );
+		$text->set( 'placeholder', __( 'Link text', 'arraypress' ) );
 
 		$target = $this->part_attributes( $attributes, 'target' );
 		$target->set( 'type', 'checkbox' );
 		$target->set( 'value', '_blank' );
+		$target->set( 'role', 'switch' );
+		$target->set( 'aria-checked', '_blank' === $value['target'] ? 'true' : 'false' );
+		$target->add_class( 'field-kit__toggle' );
 		$target->set_if( '_blank' === $value['target'], 'checked', true );
 
-		// The shape core's own link dialog uses: each input under its own
-		// small label, then the new-tab checkbox on its own line. Divs rather
-		// than paragraphs, because a <p> here inherited the description's
-		// spacing and left the three parts further apart than the fields
-		// around them.
+		// One control, not a small form: the address with a link glyph in
+		// its affix, the text beside it, and a switch for the new tab — the
+		// shape the block editor's link control takes. Three inputs stacked
+		// under three labels read as three fields and looked like a dialog
+		// from another decade. The labels stay, for screen readers; the
+		// placeholders say the same thing to everyone else.
 		return sprintf(
 			'<div class="field-kit__link">' .
-			'<div class="field-kit__link-part">%s<input%s /></div>' .
-			'<div class="field-kit__link-part">%s<input%s /></div>' .
-			'<div class="field-kit__link-part">' .
-			'<label class="field-kit__checkbox-label" for="%s"><input%s /> %s</label>' .
-			'</div></div>',
-			$this->sub_label( (string) $url->get( 'id' ), __( 'URL', 'arraypress' ) ),
+			'<span class="field-kit__link-url field-kit__adorned field-kit__adorned--prefix">' .
+			'<span class="field-kit__adornment field-kit__adornment--prefix" aria-hidden="true"><span class="dashicons dashicons-admin-links"></span></span>' .
+			'<label class="screen-reader-text" for="%1$s">%2$s</label><input%3$s /></span>' .
+			'<span class="field-kit__link-text"><label class="screen-reader-text" for="%4$s">%5$s</label><input%6$s /></span>' .
+			'<label class="field-kit__link-target" for="%7$s"><input%8$s /> %9$s</label>' .
+			'</div>',
+			esc_attr( (string) $url->get( 'id' ) ),
+			esc_html__( 'URL', 'arraypress' ),
 			$url->render(),
-			$this->sub_label( (string) $text->get( 'id' ), __( 'Link text', 'arraypress' ) ),
+			esc_attr( (string) $text->get( 'id' ) ),
+			esc_html__( 'Link text', 'arraypress' ),
 			$text->render(),
 			esc_attr( (string) $target->get( 'id' ) ),
 			$target->render(),

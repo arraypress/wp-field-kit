@@ -140,10 +140,11 @@ final class EmailEditorType extends AbstractNestedType {
 		$title_id  = $field->input_id() . '__title';
 		$collapsed = (bool) $field->get( 'collapsed', false );
 
+		// Core's own accordion, the one the kit's collapsible sections use,
+		// so the panel folds and looks like the sections beside it rather
+		// than like a metabox that wandered in from an edit screen.
 		$panel = new Attributes();
-		$panel->set( 'id', $field->input_id() . '__panel' );
-		$panel->add_class( 'postbox', 'field-kit__email' );
-		$panel->set_if( $collapsed, 'class', 'closed' );
+		$panel->add_class( 'privacy-settings-accordion', 'field-kit__accordion', 'field-kit__email' );
 
 		// role="region" with a name is what core gives a metabox, and it is
 		// what lets someone move between panels rather than tab through every
@@ -159,37 +160,41 @@ final class EmailEditorType extends AbstractNestedType {
 
 		$panel->set_if( '' !== $described, 'aria-describedby', $described );
 
+		$panel_id = $field->input_id() . '__panel';
+
 		return sprintf(
-			'<div%s>%s<div class="inside">%s%s</div></div>',
+			'<div%s>%s<div id="%s" class="field-kit__accordion-panel"%s>%s%s</div></div>',
 			$panel->render(),
-			$this->render_header( $field, $title_id, $collapsed ),
+			$this->render_header( $field, $title_id, $panel_id, $collapsed ),
+			esc_attr( $panel_id ),
+			$collapsed ? ' hidden' : '',
 			$this->render_children( $this->with_parts( $field ), $values, $field->input_name() ),
 			$this->render_actions( $field )
 		);
 	}
 
 	/**
-	 * The panel header, with core's own show/hide control.
+	 * The panel header: core's accordion trigger, chevron at the end.
+	 *
+	 * The kit's Accordion module binds it, as it does every trigger inside
+	 * a .field-kit__accordion, so there is no toggle of this type's own.
 	 *
 	 * @param Field  $field     The field.
 	 * @param string $title_id  Id of the heading.
+	 * @param string $panel_id  Id of the panel the button controls.
 	 * @param bool   $collapsed Whether the panel starts closed.
 	 *
 	 * @return string
 	 */
-	private function render_header( Field $field, string $title_id, bool $collapsed ): string {
+	private function render_header( Field $field, string $title_id, string $panel_id, bool $collapsed ): string {
 		return sprintf(
-			'<div class="postbox-header">' .
-			'<h2 class="hndle" id="%1$s">%2$s</h2>' .
-			'<div class="handle-actions hide-if-no-js">' .
-			'<button type="button" class="handlediv field-kit__email-toggle" aria-expanded="%3$s" aria-describedby="%1$s">' .
-			'<span class="screen-reader-text">%4$s</span>' .
-			'<span class="toggle-indicator" aria-hidden="true"></span>' .
-			'</button></div></div>',
+			'<h4 class="privacy-settings-accordion-heading" id="%1$s">' .
+			'<button aria-expanded="%3$s" class="privacy-settings-accordion-trigger" aria-controls="%4$s" type="button">' .
+			'<span class="title">%2$s</span><span class="icon"></span></button></h4>',
 			esc_attr( $title_id ),
 			esc_html( '' !== $field->label() ? $field->label() : __( 'Email', 'arraypress' ) ),
 			$collapsed ? 'false' : 'true',
-			esc_html__( 'Show or hide panel', 'arraypress' )
+			esc_attr( $panel_id )
 		);
 	}
 

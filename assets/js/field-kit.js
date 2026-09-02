@@ -3150,10 +3150,10 @@
 		/**
 		 * Bind every email panel within a root.
 		 *
-		 * Two behaviours, both of which the markup promises and neither of
-		 * which core supplies here: the postbox header collapses the panel
-		 * (core's postboxes.js only runs on metabox screens), and a merge tag
-		 * inserts itself where the author was last typing.
+		 * One behaviour the markup promises and core does not supply: a merge
+		 * tag inserts itself where the author was last typing. Folding the
+		 * panel is the Accordion module's, since the header is core's
+		 * accordion trigger like every collapsible section's.
 		 *
 		 * @param {Element} root Container.
 		 */
@@ -3164,53 +3164,8 @@
 				}
 
 				panel.dataset.fkBound = '1';
-				EmailPanel.bindToggle( panel );
 				EmailPanel.bindTags( panel );
 			} );
-		},
-
-		/**
-		 * Collapse and expand from the header.
-		 *
-		 * @param {Element} panel The panel.
-		 */
-		bindToggle: function ( panel ) {
-			var button = panel.querySelector( '.field-kit__email-toggle' );
-			var header = panel.querySelector( '.postbox-header .hndle' );
-
-			if ( ! button ) {
-				return;
-			}
-
-			function toggle() {
-				// Core's postboxes.js binds '.postbox .hndle, .postbox
-				// .handlediv' across the whole document on any screen that
-				// calls add_postbox_toggles() — a post editor, the dashboard
-				// — and its handler does everything this one does. Two
-				// handlers on the same button is a panel that toggles twice
-				// and so never appears to move at all, which is exactly what
-				// happened to the email editor inside a metabox.
-				//
-				// Checked here rather than at bind time because core sets
-				// this on DOM ready and the order of the two is not fixed.
-				if ( window.postboxes && window.postboxes.page ) {
-					return;
-				}
-
-				var open = 'true' === button.getAttribute( 'aria-expanded' );
-
-				button.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
-				panel.classList.toggle( 'closed', open );
-			}
-
-			button.addEventListener( 'click', toggle );
-
-			// Core makes the whole header clickable, and so does this — but
-			// only the button carries the state, so there is one control to
-			// find from a keyboard rather than two that disagree.
-			if ( header ) {
-				header.addEventListener( 'click', toggle );
-			}
 		},
 
 		/**

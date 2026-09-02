@@ -503,21 +503,52 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	white-space: nowrap;
 }
 
-.field-kit__link-part {
-	margin: 0 0 .5rem;
+/* A link is one control on one line: the address, with a link glyph in
+   its affix, the text beside it, and a switch for the new tab. The parts
+   share the width and wrap when there is not enough of it. */
+.field-kit__link {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem;
+	max-width: 40rem;
 }
 
-.field-kit__link-part:last-child {
-	margin-bottom: 0;
+.field-kit__link .field-kit__link-url {
+	flex: 1 1 16rem;
+	width: auto;
+	max-width: none;
 }
 
-/* Core's link dialog labels its inputs at the same size as the input's own
-   text and sits them tight above it. Ours were spaced like field headings,
-   which made three parts read as three fields. */
-.field-kit__link .field-kit__sub-label {
-	margin-bottom: .15rem;
-	line-height: 1.4;
-	color: #50575e;
+.field-kit__link-text {
+	flex: 1 1 10rem;
+}
+
+.field-kit__link .field-kit__link-url > input,
+.field-kit__link-text > input {
+	width: 100%;
+	max-width: none;
+}
+
+.field-kit__link-target {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	gap: .5rem;
+	white-space: nowrap;
+}
+
+/* The glyph sits in the affix the way a currency symbol does, and the
+   input keeps clear of it: the affix padding rule is written for the
+   kit's own input class, which a composite's part does not carry. */
+.field-kit__link .field-kit__adornment .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.field-kit__link .field-kit__link-url > input {
+	padding-inline-start: 2.75rem;
 }
 
 /* -----------------------------------------------------------------------
@@ -1969,8 +2000,7 @@ select.field-kit__select[multiple] {
 /* Sub-labels inside composite fields are not field labels and should not
    inherit the field label's weight. */
 .field-kit__dimensions-part .field-kit__sub-label,
-.field-kit__range-pair-part .field-kit__sub-label,
-.field-kit__link .field-kit__sub-label {
+.field-kit__range-pair-part .field-kit__sub-label {
 	display: block;
 	font-weight: 400;
 }
@@ -2155,6 +2185,26 @@ select.field-kit__select[multiple] {
 .field-kit__email-status,
 .field-kit__license-status {
 	min-height: 1.2em;
+}
+
+/* The button, its spinner and what the action said sit on one line and
+   centre on each other, the way the clipboard's "Copied" sits beside its
+   button; the status used to hang off the button's top corner with no
+   room between them. The preview, when there is one, drops underneath. */
+.field-kit__action-wrap {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem;
+}
+
+.field-kit__action-wrap .spinner {
+	float: none;
+	margin: 0;
+}
+
+.field-kit__action-wrap .field-kit__action-preview {
+	flex-basis: 100%;
 }
 
 .field-kit__license-status {
@@ -2352,73 +2402,9 @@ select.field-kit__select[multiple] {
 	max-width: 60rem;
 }
 
-/* core's postbox-header is not clickable on its own; on a metabox screen the
-   whole thing is a drag handle. Here it collapses the panel, so it should
-   look like it does something.
-
-   The padding is core's too, but core scopes it to .metabox-holder, which a
-   panel outside a metabox screen is not inside — so the title sat flush
-   against the panel's own border. */
-.field-kit__email .postbox-header .hndle {
-	padding: 8px 12px;
-	margin: 0;
-	font-size: 14px;
-	line-height: 1.4;
-	cursor: pointer;
-}
-
-/* core hides .inside on .closed through .postbox.closed .inside, which is
-   part of the metabox stylesheet rather than the common one. */
-.field-kit__email.closed .inside {
-	display: none;
-}
-
-/* Core's .postbox .inside has no top padding — on a metabox screen the
-   first thing inside is a metabox that brings its own margin. A field does
-   not, so the first control sat against the header's border. */
-.field-kit__email .inside {
-	padding: 12px;
-	margin: 0;
-}
-
-/* The arrow glyph is core's, but core scopes it to .meta-box-sortables —
-   the sortable container an edit screen's metaboxes live in, which a panel
-   outside one is not inside. So the button rendered with nothing in it.
-   Restated, both states, from common.css. */
-.field-kit__email .toggle-indicator::before {
-	content: "\f142";
-	display: inline-block;
-	font: normal 20px/1 dashicons;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-decoration: none;
-	width: 20px;
-	border-radius: 50%;
-	position: relative;
-	top: .05rem;
-	color: #787c82;
-}
-
-.field-kit__email.closed .toggle-indicator::before {
-	content: "\f140";
-}
-
-.field-kit__email .handlediv:hover .toggle-indicator::before,
-.field-kit__email .handlediv:focus .toggle-indicator::before {
-	color: #1d2327;
-}
-
-/* core sizes .handlediv on a metabox screen; ours needs it too or the
-   button collapses to the glyph with no target around it. */
-.field-kit__email .handlediv {
-	width: 44px;
-	height: 44px;
-	padding: 0;
-	border: 0;
-	background: none;
-	cursor: pointer;
-	color: #787c82;
-}
+/* The panel is core's accordion, the same one the collapsible sections
+   use, so its heading, chevron and frame come from edit.css and match
+   them. Nothing about the header is drawn here any more. */
 
 .field-kit__email .field-kit__field {
 	margin-bottom: 1.25rem;
@@ -2645,12 +2631,21 @@ select.field-kit__select[multiple] {
 	margin: 0;
 }
 
-/* The actions column is as wide as its buttons and no wider. */
+/* The actions column is as wide as its buttons and no wider. It stays a
+   table cell: the stacked layout makes the actions a flex box, and a cell
+   made one loses vertical-align, so the handle and the bin sat at the top
+   of a row whose inputs were centred. */
 .field-kit__repeater-table .field-kit__repeater-actions,
 .field-kit__repeater-table .field-kit__repeater-actions-head {
+	display: table-cell;
 	width: 1%;
 	white-space: nowrap;
 	text-align: end;
+	vertical-align: middle;
+}
+
+.field-kit__repeater-table td.field-kit__repeater-actions > * {
+	vertical-align: middle;
 }
 
 /* A row's description would be a second line inside a cell, which in a table
@@ -2682,6 +2677,26 @@ select.field-kit__select[multiple] {
 	border: 1px solid #dcdcde;
 	border-radius: 2px;
 	background: #fff;
+}
+
+/* Inside a meta box the strip or the accordion is the box's whole body,
+   so it takes the box's edges. Its own frame doubled the box's, and a
+   strip inset by the box's padding read as a box inside a box. The
+   negative margins are core's .inside padding (0 12px 12px). */
+.postbox .inside > .field-kit__metabox > .field-kit__panel-tabs,
+.postbox .inside > .field-kit__metabox > .field-kit__accordion {
+	margin: 0 -12px;
+	border-width: 0;
+	border-radius: 0;
+}
+
+.postbox .inside > .field-kit__metabox > .field-kit__panel-tabs:last-child,
+.postbox .inside > .field-kit__metabox > .field-kit__accordion:last-child {
+	margin-bottom: -12px;
+}
+
+.postbox .inside > .field-kit__metabox > .field-kit__accordion .privacy-settings-accordion-heading:first-child {
+	border-top: 0;
 }
 
 /* The term screens put the form in a cell core sizes to 95% of the page,
