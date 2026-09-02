@@ -366,8 +366,12 @@ final class GalleryType extends AbstractMediaType {
 		/* translators: %s: item name */
 		$button->set( 'aria-label', sprintf( __( 'Remove %s', 'arraypress' ), $name ) );
 
+		// A drawn cross rather than the dashicon: the font glyph is cut for
+		// 20px and blurs at the size a corner control is, and the stroke is
+		// the same weight at any size.
 		return sprintf(
-			'<button%s><span class="dashicons dashicons-no-alt" aria-hidden="true"></span></button>',
+			'<button%s><svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">' .
+			'<path d="M2.5 2.5l7 7M9.5 2.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" /></svg></button>',
 			$button->render()
 		);
 	}

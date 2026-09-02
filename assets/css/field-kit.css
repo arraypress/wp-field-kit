@@ -669,26 +669,32 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	display: contents;
 }
 
-/* Controls stay out of the way until the tile is hovered or something
-   inside it takes focus.
- *
- * :focus-within is what keeps this usable. Dragging cannot be done from a
- * keyboard at all, so the move buttons are the only way to reorder without
- * a mouse — hiding them on hover alone would make the gallery unorderable
- * for anyone tabbing through it, while looking perfectly fine to everyone
- * else.
- *
- * Its size and corners come from the button-link reset further down, which
- * is later in the sheet and wins: the 1.5rem circle once declared here was
- * never what rendered. */
+/* The cross: a small dark disc in the corner that shows when the tile is
+   hovered or something inside it takes focus, and turns red under the
+   pointer. Dark over the picture rather than white, because a white disc
+   vanished on a light photo and sat like a sticker on a dark one; a
+   translucent dark one reads on both. :focus-within is what keeps it
+   usable from a keyboard, where there is no hover to reveal it.
+   Everything about it is here, so nothing later in the sheet resizes it. */
 .wp-core-ui .field-kit__gallery-remove {
 	position: absolute;
-	top: .2rem;
-	inset-inline-end: .2rem;
-	background: rgba(255, 255, 255, .92);
-	color: #b32d2e;
+	top: .375rem;
+	inset-inline-end: .375rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(29, 35, 39, .7);
+	color: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+	text-decoration: none;
 	opacity: 0;
-	transition: opacity .1s ease-in-out;
+	transition: opacity .12s ease-in-out, background-color .12s ease-in-out;
 }
 
 .field-kit__gallery-item:hover .field-kit__gallery-remove,
@@ -699,30 +705,30 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 
 .wp-core-ui .field-kit__gallery-remove:hover,
 .wp-core-ui .field-kit__gallery-remove:focus {
-	background: #b32d2e;
+	background: #d63638;
 	color: #fff;
+	text-decoration: none;
 }
 
-/* The cross is a small white disc in the corner, which is what a cross
-   for removing a picture looks like everywhere else in the admin. */
-.wp-core-ui .field-kit__gallery-remove {
-	width: 1.5rem;
-	height: 1.5rem;
-	border-radius: 50%;
-	box-shadow: 0 0 0 1px rgba(0, 0, 0, .12);
+.wp-core-ui .field-kit__gallery-remove:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 1px;
+	box-shadow: 0 0 0 4px rgba(29, 35, 39, .5);
+}
+
+.field-kit__gallery-remove svg {
+	display: block;
 }
 
 /* Nothing may be revealed by hover alone where hovering is not possible. */
 @media (hover: none) {
-	.wp-core-ui .field-kit__gallery-remove,
-	.field-kit__gallery-item .field-kit__gallery-handle {
+	.wp-core-ui .field-kit__gallery-remove {
 		opacity: 1;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.wp-core-ui .field-kit__gallery-remove,
-	.field-kit__gallery-item .field-kit__gallery-handle {
+	.wp-core-ui .field-kit__gallery-remove {
 		transition: none;
 	}
 }
@@ -1836,7 +1842,6 @@ li.field-kit__repeater-row {
 /* Core defines .wp-core-ui .button-link at specificity 0,2,0 and underlines
    it, so a bare class here loses and every chevron carries a line under it.
    Matching the prefix is what makes these win. */
-.wp-core-ui .field-kit__gallery-remove,
 .wp-core-ui .field-kit__repeater-remove,
 .wp-core-ui .field-kit__sortable-move {
 	display: inline-flex;
@@ -1875,7 +1880,6 @@ li.field-kit__repeater-row {
 /* The dashicon is the button's whole content, so it should not carry the
    line-height of surrounding text. */
 .field-kit__sortable-move .dashicons,
-.field-kit__gallery-remove .dashicons,
 .field-kit__repeater-remove .dashicons {
 	width: 1rem;
 	height: 1rem;
@@ -3587,32 +3591,43 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .t
 	color: #646970;
 }
 
-/* On a tile the handle sits over the image; in a row it sits beside the name.
-   Either way it is the thing you grab, so the item itself stops claiming to
-   be. */
+/* A tile is dragged by any part of it, so the handle is for the keyboard
+   alone: the button that takes the arrow keys. Nobody with a pointer needs
+   to see it, so it is clipped away the way core hides screen-reader text
+   and comes back only when it is tabbed to -- over the picture on a tile,
+   beside the name in a row. */
 .field-kit__gallery-item .field-kit__gallery-handle {
 	position: absolute;
-	top: .25rem;
-	inset-inline-start: .25rem;
+	top: .375rem;
+	inset-inline-start: .375rem;
 	z-index: 1;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect( 1px, 1px, 1px, 1px );
+	clip-path: inset( 50% );
+	border: 0;
 	border-radius: 2px;
-	background: rgba( 255, 255, 255, .85 );
-	opacity: 0;
-	transition: opacity .1s ease-in-out;
+	background: rgba( 255, 255, 255, .92 );
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, .25 );
 }
 
-/* A tile is dragged by any part of it, so the handle is for the keyboard:
-   it appears with the cross, on hover or when something in the tile has
-   focus, and stays out of the picture the rest of the time. */
-.field-kit__gallery-item:hover .field-kit__gallery-handle,
-.field-kit__gallery-item:focus-within .field-kit__gallery-handle,
 .field-kit__gallery-item .field-kit__gallery-handle:focus-visible {
-	opacity: 1;
+	width: auto;
+	height: auto;
+	margin: 0;
+	overflow: visible;
+	clip: auto;
+	clip-path: none;
 }
 
 .field-kit__gallery-item--file .field-kit__gallery-handle {
-	position: static;
-	background: none;
+	position: absolute;
+	inset-inline-start: .25rem;
+	top: 50%;
+	transform: translateY( -50% );
 }
 
 .field-kit__gallery-items:has( .field-kit__gallery-item--file ) {
