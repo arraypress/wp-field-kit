@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Support;
 
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Types\AccordionType;
 use ArrayPress\FieldKit\Utils\Runtime;
 
 /**
@@ -126,7 +127,7 @@ final class Sections {
 
 		if ( 'accordion' === $layout['kind'] ) {
 			foreach ( $layout['sections'] as $index => $section ) {
-				$open = (bool) $section['field']->get( 'open', 0 === $index );
+				$open = AccordionType::starts_open( $section['field'], $index );
 
 				$markup .= sprintf(
 					'<details class="field-kit__accordion"%s><summary class="field-kit__accordion-summary">%s</summary>' .

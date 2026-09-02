@@ -231,9 +231,14 @@ final class EmailEditorType extends AbstractNestedType {
 			return '';
 		}
 
+		// The preview region is here from the start, hidden. The script fills
+		// it with whatever a handler returns as data.html and shows it; a
+		// region it has to find cannot be one nothing rendered, which is
+		// what left a Preview button reporting "done" with nothing to see.
 		return sprintf(
 			'<p class="field-kit__email-actions">%s<span class="spinner"></span>' .
-			'<span class="field-kit__email-status" aria-live="polite"></span></p>',
+			'<span class="field-kit__email-status" aria-live="polite"></span></p>' .
+			'<div class="field-kit__action-preview" hidden></div>',
 			$buttons
 		);
 	}

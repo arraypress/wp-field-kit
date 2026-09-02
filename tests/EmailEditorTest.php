@@ -364,4 +364,27 @@ final class EmailEditorTest extends TestCase {
 		$this->assertStringContainsString( 'name="receipt[sms]"', $html );
 		$this->assertStringNotContainsString( 'name="receipt[subject]"', $html );
 	}
+
+	/**
+	 * A handler's preview has somewhere to land.
+	 *
+	 * The script fills `.field-kit__action-preview` with whatever a handler
+	 * returns as data.html. The stylesheet styled that region and nothing
+	 * rendered it, so a Preview button reported success with nothing to see.
+	 */
+	public function test_the_preview_region_is_rendered(): void {
+		$registry = new Registry();
+
+		foreach ( [ 'email_editor', 'action_button' ] as $type ) {
+			$config = [
+				'label'        => 'Demo',
+				'input_name'   => 'demo',
+				'action_names' => [ 'preview' => 'demo_preview', 'run' => 'demo_run' ],
+			];
+
+			$html = ( new Renderer() )->render( new Field( 'demo', $registry->get( $type ), $config, null ) );
+
+			$this->assertStringContainsString( '<div class="field-kit__action-preview" hidden></div>', $html, $type );
+		}
+	}
 }

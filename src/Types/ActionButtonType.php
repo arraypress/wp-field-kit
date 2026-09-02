@@ -51,10 +51,14 @@ final class ActionButtonType extends AbstractType {
 			$attributes->set( 'data-confirm', (string) $field->get( 'confirm' ) );
 		}
 
+		// The hidden preview region is where the script puts a handler's
+		// data.html. Rendered here rather than created on demand, so the
+		// markup a handler returns has somewhere to go on every screen.
 		return sprintf(
 			'<div class="field-kit__action-wrap"><button%s>%s</button>' .
 			'<span class="spinner field-kit__action-spinner"></span>' .
-			'<span class="field-kit__action-status" aria-live="polite"></span></div>',
+			'<span class="field-kit__action-status" aria-live="polite"></span>' .
+			'<div class="field-kit__action-preview" hidden></div></div>',
 			$attributes->render(),
 			esc_html( (string) $field->get( 'button_label', $field->label() ) )
 		);

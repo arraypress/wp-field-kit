@@ -54,4 +54,29 @@ final class AccordionType extends AbstractLayoutType {
 	public function render( Field $field, Attributes $attributes ): string {
 		return '';
 	}
+
+	/**
+	 * Whether a panel starts open.
+	 *
+	 * The first does unless told otherwise, and the rest stay closed unless
+	 * told. Answered here rather than read by Sections, which draws the
+	 * accordion, so the key belongs to the type that declares it.
+	 *
+	 * @param Field $field The marker field.
+	 * @param int   $index Its position among the sections.
+	 *
+	 * @return bool
+	 */
+	public static function starts_open( Field $field, int $index ): bool {
+		return (bool) $field->get( 'open', 0 === $index );
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge( parent::config_keys(), [ 'open' ] );
+	}
 }
