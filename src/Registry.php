@@ -62,6 +62,8 @@ final class Registry {
 		'radio'           => Types\RadioType::class,
 		'checkbox_group'  => Types\CheckboxGroupType::class,
 		'button_group'    => Types\ButtonGroupType::class,
+		'country'         => Types\CountryType::class,
+		'currency'        => Types\CurrencyType::class,
 
 		// Media.
 		'image'           => Types\ImageType::class,

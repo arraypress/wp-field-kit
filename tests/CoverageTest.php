@@ -308,6 +308,8 @@ final class CoverageTest extends TestCase {
 		'button_group',
 		'checkbox',
 		'color',
+		'country',
+		'currency',
 		'date',
 		'datetime',
 		'email',
