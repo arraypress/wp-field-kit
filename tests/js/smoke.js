@@ -849,9 +849,199 @@ try {
 	}
 } )();
 
+/**
+ * An element that remembers its attributes and classes.
+ *
+ * For the tests that assert on what a module wrote, rather than only that
+ * it ran: makeElement() forgets everything set on it, which is right for a
+ * smoke test and useless for one that reads the result back.
+ *
+ * @return {Object} The element.
+ */
+function recorder() {
+	const classes = new Set();
+	const attributes = {};
+
+	return {
+		dataset: {},
+		type: '',
+		value: '',
+		textContent: '',
+		classList: {
+			add: ( name ) => classes.add( name ),
+			remove: ( name ) => classes.delete( name ),
+			contains: ( name ) => classes.has( name ),
+			toggle: ( name, on ) => ( on ? classes.add( name ) : classes.delete( name ) ),
+		},
+		getAttribute: ( name ) => ( name in attributes ? attributes[ name ] : null ),
+		setAttribute: ( name, value ) => {
+			attributes[ name ] = String( value );
+		},
+		querySelector: () => null,
+		closest: () => null,
+		addEventListener() {},
+	};
+}
+
+/*
+ * A reveal button shows what has been typed, and says so.
+ *
+ * The input's type is what does it, and the button has to describe the
+ * state it put the input in -- icon, pressed state and label together, or a
+ * screen reader hears "Show password" over a field already showing it. The
+ * PHP suite can render the button but never press it.
+ */
+( function () {
+	const icon = recorder();
+	const input = recorder();
+	const wrap = recorder();
+	const button = recorder();
+	const clicks = [];
+
+	icon.classList.add( 'dashicons' );
+	icon.classList.add( 'dashicons-visibility' );
+	input.type = 'password';
+	wrap.querySelector = ( selector ) => ( 'input' === selector ? input : null );
+	button.closest = () => wrap;
+	button.querySelector = ( selector ) => ( '.dashicons' === selector ? icon : null );
+	button.addEventListener = ( type, handler ) => clicks.push( handler );
+	button.setAttribute( 'aria-label', 'Show password' );
+	button.setAttribute( 'aria-pressed', 'false' );
+	button.setAttribute( 'data-toggle', '0' );
+
+	const root = Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) => ( selector.includes( 'password-toggle' ) ? [ button ] : [] ),
+	} );
+
+	// Twice, because init() runs twice on a normal page load.
+	modules.PasswordReveal.init( root );
+	modules.PasswordReveal.init( root );
+
+	if ( 1 !== clicks.length ) {
+		console.error( `  PasswordReveal: expected one click handler on the button, got ${ clicks.length }` );
+		failures ++;
+
+		return;
+	}
+
+	clicks[ 0 ]();
+
+	if ( 'text' !== input.type ) {
+		console.error( '  PasswordReveal: the input is still a password after a press' );
+		failures ++;
+	}
+
+	if ( ! icon.classList.contains( 'dashicons-hidden' ) || icon.classList.contains( 'dashicons-visibility' ) ) {
+		console.error( '  PasswordReveal: the icon did not change' );
+		failures ++;
+	}
+
+	if ( 'true' !== button.getAttribute( 'aria-pressed' ) || '1' !== button.getAttribute( 'data-toggle' ) ) {
+		console.error( '  PasswordReveal: the button does not report itself pressed' );
+		failures ++;
+	}
+
+	if ( 'Hide password' !== button.getAttribute( 'aria-label' ) ) {
+		console.error( `  PasswordReveal: the label still reads "${ button.getAttribute( 'aria-label' ) }" over a shown password` );
+		failures ++;
+	}
+
+	clicks[ 0 ]();
+
+	if ( 'password' !== input.type
+		|| ! icon.classList.contains( 'dashicons-visibility' )
+		|| icon.classList.contains( 'dashicons-hidden' )
+		|| 'false' !== button.getAttribute( 'aria-pressed' )
+		|| '0' !== button.getAttribute( 'data-toggle' )
+		|| 'Show password' !== button.getAttribute( 'aria-label' ) ) {
+		console.error( '  PasswordReveal: a second press does not hide the password again' );
+		failures ++;
+	}
+} )();
+
+/*
+ * A count follows what is typed.
+ *
+ * Rendered by PHP with the saved value's length and then left to the
+ * script, which is the half the PHP suite cannot reach. It also has to find
+ * its control through the wrapper an affix puts round the input, or every
+ * adorned field with a limit has a count that never moves.
+ */
+( function () {
+	const control = recorder();
+	const counter = recorder();
+	const listeners = [];
+
+	control.tagName = 'INPUT';
+	control.value = 'hello';
+	control.setAttribute( 'maxlength', '8' );
+	control.addEventListener = ( type, handler ) => listeners.push( [ type, handler ] );
+	counter.textContent = '5 / 8';
+	counter.previousElementSibling = control;
+
+	modules.Counter.init( Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) => ( '[data-counter]' === selector ? [ counter ] : [] ),
+	} ) );
+
+	const bound = listeners.find( ( [ type ] ) => 'input' === type );
+
+	if ( ! bound ) {
+		console.error( '  Counter: nothing listens to the control, so the count never moves' );
+		failures ++;
+
+		return;
+	}
+
+	const update = bound[ 1 ];
+
+	control.value = 'hello wor';
+	update();
+
+	if ( '9 / 8' !== counter.textContent || ! counter.classList.contains( 'field-kit__count--over' ) ) {
+		console.error( `  Counter: reads "${ counter.textContent }" for nine of eight, over: ${ counter.classList.contains( 'field-kit__count--over' ) }` );
+		failures ++;
+	}
+
+	control.value = 'hi';
+	update();
+
+	if ( '2 / 8' !== counter.textContent || counter.classList.contains( 'field-kit__count--over' ) ) {
+		console.error( '  Counter: does not come back under the limit' );
+		failures ++;
+	}
+
+	// Characters, as PHP counted them, not code units.
+	control.value = '\u{1F600}\u{1F600}';
+	update();
+
+	if ( '2 / 8' !== counter.textContent ) {
+		console.error( `  Counter: two emoji read as "${ counter.textContent }"` );
+		failures ++;
+	}
+
+	// Through the wrapper an affix puts round the input.
+	const wrapped = recorder();
+	const second = recorder();
+	const found = [];
+
+	wrapped.tagName = 'SPAN';
+	wrapped.querySelector = ( selector ) => ( 'input, textarea' === selector ? control : null );
+	second.previousElementSibling = wrapped;
+	control.addEventListener = ( type ) => found.push( type );
+
+	modules.Counter.init( Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) => ( '[data-counter]' === selector ? [ second ] : [] ),
+	} ) );
+
+	if ( ! found.includes( 'input' ) ) {
+		console.error( '  Counter: cannot find its control through an affix wrapper' );
+		failures ++;
+	}
+} )();
+
 if ( failures ) {
 	console.error( `\n${ failures } failure(s)` );
 	process.exit( 1 );
 }
 
-console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once` );
+console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts` );

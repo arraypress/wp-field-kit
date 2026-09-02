@@ -3739,6 +3739,153 @@
 	window.ArrayPressFieldKitModules.Money = Money;
 
 	/* ====================================================================
+	 * Password reveal
+	 * ================================================================= */
+
+	var PasswordReveal = {
+
+		/**
+		 * Bind every reveal button within a root.
+		 *
+		 * The button is rendered hide-if-no-js, so one this never reaches
+		 * is one nobody sees rather than one that does nothing.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__password-toggle' ).forEach( function ( button ) {
+				if ( button.dataset.fkBound ) {
+					return;
+				}
+
+				button.dataset.fkBound = '1';
+
+				button.addEventListener( 'click', function () {
+					PasswordReveal.toggle( button );
+				} );
+			} );
+		},
+
+		/**
+		 * Show or hide what has been typed.
+		 *
+		 * The input's type is what does it; everything else -- the icon, the
+		 * pressed state, the label -- is the button describing the state it
+		 * has put the input in. Mirrors core's own toggle on the profile
+		 * screen, which swaps the label along with the icon.
+		 *
+		 * @param {Element} button The toggle.
+		 */
+		toggle: function ( button ) {
+			var wrap = button.closest( '.field-kit__password' );
+			var input = wrap ? wrap.querySelector( 'input' ) : null;
+			var icon = button.querySelector( '.dashicons' );
+
+			if ( ! input ) {
+				return;
+			}
+
+			var show = 'password' === input.type;
+
+			input.type = show ? 'text' : 'password';
+
+			button.setAttribute( 'data-toggle', show ? '1' : '0' );
+			button.setAttribute( 'aria-pressed', show ? 'true' : 'false' );
+			button.setAttribute(
+				'aria-label',
+				show ? t( 'hidePassword', 'Hide password' ) : t( 'showPassword', 'Show password' )
+			);
+
+			if ( icon ) {
+				icon.classList.toggle( 'dashicons-visibility', ! show );
+				icon.classList.toggle( 'dashicons-hidden', show );
+			}
+		}
+	};
+
+	window.ArrayPressFieldKitModules.PasswordReveal = PasswordReveal;
+
+	/* ====================================================================
+	 * Character count
+	 * ================================================================= */
+
+	var Counter = {
+
+		/**
+		 * Bind every count within a root.
+		 *
+		 * The number is rendered by PHP from the saved value, so a count this
+		 * never reaches is right until the first keystroke rather than blank.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '[data-counter]' ).forEach( function ( counter ) {
+				if ( counter.dataset.fkBound ) {
+					return;
+				}
+
+				counter.dataset.fkBound = '1';
+
+				var control = Counter.control( counter );
+
+				if ( ! control ) {
+					return;
+				}
+
+				control.addEventListener( 'input', function () {
+					Counter.update( counter, control );
+				} );
+			} );
+		},
+
+		/**
+		 * The control a count belongs to.
+		 *
+		 * The one rendered immediately before it -- bare, or inside the
+		 * wrapper an affix or a reveal button puts round it. Found from the
+		 * count rather than by id, so a count in a repeater row cloned from
+		 * the template follows its own input and not the first on the page.
+		 *
+		 * @param {Element} counter The count.
+		 * @return {Element|null} The input or textarea, if there is one.
+		 */
+		control: function ( counter ) {
+			var previous = counter.previousElementSibling;
+
+			if ( ! previous ) {
+				return null;
+			}
+
+			if ( 'INPUT' === previous.tagName || 'TEXTAREA' === previous.tagName ) {
+				return previous;
+			}
+
+			return previous.querySelector( 'input, textarea' );
+		},
+
+		/**
+		 * Write the current length.
+		 *
+		 * Counted in characters, as PHP counted the initial value, rather
+		 * than in code units -- an emoji is one character to the person who
+		 * typed it.
+		 *
+		 * @param {Element} counter The count.
+		 * @param {Element} control The input or textarea.
+		 */
+		update: function ( counter, control ) {
+			var max = parseInt( control.getAttribute( 'maxlength' ), 10 ) || 0;
+			var length = Array.from( control.value || '' ).length;
+
+			counter.textContent = length + ' / ' + max;
+			counter.classList.toggle( 'field-kit__count--over', length > max );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Counter = Counter;
+
+	/* ====================================================================
 	 * Bootstrap
 	 * ================================================================= */
 
@@ -3754,7 +3901,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money', 'PasswordReveal', 'Counter' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

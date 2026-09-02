@@ -26,6 +26,8 @@ wherever the screen happens to be.
 * Sit two short fields on one line with `'width' => 'half'`
 * Take an amount with its currency symbol inside the control
 * Fill a select from a named preset — roles, timezones, countries — with one string
+* Put a unit inside any input — a `$` before a price, `days` after a number
+* Reveal a password as it is typed, and count characters against a limit
 * Fold a repeater's rows away, each titled by one of its own fields
 * Reorder a repeater by dragging its handle, or from the keyboard
 * Refuse a value that fails a rule — required, email, url, your own callable — and say why
@@ -156,6 +158,27 @@ A preset is resolved when the field renders, not when it is declared, and its
 options pass through the `field_kit_preset_options` filter. Register your own
 with `Presets::register( 'products', fn() => $options )` and any field can say
 `'options' => 'products'`.
+
+## A unit in the box, a reveal, a count
+
+Any single-line input takes a `prefix` or a `suffix`, drawn inside the box
+and announced with the value. A `percentage` is a number from 0 to 100 with
+the sign already in it. A password shows what is typed on request, and
+anything with a `maxlength` counts as you go.
+
+```php
+$set = new FieldSet(
+	[
+		'price'    => [ 'type' => 'number', 'label' => __( 'Price', 'my-plugin' ), 'prefix' => '$', 'step' => 0.01 ],
+		'discount' => [ 'type' => 'percentage', 'label' => __( 'Discount', 'my-plugin' ) ],
+		'expires'  => [ 'type' => 'number', 'label' => __( 'Expires after', 'my-plugin' ), 'suffix' => 'days' ],
+		'api_key'  => [ 'type' => 'password', 'label' => __( 'API key', 'my-plugin' ), 'reveal' => true ],
+		'tagline'  => [ 'type' => 'text', 'label' => __( 'Tagline', 'my-plugin' ), 'maxlength' => 80 ],
+	],
+	new OptionContext( 'my_plugin' ),
+	'my_plugin'
+);
+```
 
 ## Requirements
 

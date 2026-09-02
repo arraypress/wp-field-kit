@@ -11,6 +11,7 @@ namespace ArrayPress\FieldKit\Types;
 
 use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Support\Markup;
 
 /**
  * A multi-line text control.
@@ -40,10 +41,21 @@ class TextareaType extends AbstractType {
 		$attributes->set_if( $field->has( 'cols' ), 'cols', $field->get( 'cols' ) );
 		$attributes->set_if( $field->has( 'maxlength' ), 'maxlength', $field->get( 'maxlength' ) );
 
+		$value = (string) $field->value();
+
+		// A count against the limit, where there is one. A textarea is the
+		// control most likely to have a limit worth watching -- a meta
+		// description, an excerpt -- and the one where a person is furthest
+		// from the end of what they have typed.
 		return sprintf(
 			'<textarea%s>%s</textarea>',
 			$attributes->render(),
-			esc_textarea( (string) $field->value() )
+			esc_textarea( $value )
+		) . Markup::counter(
+			mb_strlen( $value ),
+			(int) $field->get( 'maxlength', 0 ),
+			(bool) $field->get( 'counter', true ),
+			'large-text'
 		);
 	}
 
@@ -90,7 +102,7 @@ class TextareaType extends AbstractType {
 	public function config_keys(): array {
 		return array_merge(
 			parent::config_keys(),
-			[ 'cols', 'maxlength', 'rows' ]
+			[ 'cols', 'counter', 'maxlength', 'rows' ]
 		);
 	}
 }

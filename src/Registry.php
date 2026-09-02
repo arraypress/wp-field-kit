@@ -40,6 +40,7 @@ final class Registry {
 		'password'        => Types\PasswordType::class,
 		'hidden'          => Types\HiddenType::class,
 		'number'          => Types\NumberType::class,
+		'percentage'      => Types\PercentageType::class,
 		'range'           => Types\RangeType::class,
 		'textarea'        => Types\TextareaType::class,
 		'code'            => Types\CodeType::class,
