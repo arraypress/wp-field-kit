@@ -115,6 +115,16 @@ final class ActionController {
 	 * @return true|WP_Error
 	 */
 	public function check_permission( WP_REST_Request $request ): bool|WP_Error {
+		// Before the lookup, for the same reason as the search route: an
+		// anonymous request must not learn which actions exist.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error(
+				'field_kit_forbidden',
+				__( 'You are not allowed to do that.', 'arraypress' ),
+				[ 'status' => rest_authorization_required_code() ]
+			);
+		}
+
 		$action = $this->actions->get( (string) $request->get_param( 'action' ) );
 
 		if ( null === $action ) {

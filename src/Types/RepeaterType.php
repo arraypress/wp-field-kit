@@ -126,16 +126,17 @@ class RepeaterType extends AbstractNestedType {
 				// nothing.
 				$this->render_empty_row( $field, $total ),
 				$this->render_template( $field ),
-				$this->render_add_button( $field )
+				$this->render_status() . $this->render_add_button( $field )
 			);
 		}
 
 		return sprintf(
-			'<div%s><ol class="field-kit__repeater-rows" data-empty="%s">%s</ol>%s%s%s</div>',
+			'<div%s><ol class="field-kit__repeater-rows" data-empty="%s">%s</ol>%s%s%s%s</div>',
 			$wrapper->render(),
 			$total > 0 ? 'false' : 'true',
 			$markup,
 			$this->render_empty_message( $total ),
+			$this->render_status(),
 			$this->render_template( $field ),
 			$this->render_add_button( $field )
 		);
@@ -567,18 +568,31 @@ class RepeaterType extends AbstractNestedType {
 	}
 
 	/**
-	 * The message shown when there are no rows.
+	 * The live region that says what adding and removing a row did.
 	 *
-	 * Announced politely so adding and removing the last row is not silent
-	 * for someone who cannot see the list empty.
-	 *
-	 * @param int $total Total rows.
+	 * Its own element rather than the empty message, which is hidden the
+	 * moment a row exists -- and a hidden live region announces nothing.
+	 * Nor the first `[aria-live]` inside the repeater, which on a row that
+	 * holds a range or a tags field is that field's own readout.
 	 *
 	 * @return string
 	 */
+	private function render_status(): string {
+		return '<span class="field-kit__repeater-status screen-reader-text" aria-live="polite"></span>';
+	}
+
+	/**
+	 * The message shown when there are no rows.
+	 *
+	 * Hidden, not removed, once a row exists, so the script can show it
+	 * again when the last row goes. It is not a live region: the status
+	 * element beside it does the announcing, because a hidden region
+	 * announces nothing and this one is hidden precisely when a row is
+	 * added.
+	 */
 	private function render_empty_message( int $total ): string {
 		return sprintf(
-			'<p class="field-kit__repeater-empty description" aria-live="polite"%s>%s</p>',
+			'<p class="field-kit__repeater-empty description"%s>%s</p>',
 			$total > 0 ? ' hidden' : '',
 			esc_html__( 'No rows yet.', 'arraypress' )
 		);
@@ -658,17 +672,40 @@ class RepeaterType extends AbstractNestedType {
 			return [];
 		}
 
-		$rows = [];
+		// What each row already holds, by position. A type that consults its
+		// stored value on the way in -- a licence that must not be overwritten
+		// by its own mask -- needs the row it belongs to, not the whole list.
+		$stored = (array) $field->value();
+		$rows   = [];
 
-		foreach ( $value as $row ) {
-			$clean = $this->sanitize_children( $field, $row );
+		foreach ( $value as $index => $row ) {
+			$clean = $this->sanitize_children( $field, $row, null, (array) ( $stored[ $index ] ?? [] ) );
 
 			if ( $this->has_content( $clean ) ) {
 				$rows[] = $clean;
 			}
 		}
 
-		return $rows;
+		return $this->apply_max_rows( $rows, $field );
+	}
+
+	/**
+	 * Cut the rows down to the configured maximum.
+	 *
+	 * The control refuses to add past `max_rows`, but the control is
+	 * JavaScript and the rows arrive over HTTP. A limit enforced only in the
+	 * browser is not a limit, so the extras are dropped here as well -- from
+	 * the end, so the editor keeps what they entered first.
+	 *
+	 * @param array<int, array<string, mixed>> $rows  The sanitized rows.
+	 * @param Field                            $field The field.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	protected function apply_max_rows( array $rows, Field $field ): array {
+		$max = (int) $field->get( 'max_rows', 0 );
+
+		return $max > 0 ? array_slice( $rows, 0, $max ) : $rows;
 	}
 
 	/**

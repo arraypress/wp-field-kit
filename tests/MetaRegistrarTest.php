@@ -10,6 +10,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Tests;
 
 use ArrayPress\FieldKit\Context\CommentMetaContext;
+use ArrayPress\FieldKit\Context\EncryptedContext;
 use ArrayPress\FieldKit\Context\OptionContext;
 use ArrayPress\FieldKit\Context\PostMetaContext;
 use ArrayPress\FieldKit\Context\TermMetaContext;
@@ -452,5 +453,99 @@ final class MetaRegistrarTest extends TestCase {
 		// The empty option is a real choice: it is how a non-required select
 		// says nothing was picked.
 		$this->assertSame( [ '', 'a', 'b' ], $schema['enum'] );
+	}
+
+	/**
+	 * An encrypted field's sanitizer lets ciphertext through.
+	 *
+	 * update_metadata() runs the registered sanitizer on whatever it is
+	 * handed, and what the encrypting context hands it is `fkenc:j:...`. A
+	 * number type asked to sanitize that returned zero, so every encrypted
+	 * number, URL, select and group was wiped on its way into the database.
+	 */
+	public function test_an_encrypted_fields_sanitizer_passes_ciphertext_through(): void {
+		$this->register(
+			[
+				'count' => [
+					'type'      => 'number',
+					'encrypted' => true,
+				],
+			]
+		);
+
+		$sanitize = $this->registered( 'count' )['sanitize_callback'];
+
+		$this->assertSame( 'fkenc:j:not-for-a-number-type', $sanitize( 'fkenc:j:not-for-a-number-type' ) );
+
+		// Plaintext still gets the type's treatment.
+		$this->assertSame( 5, $sanitize( '5' ) );
+	}
+
+	/**
+	 * A field that is not encrypted has no such exception.
+	 */
+	public function test_a_plain_fields_sanitizer_treats_the_marker_as_text(): void {
+		$this->register( [ 'count' => [ 'type' => 'number' ] ] );
+
+		$sanitize = $this->registered( 'count' )['sanitize_callback'];
+
+		$this->assertSame( 0, $sanitize( 'fkenc:j:whatever' ) );
+	}
+
+	/**
+	 * A default is shaped by the type before it is registered.
+	 *
+	 * register_meta() refuses the whole registration when a default does
+	 * not match the type -- silently, unless WP_DEBUG is on.
+	 */
+	public function test_a_default_is_shaped_by_the_type(): void {
+		$this->register(
+			[
+				'on' => [
+					'type'    => 'checkbox',
+					'default' => true,
+				],
+			]
+		);
+
+		$this->assertSame( 1, $this->registered( 'on' )['default'] );
+	}
+
+	/**
+	 * A default the type cannot shape to fit is dropped rather than sent.
+	 */
+	public function test_a_default_that_cannot_fit_is_dropped(): void {
+		$this->register(
+			[
+				'photo' => [
+					'type'    => 'image',
+					'default' => '',
+				],
+			]
+		);
+
+		$this->assertArrayNotHasKey( 'default', $this->registered( 'photo' ) );
+	}
+
+	/**
+	 * A password or a licence key is refused REST exposure like an encrypted field.
+	 */
+	public function test_a_secret_is_refused_rest_exposure(): void {
+		$this->register(
+			[
+				'secret' => [
+					'type'         => 'password',
+					'show_in_rest' => true,
+				],
+				'key'    => [
+					'type'         => 'license',
+					'show_in_rest' => true,
+				],
+			]
+		);
+
+		$this->assertFalse( $this->registered( 'secret' )['show_in_rest'] );
+		$this->assertFalse( $this->registered( 'key' )['show_in_rest'] );
+		$this->assertCount( 2, $GLOBALS['fk_doing_it_wrong'] );
 	}
 }

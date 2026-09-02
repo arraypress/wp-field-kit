@@ -50,10 +50,14 @@ final class CodeType extends TextareaType {
 	/**
 	 * Coerce a submitted value.
 	 *
-	 * Code is stored verbatim apart from slashes: running it through a
-	 * sanitizer would rewrite the very characters it exists to hold. The
-	 * capability check on the screen is the real gate, exactly as it is for
-	 * the theme and plugin editors in core.
+	 * The same line core draws for post content: markup from someone
+	 * without `unfiltered_html` is filtered, and from someone with it is
+	 * stored as written. A code field is where custom CSS or a snippet of
+	 * script lives, which makes it precisely the field an author must not
+	 * be able to put a script into if the theme goes on to print it. That
+	 * is a stricter rule than the theme and plugin editors in core apply,
+	 * because those sit behind a capability of their own and a metabox
+	 * carrying this field sits behind whatever the screen asks for.
 	 *
 	 * @param mixed $value Raw submitted value.
 	 * @param Field $field The field.
@@ -61,7 +65,9 @@ final class CodeType extends TextareaType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		return (string) $value;
+		$value = $this->scalar( $value );
+
+		return current_user_can( 'unfiltered_html' ) ? $value : wp_kses_post( $value );
 	}
 
 	/**

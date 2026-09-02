@@ -112,12 +112,21 @@ abstract class AbstractNestedType extends AbstractType {
 	/**
 	 * Sanitize every child of a parent.
 	 *
-	 * @param Field $owner Parent field.
-	 * @param mixed $value  Raw submitted value for the whole group.
+	 * Each child is built around what it already holds, where the caller
+	 * knows. A type's sanitizer may consult its stored value -- a licence
+	 * refuses to write its own mask back over the real key, a gradient keeps
+	 * a stored preset the theme no longer offers -- and a child built with
+	 * nothing behind it lost both the first time its parent was saved.
+	 *
+	 * @param Field                $owner  Parent field.
+	 * @param mixed                $value  Raw submitted value for the whole group.
+	 * @param array|null           $fields The children, where the owner's own
+	 *                                     list is not the answer.
+	 * @param array<string, mixed> $stored What the children currently hold.
 	 *
 	 * @return array<string, mixed>
 	 */
-	protected function sanitize_children( Field $owner, mixed $value, ?array $fields = null ): array {
+	protected function sanitize_children( Field $owner, mixed $value, ?array $fields = null, array $stored = [] ): array {
 		$registry = $this->registry ?? new Registry();
 		$value    = is_array( $value ) ? $value : [];
 		$clean    = [];
@@ -139,7 +148,7 @@ abstract class AbstractNestedType extends AbstractType {
 				(string) $key,
 				$resolved,
 				array_merge( $resolved->defaults(), (array) $config ),
-				null
+				$stored[ $key ] ?? null
 			);
 
 			$clean[ $key ] = $resolved->sanitize( $value[ $key ] ?? null, $child );

@@ -385,9 +385,15 @@ if ( ! function_exists( 'register_rest_route' ) ) {
 	}
 }
 
+if ( ! function_exists( 'is_user_logged_in' ) ) {
+	function is_user_logged_in() {
+		return true;
+	}
+}
+
 if ( ! function_exists( 'current_user_can' ) ) {
 	function current_user_can( $capability, ...$args ) {
-		return true;
+		return $GLOBALS['fk_user_can'][ $capability ] ?? true;
 	}
 }
 

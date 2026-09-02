@@ -93,7 +93,21 @@ abstract class AbstractType implements FieldType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
-		return sanitize_text_field( (string) $value );
+		return sanitize_text_field( $this->scalar( $value ) );
+	}
+
+	/**
+	 * A submitted value as text.
+	 *
+	 * An array where text was expected -- `field[]=x` in a request nobody
+	 * typed -- casts to the word "Array", with a warning. It is nothing.
+	 *
+	 * @param mixed $value Raw submitted value.
+	 *
+	 * @return string
+	 */
+	protected function scalar( mixed $value ): string {
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	/**

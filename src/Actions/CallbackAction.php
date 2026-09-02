@@ -90,9 +90,18 @@ final class CallbackAction implements Action {
 		try {
 			$result = ( $this->callback )( $payload );
 		} catch ( Throwable $e ) {
+			// What the exception says is for the log. A database error names
+			// tables, an HTTP client quotes the response it got, and the
+			// button's capability is whatever the consumer set it to.
+			if ( function_exists( 'wp_trigger_error' ) ) {
+				wp_trigger_error( __METHOD__, $e->getMessage(), E_USER_WARNING );
+			}
+
 			return [
 				'success' => false,
-				'message' => $e->getMessage(),
+				'message' => defined( 'WP_DEBUG' ) && WP_DEBUG
+					? $e->getMessage()
+					: __( 'That did not work. The error has been logged.', 'arraypress' ),
 			];
 		}
 

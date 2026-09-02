@@ -75,7 +75,11 @@ final class Attributes implements Stringable {
 	public function set( string $name, mixed $value ): self {
 		$name = strtolower( trim( $name ) );
 
-		if ( '' === $name ) {
+		// A name is one token. One carrying a space or an equals sign would
+		// render as two attributes, the second whatever the caller wrote, and
+		// escaping the value cannot help with that. Refused rather than
+		// escaped: there is no escaped form of a name that is not a name.
+		if ( ! preg_match( '/^[a-z_:][a-z0-9_:.-]*$/', $name ) ) {
 			return $this;
 		}
 

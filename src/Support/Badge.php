@@ -97,7 +97,7 @@ final class Badge {
 			return sprintf( '<span%s>%s%s</span>', $attributes->render(), $icon, esc_html( $badge['text'] ) );
 		}
 
-		$attributes->set( 'href', $badge['url'] );
+		$attributes->set( 'href', esc_url_raw( $badge['url'] ) );
 
 		// An upgrade page is somewhere else, and a link that leaves the admin
 		// mid-configuration should not take the settings screen with it.

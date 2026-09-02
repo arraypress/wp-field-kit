@@ -58,7 +58,7 @@ final class ColorType extends AbstractInputType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		$value = trim( (string) $value );
+		$value = trim( $this->scalar( $value ) );
 
 		if ( '' === $value ) {
 			return '';

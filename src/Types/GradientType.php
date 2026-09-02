@@ -111,12 +111,18 @@ final class GradientType extends AbstractType {
 			$input->add_class( 'field-kit__gradient-input' );
 			$input->set( 'checked', true );
 
+			// Painted from the stored value, which is only as trustworthy as
+			// whatever last wrote it. A gradient has no use for a semicolon,
+			// a brace or a url(), so one carrying any of them is listed but
+			// not drawn.
+			$paint = ! preg_match( '/[;{}<>]|url\s*\(|expression|javascript:/i', $current );
+
 			$markup .= sprintf(
 				'<label class="field-kit__gradient"><input%s />' .
-				'<span class="field-kit__gradient-swatch" style="background:%s" aria-hidden="true"></span>' .
+				'<span class="field-kit__gradient-swatch"%s aria-hidden="true"></span>' .
 				'<span class="field-kit__gradient-label">%s</span></label>',
 				$input->render(),
-				esc_attr( $current ),
+				$paint ? ' style="background:' . esc_attr( $current ) . '"' : '',
 				esc_html__( 'Current', 'arraypress' )
 			);
 		}

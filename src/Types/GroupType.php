@@ -47,7 +47,7 @@ final class GroupType extends AbstractNestedType {
 	 * @return array<string, mixed>
 	 */
 	public function sanitize( mixed $value, Field $field ): array {
-		return $this->sanitize_children( $field, $value );
+		return $this->sanitize_children( $field, $value, null, (array) $field->value() );
 	}
 
 	/**

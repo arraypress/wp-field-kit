@@ -75,7 +75,7 @@ Media
 : `image` `file` `file_url` `gallery` `files`
 
 Compound
-: `group` `repeater` `list` `key_value` `sortable` `providers` `dimensions` `amount_type` `flexible`
+: `group` `repeater` `list` `key_value` `sortable` `providers` `dimensions` `amount_type` `money` `flexible`
 
 Layout and display
 : `heading` `separator` `message` `html` `link` `clipboard` `oembed` `custom` `tab` `accordion` `icon` `nav_menu`

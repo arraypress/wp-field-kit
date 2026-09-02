@@ -162,7 +162,6 @@ abstract class AbstractRelationalType extends SelectType {
 
 		// A field with a callback is resolved server-side by key, so the
 		// callable itself never reaches the page.
-		$attributes->set_if( $field->has( 'search_callback' ), 'data-search-field', $field->key() );
 
 		$attributes->set_if( (bool) $field->get( 'creatable', false ), 'data-creatable', 'true' );
 

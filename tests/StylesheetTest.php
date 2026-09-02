@@ -54,10 +54,6 @@ final class StylesheetTest extends TestCase {
 		// LicenseType: 'field-kit__license-state--' . ( active ? 'active' : 'inactive' )
 		'field-kit__license-state--active',
 		'field-kit__license-state--inactive',
-
-		// Modifiers a consumer opts into.
-		'field-kit__radio-group--inline',
-		'field-kit__checkbox-group--inline',
 	];
 
 	/**
@@ -250,9 +246,7 @@ final class StylesheetTest extends TestCase {
 				$stem = rtrim( $stem, '-' );
 			}
 
-			// A modifier is opted into by a consumer's config rather than
-			// written by the kit, so there is no stem to find.
-			if ( ! $found && ! str_contains( $class, '--inline' ) ) {
+			if ( ! $found ) {
 				$orphans[] = $class;
 			}
 		}
@@ -263,7 +257,6 @@ final class StylesheetTest extends TestCase {
 			'Exempted as built at runtime, but nothing builds them: ' . implode( ', ', $orphans )
 		);
 	}
-
 
 	/**
 	 * A row a pointer can choose reacts to the pointer.
@@ -537,18 +530,27 @@ final class StylesheetTest extends TestCase {
 	 * boxes nobody had asked for.
 	 *
 	 * CSS has no errors, so nothing said a word.
+	 *
+	 * Every comment in the run is checked, not only the first. A section
+	 * banner in front of the list is a comment too, and looking no further
+	 * than that one let a dimensions field and a range pair merge into the
+	 * gradient grid's rule for a second time.
 	 */
 	public function test_no_comment_sits_inside_a_selector_list(): void {
 		$css   = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 		$merged = [];
 
+		// Each comment collapsed to a marker, so its prose cannot supply a
+		// comma and its position in the run is still known.
+		$css = (string) preg_replace( '#/\*.*?\*/#s', "\0", $css );
+
 		preg_match_all( '/(?:^|\})([^{}]*)\{/', $css, $rules );
 
 		foreach ( $rules[1] as $selector ) {
-			$before = explode( '/*', $selector )[0];
-
-			if ( str_contains( $selector, '/*' ) && str_contains( $before, ',' ) ) {
-				$merged[] = trim( explode( "\n", trim( $before ) )[0] );
+			// A comma, then a comment before the brace, with no comment in
+			// between — that comment sits inside the list.
+			if ( preg_match( '/,[^\0]*\0/', $selector ) ) {
+				$merged[] = trim( explode( "\n", trim( explode( "\0", ltrim( $selector, "\0\n " ) )[0] ) )[0] );
 			}
 		}
 

@@ -579,4 +579,83 @@ final class RepeaterTest extends TestCase {
 		return ( new FieldSet( $fields, new ArrayContext( [] ), '' ) )->render();
 	}
 
+	/**
+	 * Sanitize rows through the repeater.
+	 *
+	 * @param mixed                $value  Submitted rows.
+	 * @param array<string, mixed> $config Extra configuration.
+	 * @param mixed                $stored What the field already holds.
+	 *
+	 * @return array
+	 */
+	private function sanitize( mixed $value, array $config = [], mixed $stored = null ): array {
+		$registry = new Registry();
+		$field    = new Field(
+			'rates',
+			$registry->get( 'repeater' ),
+			array_merge( [ 'input_name' => 'rates', 'fields' => self::SUB_FIELDS ], $config ),
+			null
+		);
+
+		return $registry->get( 'repeater' )->sanitize( $value, $field->with_value( $stored ) );
+	}
+
+	/**
+	 * max_rows is enforced on save, not only in the browser.
+	 */
+	public function test_max_rows_is_enforced_on_save(): void {
+		$rows = [];
+
+		for ( $i = 0; $i < 5; $i++ ) {
+			$rows[] = [ 'country' => 'C' . $i ];
+		}
+
+		$clean = $this->sanitize( $rows, [ 'max_rows' => 2 ] );
+
+		$this->assertCount( 2, $clean );
+		$this->assertSame( 'C0', $clean[0]['country'] );
+		$this->assertSame( 'C1', $clean[1]['country'] );
+	}
+
+	/**
+	 * A row's fields see what that row already holds.
+	 *
+	 * A licence posts its mask back rather than the key, and its sanitizer
+	 * keeps the stored key in that case. Inside a repeater the child was built
+	 * with nothing behind it, so every save wiped every licence.
+	 */
+	public function test_a_nested_licence_keeps_its_stored_key(): void {
+		$clean = $this->sanitize(
+			[
+				[ 'name' => 'Pro', 'key' => 'abcd********' ],
+				[ 'name' => 'Team', 'key' => 'fresh-key-typed' ],
+			],
+			[
+				'fields' => [
+					'name' => [ 'type' => 'text' ],
+					'key'  => [ 'type' => 'license' ],
+				],
+			],
+			[
+				[ 'name' => 'Pro', 'key' => 'abcd-real-key' ],
+				[ 'name' => 'Team', 'key' => 'old-team-key' ],
+			]
+		);
+
+		$this->assertSame( 'abcd-real-key', $clean[0]['key'] );
+		$this->assertSame( 'fresh-key-typed', $clean[1]['key'] );
+	}
+
+	/**
+	 * The status region is the repeater's own, and the empty message is not one.
+	 */
+	public function test_the_status_region_is_its_own_element(): void {
+		foreach ( [ 'card', 'table' ] as $layout ) {
+			$html = $this->render( $layout );
+
+			$this->assertStringContainsString( 'field-kit__repeater-status', $html, $layout );
+			$this->assertMatchesRegularExpression( '/class="field-kit__repeater-status[^"]*" aria-live="polite"/', $html, $layout );
+			$this->assertDoesNotMatchRegularExpression( '/field-kit__repeater-empty[^>]*aria-live/', $html, $layout );
+		}
+	}
 }

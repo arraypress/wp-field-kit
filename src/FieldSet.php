@@ -141,7 +141,8 @@ final class FieldSet {
 				new CallbackSource(
 					$this->source_name_for( (string) $key, $config ),
 					$callback,
-					(string) ( $config['search_capability'] ?? 'edit_posts' )
+					(string) ( $config['search_capability'] ?? 'edit_posts' ),
+					array_keys( (array) ( $config['search_args'] ?? [] ) )
 				)
 			);
 		}

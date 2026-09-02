@@ -280,4 +280,49 @@ final class RelationalLimitsTest extends TestCase {
 		$this->assertStringContainsString( '&quot;ok&quot;:1', $markup );
 		$this->assertStringNotContainsString( 'bad', $markup );
 	}
+
+	/**
+	 * An ajax field's max is enforced on save like every other relational type.
+	 */
+	public function test_ajax_max_is_enforced_on_save(): void {
+		$this->assertSame(
+			[ 'a', 'b' ],
+			$this->sanitize( 'ajax', [ 'a', 'b', 'c' ], [ 'multiple' => true, 'max' => 2 ] )
+		);
+	}
+
+	/**
+	 * An array where one value was expected is nothing, not "Array".
+	 */
+	public function test_ajax_single_refuses_a_nested_array(): void {
+		$this->assertSame( '', $this->sanitize( 'ajax', [ [ 'nested' ] ] ) );
+		$this->assertSame( [], $this->sanitize( 'ajax', [ [ 'nested' ] ], [ 'multiple' => true ] ) );
+	}
+
+	/**
+	 * The label lookup hands the callback the same third argument the search does.
+	 */
+	public function test_the_label_callback_receives_the_declared_arguments(): void {
+		$seen = null;
+
+		$field = new Field(
+			'demo',
+			( new Registry() )->get( 'ajax' ),
+			[
+				'label'           => 'Demo',
+				'input_name'      => 'demo',
+				'search_args'     => [ 'exclude' => 12 ],
+				'search_callback' => function ( $term, $ids, $args ) use ( &$seen ) {
+					$seen = $args;
+
+					return [ [ 'id' => '7', 'text' => 'Seven' ] ];
+				},
+			],
+			'7'
+		);
+
+		( new Renderer() )->render( $field );
+
+		$this->assertSame( [ 'exclude' => 12 ], $seen );
+	}
 }

@@ -12,7 +12,9 @@ declare( strict_types=1 );
 
 namespace ArrayPress\FieldKit;
 
+use ArrayPress\FieldKit\Context\EncryptedContext;
 use ArrayPress\FieldKit\Contracts\Context;
+use ArrayPress\FieldKit\Contracts\FieldType;
 use ArrayPress\FieldKit\Contracts\Registrable;
 
 /**
@@ -137,21 +139,24 @@ final class MetaRegistrar {
 
 		$field  = new Field( $key, $resolved, array_merge( $resolved->defaults(), $config ), null );
 		$schema = $resolved->schema( $field );
+		$scalar = $this->scalar_type( $schema );
 
 		$args = [
-			'type'              => $this->scalar_type( $schema ),
+			'type'              => $scalar,
 			'description'       => $field->description(),
 			'single'            => true,
-			'sanitize_callback' => fn( $value ) => $resolved->sanitize( $value, $field ),
-			'show_in_rest'      => $this->rest_argument( $field, $schema ),
+			'sanitize_callback' => $this->sanitizer( $field, $resolved ),
+			'show_in_rest'      => $this->rest_argument( $field, $schema, $type ),
 		];
 
 		if ( '' !== $this->subtype ) {
 			$args['object_subtype'] = $this->subtype;
 		}
 
-		if ( null !== $field->get( 'default' ) ) {
-			$args['default'] = $field->get( 'default' );
+		$default = $this->default_argument( $field, $resolved, $scalar );
+
+		if ( null !== $default ) {
+			$args['default'] = $default;
 		}
 
 		if ( $field->has( 'capability' ) ) {
@@ -189,6 +194,75 @@ final class MetaRegistrar {
 	}
 
 	/**
+	 * The sanitizer to register for a field.
+	 *
+	 * The field's own type, so a value written by anything other than the
+	 * form gets the treatment the form's would. With one exception. An
+	 * encrypted field's context writes ciphertext, and `update_metadata()`
+	 * runs this callback on whatever it is handed: a number type asked to
+	 * sanitize `fkenc:j:...` returns zero, a URL type returns nothing, a
+	 * select returns nothing -- every encrypted value that was not plain
+	 * text was being destroyed on its way into the database. Ciphertext
+	 * passes through untouched; the plaintext was sanitized before it was
+	 * encrypted, by this same type.
+	 *
+	 * @param Field     $field    The field.
+	 * @param FieldType $resolved Its type.
+	 *
+	 * @return callable
+	 */
+	private function sanitizer( Field $field, FieldType $resolved ): callable {
+		$encrypted = (bool) $field->get( 'encrypted', false );
+
+		return static function ( $value ) use ( $encrypted, $resolved, $field ) {
+			if ( $encrypted && EncryptedContext::is_ciphertext( $value ) ) {
+				return $value;
+			}
+
+			return $resolved->sanitize( $value, $field );
+		};
+	}
+
+	/**
+	 * What to pass as `default`, or nothing.
+	 *
+	 * `register_meta()` validates a default against the registered type and
+	 * refuses the whole registration when they disagree -- no REST, no entry
+	 * in the registry, and no message unless WP_DEBUG is on. A checkbox
+	 * defaulting to `true` against an integer schema was enough, and so was
+	 * a media field defaulting to an empty string against an integer one.
+	 * The default goes through the type's own sanitizer, which is what
+	 * decides the shape, and is dropped rather than sent if it still does
+	 * not fit.
+	 *
+	 * @param Field     $field    The field.
+	 * @param FieldType $resolved Its type.
+	 * @param string    $type     The registered scalar type.
+	 *
+	 * @return mixed Null when there is nothing to pass.
+	 */
+	private function default_argument( Field $field, FieldType $resolved, string $type ): mixed {
+		$default = $field->get( 'default' );
+
+		if ( null === $default ) {
+			return null;
+		}
+
+		$default = $resolved->sanitize( $default, $field );
+
+		$fits = match ( $type ) {
+			'integer' => is_int( $default ),
+			'number'  => is_int( $default ) || is_float( $default ),
+			'boolean' => is_bool( $default ),
+			'array',
+			'object'  => is_array( $default ),
+			default   => is_string( $default ),
+		};
+
+		return $fits ? $default : null;
+	}
+
+	/**
 	 * The scalar type register_meta() wants, from a JSON Schema fragment.
 	 *
 	 * `register_meta()` takes one type and rejects anything else. A schema is
@@ -212,10 +286,11 @@ final class MetaRegistrar {
 	 *
 	 * @param Field                $field  The field.
 	 * @param array<string, mixed> $schema The field's schema.
+	 * @param string               $type   The field's type name.
 	 *
 	 * @return array<string, mixed>|bool
 	 */
-	private function rest_argument( Field $field, array $schema ): array|bool {
+	private function rest_argument( Field $field, array $schema, string $type ): array|bool {
 		if ( ! $field->get( 'show_in_rest', false ) ) {
 			return false;
 		}
@@ -230,6 +305,23 @@ final class MetaRegistrar {
 				sprintf(
 					/* translators: %s: the field key */
 					esc_html__( 'The field "%s" is encrypted, so it cannot be exposed in the REST API. show_in_rest was ignored.', 'arraypress' ),
+					esc_html( $field->key() )
+				),
+				'1.0.0'
+			);
+
+			return false;
+		}
+
+		// A password or a licence key is a secret whether or not it is
+		// encrypted, and the REST index would print it for anyone who can
+		// read the object it hangs off.
+		if ( in_array( $type, [ 'password', 'license' ], true ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				sprintf(
+					/* translators: %s: the field key */
+					esc_html__( 'The field "%s" holds a secret, so it cannot be exposed in the REST API. show_in_rest was ignored.', 'arraypress' ),
 					esc_html( $field->key() )
 				),
 				'1.0.0'

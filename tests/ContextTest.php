@@ -410,4 +410,73 @@ final class ContextTest extends TestCase {
 
 		$this->assertSame( [], $collector->values() );
 	}
+
+	/**
+	 * An unreadable ciphertext is read as nothing, not handed back raw.
+	 */
+	public function test_unreadable_ciphertext_reads_as_empty(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+
+		// Carries the marker, decodes, and was never encrypted with this key.
+		$inner->write( 0, $field, 'fkenc:j:' . base64_encode( random_bytes( 40 ) ) );
+
+		$this->assertSame( '', $context->read( 0, $field ) );
+	}
+
+	/**
+	 * Deleting an unreadable ciphertext keeps it.
+	 *
+	 * The form showed a blank because the value would not decrypt, and a
+	 * save that read the blank as "cleared" would delete the only copy.
+	 */
+	public function test_deleting_an_unreadable_ciphertext_keeps_it(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+		$junk    = 'fkenc:j:' . base64_encode( random_bytes( 40 ) );
+
+		$inner->write( 0, $field, $junk );
+		$context->delete( 0, $field );
+
+		$this->assertSame( $junk, $inner->read( 0, $field ) );
+	}
+
+	/**
+	 * Deleting a readable value still deletes it.
+	 */
+	public function test_deleting_a_readable_ciphertext_deletes_it(): void {
+		if ( ! EncryptedContext::available() ) {
+			$this->markTestSkipped( 'OpenSSL or the salts are unavailable.' );
+		}
+
+		$inner   = new OptionContext( 'fk_test' );
+		$context = new EncryptedContext( $inner );
+		$field   = $this->field( [ 'encrypted' => true ] );
+
+		$context->write( 0, $field, 'sk-secret-value' );
+		$context->delete( 0, $field );
+
+		$this->assertNull( $inner->read( 0, $field ) );
+	}
+
+	/**
+	 * The registrar can tell ciphertext from anything else.
+	 */
+	public function test_ciphertext_is_recognised(): void {
+		$this->assertTrue( EncryptedContext::is_ciphertext( 'fkenc:j:abc' ) );
+		$this->assertTrue( EncryptedContext::is_ciphertext( 'fkenc:abc' ) );
+		$this->assertFalse( EncryptedContext::is_ciphertext( 'plain' ) );
+		$this->assertFalse( EncryptedContext::is_ciphertext( 5 ) );
+		$this->assertFalse( EncryptedContext::is_ciphertext( [ 'fkenc:j:abc' ] ) );
+	}
 }

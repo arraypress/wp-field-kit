@@ -72,8 +72,12 @@ final class AjaxType extends AbstractRelationalType {
 			);
 		}
 
+		// The same third argument the search endpoint sends, so a callback
+		// has one signature whichever way it is reached. It used to get the
+		// Field here and an array there, and one typed for either threw on
+		// the other path.
 		$labels  = [];
-		$results = $callback( '', $ids, $field );
+		$results = $callback( '', $ids, $this->search_args( $field ) );
 
 		foreach ( (array) $results as $result ) {
 			if ( ! is_array( $result ) ) {
@@ -105,10 +109,14 @@ final class AjaxType extends AbstractRelationalType {
 	 */
 	public function sanitize( mixed $value, Field $field ): string|array {
 		if ( $this->is_multiple( $field ) ) {
-			return array_values( array_filter( array_map( 'sanitize_text_field', (array) $value ) ) );
+			$values = array_map( 'sanitize_text_field', array_filter( (array) $value, 'is_scalar' ) );
+
+			return $this->apply_max( array_values( array_filter( $values ) ), $field );
 		}
 
-		return sanitize_text_field( (string) ( is_array( $value ) ? reset( $value ) : $value ) );
+		$value = is_array( $value ) ? reset( $value ) : $value;
+
+		return sanitize_text_field( $this->scalar( $value ) );
 	}
 
 	/**

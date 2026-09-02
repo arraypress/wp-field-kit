@@ -74,6 +74,10 @@ final class Assets {
 
 		$handle = Runtime::handle();
 
+		// No wp_style_add_data( $handle, 'rtl', 'replace' ): the sheet is
+		// written with logical properties — margin-inline-start rather than
+		// margin-left — so the one file serves both directions and there is
+		// no second one to point core at.
 		wp_register_style(
 			$handle,
 			$this->url . '/css/field-kit.css',

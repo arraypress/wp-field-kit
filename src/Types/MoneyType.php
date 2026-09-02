@@ -154,7 +154,7 @@ final class MoneyType extends AbstractType {
 
 		// Digits, separators and a leading minus. A refund or an adjustment
 		// is a negative amount, so the sign survives.
-		return trim( (string) preg_replace( '/[^0-9.,\-]/', '', (string) $value ) );
+		return trim( (string) preg_replace( '/[^0-9.,\-]/', '', $this->scalar( $value ) ) );
 	}
 
 	/**

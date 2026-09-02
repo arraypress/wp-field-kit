@@ -311,4 +311,25 @@ final class FlexibleTest extends TestCase {
 		$this->assertSame( 'flexible', $registry->get( 'flexible' )->id() );
 	}
 
+	/**
+	 * A row whose layout has gone keeps the slug it was matched by, not what was posted.
+	 */
+	public function test_an_orphan_row_keeps_the_matched_slug_and_clean_keys(): void {
+		$clean = $this->sanitize(
+			[
+				[
+					'_layout'      => 'Gone<b>',
+					'headline'     => 'kept <b>as</b> text',
+					'odd key here' => 'x',
+				],
+			]
+		);
+
+		$this->assertCount( 1, $clean );
+		// sanitize_key() on what was posted, not the posted text itself.
+		$this->assertSame( 'goneb', $clean[0]['_layout'] );
+		$this->assertSame( 'kept as text', $clean[0]['headline'] );
+		$this->assertArrayNotHasKey( 'odd key here', $clean[0] );
+		$this->assertArrayHasKey( 'oddkeyhere', $clean[0] );
+	}
 }

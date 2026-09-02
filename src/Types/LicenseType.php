@@ -75,7 +75,6 @@ final class LicenseType extends AbstractInputType {
 
 		$button->set( 'data-label-activate', __( 'Activate', 'arraypress' ) );
 		$button->set( 'data-label-deactivate', __( 'Deactivate', 'arraypress' ) );
-		$button->set( 'data-payload-from', $field->input_id() );
 		$button->set( 'data-endpoint', rest_url( Runtime::rest_namespace() . '/action' ) );
 		$button->set( 'data-nonce', wp_create_nonce( 'wp_rest' ) );
 		$button->set( 'data-field', $field->key() );
@@ -184,7 +183,7 @@ final class LicenseType extends AbstractInputType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		$value = sanitize_text_field( (string) $value );
+		$value = sanitize_text_field( $this->scalar( $value ) );
 
 		return str_contains( $value, '****' ) ? (string) $field->raw_value() : $value;
 	}

@@ -239,4 +239,27 @@ final class GradientTest extends TestCase {
 
 		$this->assertStringContainsString( 'Sunrise', $html );
 	}
+
+	/**
+	 * A stored gradient the theme no longer offers is painted.
+	 */
+	public function test_a_stored_gradient_no_longer_offered_is_painted(): void {
+		$html = $this->render( [], 'linear-gradient(90deg,#000 0%,#fff 100%)' );
+
+		$this->assertStringContainsString( 'style="background:linear-gradient(90deg,#000 0%,#fff 100%)"', $html );
+	}
+
+	/**
+	 * A stored value that is not a gradient is listed but not painted.
+	 *
+	 * A swatch's style attribute is the one place a stored value reaches
+	 * CSS, and a semicolon there is a second declaration.
+	 */
+	public function test_a_stored_value_that_is_not_a_gradient_is_not_painted(): void {
+		$html = $this->render( [], 'red;position:fixed;inset:0;background:url(https://evil.example/b)' );
+
+		$this->assertStringContainsString( 'Current', $html );
+		$this->assertStringNotContainsString( 'style="background:red', $html );
+		$this->assertMatchesRegularExpression( '/checked \/><span class="field-kit__gradient-swatch" aria-hidden/', $html );
+	}
 }

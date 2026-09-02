@@ -110,4 +110,18 @@ final class AttributesTest extends TestCase {
 		$this->assertSame( ' type="email"', $attributes->render() );
 	}
 
+	/**
+	 * A name that is not a token is refused, not rendered.
+	 *
+	 * Escaping a value cannot save a name: `x onload=alert(1)` written as an
+	 * attribute name renders as two attributes.
+	 */
+	public function test_a_name_that_is_not_a_token_is_refused(): void {
+		$attributes = new Attributes();
+		$attributes->set( 'x onload=alert(1)//', 'value' );
+		$attributes->set( 'data-ok', 'fine' );
+		$attributes->set( 'aria-label', 'fine' );
+
+		$this->assertSame( ' data-ok="fine" aria-label="fine"', $attributes->render() );
+	}
 }

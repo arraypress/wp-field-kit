@@ -59,7 +59,7 @@ class TextareaType extends AbstractType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		return sanitize_textarea_field( (string) $value );
+		return sanitize_textarea_field( $this->scalar( $value ) );
 	}
 
 	/**

@@ -50,10 +50,23 @@ final class PostSource implements Source {
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
 	public function search( string $term, array $args, int $page, int $limit ): array {
+		$post_types = $this->post_type( $args );
+
+		if ( [] === $post_types ) {
+			return [
+				'results' => [],
+				'more'    => false,
+			];
+		}
+
 		$query = new WP_Query(
 			[
-				'post_type'              => $this->post_type( $args ),
+				'post_type'              => $post_types,
 				'post_status'            => [ 'publish', 'draft', 'pending', 'private' ],
+				// Unpublished work is listed for whoever may edit it, which
+				// is what `perm` decides. Without it an explicit status list
+				// shows every author's drafts to anyone holding edit_posts.
+				'perm'                   => 'editable',
 				's'                      => $term,
 				'posts_per_page'         => $limit,
 				'paged'                  => $page,
@@ -83,19 +96,40 @@ final class PostSource implements Source {
 	}
 
 	/**
-	 * The post type to query, restricted to what really exists.
+	 * The post types to query: those asked for that exist, and that the
+	 * current user may edit.
+	 *
+	 * The route's capability is a blanket edit_posts, because a picker has
+	 * to be reachable to be useful. A post type with a capability map of its
+	 * own -- an order, a subscription -- is a different question, and one its
+	 * own edit_posts answers. Nothing is substituted for a request naming
+	 * none the user may see: an empty list is an empty result, not a search
+	 * of `post` instead.
 	 *
 	 * @param array<string, mixed> $args Arguments the field supplied.
 	 *
-	 * @return string|string[]
+	 * @return string[]
 	 */
-	private function post_type( array $args ): string|array {
+	private function post_type( array $args ): array {
 		$requested = $args['post_type'] ?? 'post';
 		$requested = is_array( $requested ) ? $requested : [ (string) $requested ];
 
 		$allowed = get_post_types( [ 'show_ui' => true ], 'names' );
-		$allowed = array_values( array_intersect( $requested, $allowed ) );
+		$allowed = array_intersect( $requested, $allowed );
 
-		return [] === $allowed ? 'post' : $allowed;
+		return array_values( array_filter( $allowed, [ $this, 'can_edit' ] ) );
+	}
+
+	/**
+	 * Whether the current user may edit a post type at all.
+	 *
+	 * @param string $post_type The post type.
+	 *
+	 * @return bool
+	 */
+	private function can_edit( string $post_type ): bool {
+		$object = get_post_type_object( $post_type );
+
+		return null !== $object && current_user_can( $object->cap->edit_posts );
 	}
 }

@@ -45,6 +45,32 @@
 	}
 
 	/**
+	 * Whether a module has already bound a root, marking it if not.
+	 *
+	 * init() runs twice on a normal page load -- once at DOMContentLoaded and
+	 * once at load, to pick up a control whose library arrived late -- and
+	 * again for every repeater row added. A module that listens on the root
+	 * itself, rather than marking each control it enhances, would otherwise
+	 * bind a second handler each time: two copies to the clipboard, every
+	 * conditional field evaluated twice per keystroke.
+	 *
+	 * @param {Element} root Container.
+	 * @param {string}  name Module name.
+	 * @return {boolean} True when the root was already bound.
+	 */
+	function bound( root, name ) {
+		var marks = root.fieldKitBound || ( root.fieldKitBound = {} );
+
+		if ( marks[ name ] ) {
+			return true;
+		}
+
+		marks[ name ] = true;
+
+		return false;
+	}
+
+	/**
 	 * Announce a message to assistive technology.
 	 *
 	 * Writes into a field's own live region where it has one, so the message
@@ -79,25 +105,26 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
-			var fields = root.querySelectorAll( '[data-conditions]' );
-
-			if ( ! fields.length ) {
-				return;
-			}
-
-			fields.forEach( function ( field ) {
+			root.querySelectorAll( '[data-conditions]' ).forEach( function ( field ) {
 				Conditions.evaluate( field );
 			} );
 
+			if ( bound( root, 'Conditions' ) ) {
+				return;
+			}
+
 			// One delegated listener rather than one per watched input: the
-			// watched field may not exist yet inside a repeater row.
+			// watched field may not exist yet inside a repeater row. And the
+			// fields are looked up on each event rather than held from init:
+			// a list taken then would miss every row added since and keep
+			// every row removed since alive.
 			//
 			// field-kit:change is the kit's own signal, used where firing a
 			// native change would be read by the control that wrote the value
 			// as a fresh edit. See ColorPicker.
 			[ 'change', 'input', 'field-kit:change' ].forEach( function ( type ) {
 				root.addEventListener( type, function () {
-					fields.forEach( function ( field ) {
+					root.querySelectorAll( '[data-conditions]' ).forEach( function ( field ) {
 						Conditions.evaluate( field );
 					} );
 				}, true );
@@ -271,6 +298,10 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
+			if ( bound( root, 'Toggle' ) ) {
+				return;
+			}
+
 			root.addEventListener( 'change', function ( event ) {
 				var toggle = event.target.closest( '.field-kit__toggle' );
 
@@ -293,6 +324,10 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
+			if ( bound( root, 'Clipboard' ) ) {
+				return;
+			}
+
 			root.addEventListener( 'click', function ( event ) {
 				var button = event.target.closest( '.field-kit__clipboard-copy' );
 
@@ -626,7 +661,7 @@
 		}
 	};
 
-	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, t: t, config: config };
+	window.ArrayPressFieldKitModules = { Conditions: Conditions, Range: Range, Toggle: Toggle, Clipboard: Clipboard, CodeGenerator: CodeGenerator, Oembed: Oembed, announce: announce, bound: bound, t: t, config: config };
 } )();
 
 /**
@@ -923,6 +958,7 @@
 		bind: function ( select, input, list, status, chips, clear ) {
 			var active = -1;
 			var results = [];
+			var requests = 0;
 			var timer = null;
 			var remote = !! select.dataset.searchEndpoint;
 			var multiple = select.multiple;
@@ -1310,6 +1346,10 @@
 				var url = new URL( select.dataset.searchEndpoint, window.location.origin );
 				var args = select.dataset.searchArgs ? JSON.parse( select.dataset.searchArgs ) : {};
 
+				// Numbered, so a slow answer to "ab" cannot land after the
+				// answer to "abc" and replace it.
+				var ticket = ++requests;
+
 				url.searchParams.set( 'source', select.dataset.searchSource );
 				url.searchParams.set( 'q', term );
 
@@ -1323,12 +1363,28 @@
 				} ).then( function ( response ) {
 					return response.ok ? response.json() : { results: [] };
 				} ).then( function ( data ) {
-					results = data.results || [];
-					render();
+					settle( ticket, data.results || [] );
 				} ).catch( function () {
-					results = [];
-					render();
+					settle( ticket, [] );
 				} );
+			}
+
+			/**
+			 * Take a response, unless it is stale or the field has been left.
+			 *
+			 * render() opens the list, and a response arriving after the
+			 * input lost focus would open it under whatever has focus now.
+			 *
+			 * @param {number} ticket Which request answered.
+			 * @param {Array}  found  Its results.
+			 */
+			function settle( ticket, found ) {
+				if ( ticket !== requests || document.activeElement !== input ) {
+					return;
+				}
+
+				results = found;
+				render();
 			}
 
 			/**
@@ -1479,6 +1535,11 @@
 
 	var kit = window.ArrayPressFieldKitModules;
 	var t = kit.t;
+
+	// Defined in the block before this one. Referred to bare, it was a
+	// ReferenceError the first time a sortable chip was moved, and the new
+	// order never reached the select.
+	var Combobox = kit.Combobox;
 
 	var Reorder = {
 
@@ -2305,7 +2366,7 @@
 				first.focus();
 			}
 
-			kit.announce( wrap.querySelector( '[aria-live]' ), t( 'rowAdded', 'Row added.' ) );
+			kit.announce( Repeater.status( wrap ), t( 'rowAdded', 'Row added.' ) );
 		},
 
 		/**
@@ -2344,7 +2405,56 @@
 				target.focus();
 			}
 
-			kit.announce( wrap.querySelector( '[aria-live]' ), t( 'rowRemoved', 'Row removed.' ) );
+			kit.announce( Repeater.status( wrap ), t( 'rowRemoved', 'Row removed.' ) );
+		},
+
+		/**
+		 * The repeater's own live region.
+		 *
+		 * Not the first `[aria-live]` inside it: on a row holding a range or
+		 * a tags field that is the field's readout, and before the region
+		 * existed it was the empty message -- hidden the moment a row was
+		 * added, and a hidden region announces nothing.
+		 *
+		 * @param {Element} wrap The repeater.
+		 * @return {Element|null} The region.
+		 */
+		status: function ( wrap ) {
+			return wrap.querySelector( ':scope > .field-kit__repeater-status' ) || wrap.querySelector( '[aria-live]' );
+		},
+
+		/**
+		 * Point everything that referred to an old id at the new one.
+		 *
+		 * Labels and descriptions were moved; nothing else was. A combobox
+		 * names its listbox in aria-controls, a provider row its panel in
+		 * data-target, a merge-tag button its modal and its editor -- and all
+		 * of them were left pointing at an id that stopped existing the
+		 * moment a row above them was removed.
+		 *
+		 * @param {Element} row  The row.
+		 * @param {string}  from The old id.
+		 * @param {string}  to   The new id.
+		 */
+		retarget: function ( row, from, to ) {
+			var escaped = CSS.escape( from );
+
+			[ 'for', 'aria-controls', 'data-target', 'data-modal', 'data-editor', 'list' ].forEach( function ( attribute ) {
+				row.querySelectorAll( '[' + attribute + '="' + escaped + '"]' ).forEach( function ( element ) {
+					element.setAttribute( attribute, to );
+				} );
+			} );
+
+			// Space-separated lists: the one token is replaced, not the value.
+			[ 'aria-describedby', 'aria-labelledby', 'aria-owns' ].forEach( function ( attribute ) {
+				row.querySelectorAll( '[' + attribute + '~="' + escaped + '"]' ).forEach( function ( element ) {
+					var tokens = element.getAttribute( attribute ).split( /\s+/ ).map( function ( token ) {
+						return token === from ? to : token;
+					} );
+
+					element.setAttribute( attribute, tokens.join( ' ' ) );
+				} );
+			} );
 		},
 
 		/**
@@ -2367,29 +2477,24 @@
 			Array.from( list.children ).forEach( function ( row, index ) {
 				row.dataset.index = String( index );
 
+				// The template is rendered at index -1, one no saved row can
+				// hold, so the pattern has to admit the sign. Digits alone
+				// left every added row named [-1], and two of them posted as
+				// one -- the last one typed.
 				row.querySelectorAll( '[name]' ).forEach( function ( input ) {
 					input.name = input.name.replace(
-						new RegExp( '^' + base.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '\\[\\d*\\]' ),
+						new RegExp( '^' + base.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '\\[-?\\d*\\]' ),
 						base + '[' + index + ']'
 					);
 				} );
 
 				row.querySelectorAll( '[id]' ).forEach( function ( element ) {
-					var id = element.id.replace( /__row\d+/, '' );
+					var id = element.id.replace( /__row-?\d+/, '' );
 					var next = id + '__row' + index;
 
-					// Move every label and description pointing at the old id,
-					// or the association is lost the moment a row is renumbered.
-					row.querySelectorAll( '[for="' + CSS.escape( element.id ) + '"]' ).forEach( function ( label ) {
-						label.setAttribute( 'for', next );
-					} );
-
-					row.querySelectorAll( '[aria-describedby~="' + CSS.escape( element.id ) + '"]' ).forEach( function ( described ) {
-						described.setAttribute(
-							'aria-describedby',
-							described.getAttribute( 'aria-describedby' ).replace( element.id, next )
-						);
-					} );
+					// Move everything pointing at the old id, or the
+					// association is lost the moment a row is renumbered.
+					Repeater.retarget( row, element.id, next );
 
 					element.id = next;
 				} );
@@ -2481,9 +2586,21 @@
 				var thumb = sizes.medium || sizes.thumbnail;
 
 				preview.dataset.empty = 'false';
-				preview.innerHTML = thumb
-					? '<img src="' + thumb.url + '" alt="' + ( attachment.alt || '' ).replace( /"/g, '&quot;' ) + '" />'
-					: '<span class="field-kit__media-filename"></span>';
+				preview.textContent = '';
+
+				// Built, not written: the URL and alt text are whatever the
+				// media library holds, and a string of markup is the one
+				// place they must not be interpolated.
+				if ( thumb ) {
+					var image = document.createElement( 'img' );
+					image.src = thumb.url;
+					image.alt = attachment.alt || '';
+					preview.appendChild( image );
+				} else {
+					var name = document.createElement( 'span' );
+					name.className = 'field-kit__media-filename';
+					preview.appendChild( name );
+				}
 
 				var filename = preview.querySelector( '.field-kit__media-filename' );
 
@@ -3161,6 +3278,10 @@
 		 * @param {Element} root Container.
 		 */
 		init: function ( root ) {
+			if ( kit.bound( root, 'ActionButton' ) ) {
+				return;
+			}
+
 			root.addEventListener( 'click', function ( event ) {
 				var button = event.target.closest( '[data-endpoint][data-action]' );
 
@@ -3183,7 +3304,11 @@
 				return;
 			}
 
-			var wrap = button.closest( '.field-kit__field' ) || document;
+			// A button outside a field collects from its own container, never
+			// from the document: that would send every named input on the
+			// page -- other licence keys, password fields -- to this one's
+			// endpoint.
+			var wrap = button.closest( '.field-kit__field' ) || button.parentNode;
 			var status = wrap.querySelector( '[aria-live]' );
 			var spinner = wrap.querySelector( '.spinner' );
 

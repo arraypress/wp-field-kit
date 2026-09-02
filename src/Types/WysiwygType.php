@@ -120,7 +120,7 @@ final class WysiwygType extends AbstractType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		return wp_kses_post( (string) $value );
+		return wp_kses_post( $this->scalar( $value ) );
 	}
 
 	/**

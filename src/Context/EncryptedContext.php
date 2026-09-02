@@ -84,19 +84,23 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	public function read( int|string $object_id, Field $field ): mixed {
 		$value = $this->inner->read( $object_id, $field );
 
-		// Ciphertext is always a string, whatever went in.
-		if ( ! $this->applies( $field ) || ! is_string( $value ) ) {
+		// Ciphertext is always a string, whatever went in, and a string
+		// without the marker is what the field held before it was marked
+		// encrypted. Neither is decrypted; both are handed back as they are.
+		if ( ! $this->wants( $field ) || ! self::is_ciphertext( $value ) ) {
 			return $value;
 		}
 
-		$json = str_starts_with( $value, self::PREFIX_JSON );
-		$plain = $this->decrypt( $value );
+		// Unreadable is empty, not the marker and payload. Handed to a text
+		// input, the ciphertext would come back through sanitize on the next
+		// save as though somebody had typed it.
+		$plain = self::available() ? $this->decrypt( $value ) : null;
 
 		if ( null === $plain ) {
 			return '';
 		}
 
-		if ( ! $json ) {
+		if ( ! str_starts_with( $value, self::PREFIX_JSON ) ) {
 			return $plain;
 		}
 
@@ -117,6 +121,16 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * @return void
 	 */
 	public function write( int|string $object_id, Field $field, mixed $value ): void {
+		// Asked for and not possible is a refusal, not a downgrade. Storing
+		// the plaintext because OpenSSL or the salts were missing is the one
+		// outcome the field was marked to prevent, and the one nobody would
+		// notice until the database leaked.
+		if ( $this->wants( $field ) && ! self::available() ) {
+			self::refuse( $field );
+
+			return;
+		}
+
 		if ( $this->applies( $field ) && $this->worth_encrypting( $value ) ) {
 			// Every type, not only the ones that store a string. A group, a
 			// repeater, a set of checkboxes — anything marked encrypted has
@@ -170,6 +184,15 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * @return void
 	 */
 	public function delete( int|string $object_id, Field $field ): void {
+		// An unreadable secret is not an empty one. The form showed a blank
+		// because the value would not decrypt -- the salts were rotated, or
+		// OpenSSL went away -- and a save that read the blank as "cleared"
+		// would finish the job by deleting the only copy. It stays until
+		// something readable is written over it.
+		if ( $this->wants( $field ) && $this->unreadable( $this->inner->read( $object_id, $field ) ) ) {
+			return;
+		}
+
 		$this->inner->delete( $object_id, $field );
 	}
 
@@ -181,7 +204,63 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 	 * @return bool
 	 */
 	private function applies( Field $field ): bool {
-		return (bool) $field->get( 'encrypted', false ) && self::available();
+		return $this->wants( $field ) && self::available();
+	}
+
+	/**
+	 * Whether this field asked to be encrypted.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	private function wants( Field $field ): bool {
+		return (bool) $field->get( 'encrypted', false );
+	}
+
+	/**
+	 * Whether a stored value is ciphertext this class cannot read.
+	 *
+	 * @param mixed $stored The value as stored.
+	 *
+	 * @return bool
+	 */
+	private function unreadable( mixed $stored ): bool {
+		return self::is_ciphertext( $stored ) && ( ! self::available() || null === $this->decrypt( $stored ) );
+	}
+
+	/**
+	 * Say that a value was not saved, and why.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return void
+	 */
+	private static function refuse( Field $field ): void {
+		_doing_it_wrong(
+			__METHOD__,
+			sprintf(
+				/* translators: %s: the field key */
+				esc_html__( 'The field "%s" is marked encrypted, but encryption is not available here: OpenSSL with AES-256-GCM and the salts in wp-config.php are needed. The value was not saved.', 'arraypress' ),
+				esc_html( $field->key() )
+			),
+			'1.0.0'
+		);
+	}
+
+	/**
+	 * Whether a value is something this class wrote.
+	 *
+	 * Public because the meta registrar has to know: `update_metadata()`
+	 * runs a registered sanitizer on whatever it is handed, and a number
+	 * type asked to sanitize ciphertext returns zero.
+	 *
+	 * @param mixed $value The value as stored.
+	 *
+	 * @return bool
+	 */
+	public static function is_ciphertext( mixed $value ): bool {
+		return is_string( $value ) && str_starts_with( $value, self::PREFIX );
 	}
 
 	/**
@@ -204,9 +283,15 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 		$salt = '';
 
 		foreach ( [ 'LOGGED_IN_KEY', 'LOGGED_IN_SALT', 'AUTH_KEY', 'SECURE_AUTH_KEY' ] as $constant ) {
-			if ( defined( $constant ) && '' !== (string) constant( $constant ) ) {
-				$salt .= (string) constant( $constant );
+			$part = defined( $constant ) ? (string) constant( $constant ) : '';
+
+			// The phrase wp-config-sample.php ships with is public, and a key
+			// derived from it is no key at all.
+			if ( '' === $part || 'put your unique phrase here' === $part ) {
+				continue;
 			}
+
+			$salt .= $part;
 		}
 
 		return '' === $salt ? '' : hash( 'sha256', $salt, true );
@@ -271,6 +356,14 @@ final class EncryptedContext implements Context, Flushable, Registrable {
 		}
 
 		$nonce_length = (int) openssl_cipher_iv_length( self::CIPHER );
+
+		// A GCM tag is sixteen bytes, and OpenSSL will accept a shorter one,
+		// which is a weaker check than this class relies on. Anything too
+		// short to carry the whole nonce and tag is treated as tampered.
+		if ( strlen( $raw ) < $nonce_length + 16 ) {
+			return null;
+		}
+
 		$nonce        = substr( $raw, 0, $nonce_length );
 		$tag          = substr( $raw, $nonce_length, 16 );
 		$cipher       = substr( $raw, $nonce_length + 16 );

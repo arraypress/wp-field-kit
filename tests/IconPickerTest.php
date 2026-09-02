@@ -104,7 +104,7 @@ final class IconPickerTest extends TestCase {
 		);
 
 		$this->assertNotEmpty( $match, 'Only one of the two controls is padded, or neither.' );
-		$this->assertStringContainsString( 'padding-left', $match[1] );
+		$this->assertStringContainsString( 'padding-inline-start', $match[1] );
 	}
 
 	/**

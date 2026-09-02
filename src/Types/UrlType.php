@@ -34,6 +34,6 @@ final class UrlType extends AbstractInputType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
-		return esc_url_raw( (string) $value );
+		return esc_url_raw( $this->scalar( $value ) );
 	}
 }

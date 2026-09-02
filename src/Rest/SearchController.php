@@ -149,6 +149,17 @@ final class SearchController {
 	 * @return true|WP_Error
 	 */
 	public function check_permission( WP_REST_Request $request ): bool|WP_Error {
+		// Before the lookup, so an anonymous request cannot learn which
+		// names are registered from whether it gets a 404 or a 401. The
+		// names are built from field keys, which is more than nothing.
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error(
+				'field_kit_forbidden',
+				__( 'You are not allowed to search this.', 'arraypress' ),
+				[ 'status' => rest_authorization_required_code() ]
+			);
+		}
+
 		$source = $this->sources->get( (string) $request->get_param( 'source' ) );
 
 		if ( null === $source ) {

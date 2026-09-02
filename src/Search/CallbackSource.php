@@ -46,16 +46,25 @@ final class CallbackSource implements Source {
 	private string $capability;
 
 	/**
+	 * The argument keys the field declared, and so the only ones passed on.
+	 *
+	 * @var string[]
+	 */
+	private array $keys;
+
+	/**
 	 * Construct.
 	 *
 	 * @param string   $name       Source name.
 	 * @param callable $callback   The consumer's callable.
 	 * @param string   $capability Capability required to search it.
+	 * @param string[] $keys       Argument keys the field declared.
 	 */
-	public function __construct( string $name, callable $callback, string $capability = 'edit_posts' ) {
+	public function __construct( string $name, callable $callback, string $capability = 'edit_posts', array $keys = [] ) {
 		$this->name       = $name;
 		$this->callback   = $callback;
 		$this->capability = $capability;
+		$this->keys       = array_values( array_map( 'strval', $keys ) );
 	}
 
 	/**
@@ -87,12 +96,35 @@ final class CallbackSource implements Source {
 	 * @return array{results: array<int, array{id: string, text: string}>, more: bool}
 	 */
 	public function search( string $term, array $args, int $page, int $limit ): array {
-		$results = ( $this->callback )( $term, [], $args );
+		$results = $this->normalize( ( $this->callback )( $term, [], $this->declared( $args ) ) );
+
+		// Paged here rather than by the callable. Most of them are a
+		// get_posts() or a $wpdb call that returns what matched, and asking
+		// each to honour an offset is asking most of them to get it wrong --
+		// and the endpoint's limit is not a limit if one source ignores it.
+		$offset = max( 0, $page - 1 ) * $limit;
 
 		return [
-			'results' => $this->normalize( $results ),
-			'more'    => false,
+			'results' => array_slice( $results, $offset, $limit ),
+			'more'    => count( $results ) > $offset + $limit,
 		];
+	}
+
+	/**
+	 * The arguments the field declared, out of whatever the request sent.
+	 *
+	 * The request is the browser's to compose, and the browser is not
+	 * trusted: `search_args` says which keys a field sends, and only those
+	 * reach the callable. A callback that folds its arguments into a query
+	 * cannot then be steered with a `post_status` or a `meta_key` the field
+	 * never mentioned.
+	 *
+	 * @param array<string, mixed> $args Cleaned request arguments.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function declared( array $args ): array {
+		return array_intersect_key( $args, array_flip( $this->keys ) );
 	}
 
 	/**

@@ -372,6 +372,106 @@ try {
 } )();
 
 /*
+ * Renumbering admits the template's index.
+ *
+ * The template row is rendered at -1, an index no saved row can hold, and
+ * the pattern that renumbers names matched digits only. Every added row
+ * kept [-1], so two of them posted as one, and dragging could not move them.
+ */
+( function () {
+	/**
+	 * A row whose inputs carry the template's index.
+	 *
+	 * @return {object} The row.
+	 */
+	function makeRow() {
+		const input = Object.assign( makeElement(), { name: 'rates[-1][amount]' } );
+		const row = makeElement();
+
+		row.input = input;
+		row.querySelectorAll = ( selector ) => ( '[name]' === selector ? [ input ] : [] );
+
+		return row;
+	}
+
+	const rows = [ makeRow(), makeRow() ];
+	const list = makeElement();
+	const wrap = makeElement();
+
+	list.children = rows;
+	list.closest = () => wrap;
+	wrap.dataset = { fieldName: 'rates' };
+
+	try {
+		modules.Repeater.reindex( list );
+	} catch ( error ) {
+		console.error( `  Repeater.reindex threw: ${ error.message }` );
+		failures ++;
+	}
+
+	const names = rows.map( ( row ) => row.input.name );
+
+	if ( 'rates[0][amount]' !== names[ 0 ] || 'rates[1][amount]' !== names[ 1 ] ) {
+		console.error( `  Repeater: rows cloned from the template are not renumbered: ${ JSON.stringify( names ) }` );
+		failures ++;
+	}
+} )();
+
+/*
+ * Reordering chips reaches the combobox.
+ *
+ * Combobox lives in the block before Reorder. Referred to bare from
+ * Reorder.sync, it was a ReferenceError the first time a sortable chip
+ * moved -- and the new order never reached the select, so it was lost on save.
+ */
+( function () {
+	const select = Object.assign( makeElement(), { options: [] } );
+	const wrap = Object.assign( makeElement(), { querySelector: ( selector ) => ( 'select' === selector ? select : null ) } );
+	const chips = makeElement();
+
+	chips.classList.contains = ( name ) => 'field-kit__combobox-chips' === name;
+	chips.closest = () => wrap;
+
+	try {
+		modules.Reorder.sync( chips );
+	} catch ( error ) {
+		console.error( `  Reorder.sync on chips threw: ${ error.message }` );
+		failures ++;
+	}
+} )();
+
+/*
+ * A root is bound once.
+ *
+ * init() runs at DOMContentLoaded and again at load, and for every added
+ * row. A module listening on the root itself bound a second handler each
+ * time: two copies to the clipboard, and every conditional field evaluated
+ * twice per keystroke.
+ */
+( function () {
+	const root = makeElement();
+	const listeners = [];
+
+	root.addEventListener = ( type ) => listeners.push( type );
+
+	modules.Clipboard.init( root );
+	modules.Clipboard.init( root );
+	modules.Toggle.init( root );
+	modules.Toggle.init( root );
+	modules.Conditions.init( root );
+	modules.Conditions.init( root );
+	modules.ActionButton.init( root );
+	modules.ActionButton.init( root );
+
+	// One click for Clipboard, one change for Toggle, three for Conditions,
+	// one click for ActionButton.
+	if ( 6 !== listeners.length ) {
+		console.error( `  a second init() bound the root again: ${ JSON.stringify( listeners ) }` );
+		failures ++;
+	}
+} )();
+
+/*
  * The email panel stands aside where core already toggles postboxes.
  *
  * core's postboxes.js binds '.postbox .hndle, .postbox .handlediv' across the
@@ -754,4 +854,4 @@ if ( failures ) {
 	process.exit( 1 );
 }
 
-console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live` );
+console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once` );

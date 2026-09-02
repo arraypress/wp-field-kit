@@ -94,7 +94,7 @@ final class FileUrlType extends FileType {
 	 * @return string
 	 */
 	public function sanitize( mixed $value, Field $field ): string {
-		return esc_url_raw( (string) $value );
+		return esc_url_raw( $this->scalar( $value ) );
 	}
 
 	/**

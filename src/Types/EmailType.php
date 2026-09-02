@@ -35,6 +35,6 @@ final class EmailType extends AbstractInputType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
-		return sanitize_email( (string) $value );
+		return sanitize_email( $this->scalar( $value ) );
 	}
 }

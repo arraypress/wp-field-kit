@@ -34,7 +34,7 @@ final class DatetimeType extends AbstractInputType {
 	 * @return mixed
 	 */
 	public function sanitize( mixed $value, Field $field ): mixed {
-		return sanitize_text_field( (string) $value );
+		return sanitize_text_field( $this->scalar( $value ) );
 	}
 
 	/**

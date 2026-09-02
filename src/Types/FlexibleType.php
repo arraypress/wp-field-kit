@@ -332,9 +332,10 @@ final class FlexibleType extends RepeaterType {
 		}
 
 		$layouts = $this->layouts( $field );
+		$stored  = (array) $field->value();
 		$rows    = [];
 
-		foreach ( $value as $row ) {
+		foreach ( $value as $index => $row ) {
 			if ( ! is_array( $row ) ) {
 				continue;
 			}
@@ -349,22 +350,47 @@ final class FlexibleType extends RepeaterType {
 			// than sanitised against fields that no longer exist -- which
 			// would discard every one of its values.
 			if ( ! isset( $layouts[ $slug ] ) ) {
-				$rows[] = array_merge(
-					[ self::LAYOUT_KEY => $slug ],
-					array_map( 'sanitize_text_field', array_filter( $row, 'is_scalar' ) )
-				);
+				$rows[] = [ self::LAYOUT_KEY => $slug ] + $this->orphan_row( $row );
 
 				continue;
 			}
 
-			$clean = $this->sanitize_children( $field, $row, $layouts[ $slug ]['fields'] );
+			$clean = $this->sanitize_children( $field, $row, $layouts[ $slug ]['fields'], (array) ( $stored[ $index ] ?? [] ) );
 
 			if ( $this->has_content( $clean ) ) {
 				$rows[] = array_merge( [ self::LAYOUT_KEY => $slug ], $clean );
 			}
 		}
 
-		return $rows;
+		return $this->apply_max_rows( $rows, $field );
+	}
+
+	/**
+	 * A row kept as text, because its layout no longer exists.
+	 *
+	 * The layout key is dropped before the rest is read: left in, the
+	 * submitted spelling of it -- text, not a key -- won over the slug the
+	 * row was matched by. What remains is keyed by keys and holds text.
+	 *
+	 * @param array $row The submitted row.
+	 *
+	 * @return array<string, string>
+	 * @since 1.1.0
+	 */
+	private function orphan_row( array $row ): array {
+		unset( $row[ self::LAYOUT_KEY ] );
+
+		$kept = [];
+
+		foreach ( array_filter( $row, 'is_scalar' ) as $key => $value ) {
+			$key = sanitize_key( (string) $key );
+
+			if ( '' !== $key ) {
+				$kept[ $key ] = sanitize_text_field( (string) $value );
+			}
+		}
+
+		return $kept;
 	}
 
 	/**

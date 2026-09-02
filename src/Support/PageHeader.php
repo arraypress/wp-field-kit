@@ -145,7 +145,7 @@ final class PageHeader {
 		}
 
 		$image = new Attributes();
-		$image->set( 'src', $url );
+		$image->set( 'src', esc_url_raw( $url ) );
 		$image->set( 'alt', '' );
 		$image->add_class( 'field-kit__page-logo' );
 
@@ -200,7 +200,7 @@ final class PageHeader {
 			$active = (string) $slug === $current;
 
 			$link = new Attributes();
-			$link->set( 'href', (string) ( $tab['url'] ?? '#' ) );
+			$link->set( 'href', esc_url_raw( (string) ( $tab['url'] ?? '#' ) ) );
 			$link->add_class( 'privacy-settings-tab', 'field-kit__page-tab' );
 			$link->set_if( $active, 'class', 'active' );
 
