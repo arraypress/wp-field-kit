@@ -2672,6 +2672,13 @@ select.field-kit__select[multiple] {
 	background: #fff;
 }
 
+/* The term screens put the form in a cell core sizes to 95% of the page,
+   and a full-width strip ran past the inputs beside it. */
+body.edit-tags-php .field-kit__panel-tabs,
+body.term-php .field-kit__panel-tabs {
+	max-width: 95%;
+}
+
 .field-kit__panel-tablist {
 	display: flex;
 	flex-direction: column;
@@ -2782,65 +2789,16 @@ select.field-kit__select[multiple] {
 }
 
 /* Accordion sections
-   ------------------------------------------------------------------------- */
-
+   -------------------------------------------------------------------------
+   Core's own accordion, whose styles edit.css ships on every admin screen:
+   the heading, the trigger with its chevron, the panel. Only the room
+   around it is this sheet's. */
 .field-kit__accordion {
-	border: 1px solid #c3c4c7;
-	border-radius: 4px;
-	margin-bottom: 8px;
+	margin: 0 0 1rem;
 }
 
-.field-kit__accordion-summary {
-	cursor: pointer;
-	font-weight: 600;
-	list-style: none;
-	padding: 10px 12px;
-	background: #f6f7f7;
-}
-
-/* The default marker is a triangle that sits oddly against a bold label; the
-   rotated chevron below reads the same on every browser. */
-.field-kit__accordion-summary::-webkit-details-marker {
-	display: none;
-}
-
-.field-kit__accordion-summary::before {
-	content: "\f345";
-	display: inline-block;
-	font-family: dashicons, sans-serif;
-	margin-inline-end: 6px;
-	transition: transform 0.15s ease;
-	vertical-align: middle;
-}
-
-.field-kit__accordion[open] > .field-kit__accordion-summary::before {
-	transform: rotate( 90deg );
-}
-
-/* The same inset ring the panel tab beside it takes: the summary is a strip
-   inside the accordion's border, with no edge of its own to colour. */
-.field-kit__accordion-summary:focus-visible {
-	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, #2271b1);
-	outline-offset: -2px;
-}
-
-/* White, like the tab panel it is an alternative to. Left transparent it
-   took the page's own grey, so the two ways of dividing a form looked like
-   two unrelated widgets on the same screen. */
-.field-kit__accordion-body {
-	background: #fff;
-	border-top: 1px solid #c3c4c7;
-	padding: 12px;
-}
-
-.field-kit__accordion[open] > .field-kit__accordion-summary {
-	border-bottom: 0;
-}
-
-@media ( prefers-reduced-motion: reduce ) {
-	.field-kit__accordion-summary::before {
-		transition: none;
-	}
+.field-kit__accordion .privacy-settings-accordion-panel {
+	padding: 1rem;
 }
 
 /* Icon picker
@@ -3575,17 +3533,15 @@ li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-fields {
 /* The same chevron the accordion uses, rotated, rather than a pair of
    dashicons that swap. One glyph that turns reads as one thing moving. */
 .field-kit__repeater-toggle .toggle-indicator::before {
-	content: "\f345";
+	content: "\f142";
 	display: inline-block;
 	font: normal 20px/1 dashicons;
 	speak: never;
-	transform: rotate( 90deg );
-	transition: transform .15s ease;
 	-webkit-font-smoothing: antialiased;
 }
 
 li.field-kit__repeater-row--collapsible.is-closed .field-kit__repeater-toggle .toggle-indicator::before {
-	transform: rotate( 0deg );
+	content: "\f140";
 }
 
 /* A gallery of things that are not images is a list, not a grid of tiles:

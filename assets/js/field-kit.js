@@ -921,7 +921,19 @@
 			// back to nothing. A multiple one does not need it — each chip
 			// carries its own remove — and a required one has nothing valid
 			// to be cleared to.
-			var clearable = ! multiple && 'true' !== select.getAttribute( 'aria-required' ) && ! select.required;
+			// A closed dropdown with nothing chosen must still say what it is
+			// for. The select's own empty option carries that text — it is
+			// what a native select shows — so the placeholder comes from
+			// there rather than from a second piece of configuration.
+			var empty = Array.prototype.slice.call( select.options ).filter( function ( option ) {
+				return '' === option.value;
+			} )[ 0 ];
+
+			// A cross clears back to the empty option. A select with none --
+			// a required one, or one whose every option is a real choice --
+			// has nothing to clear to, and the cross was a button that
+			// undid a choice into a state the field cannot hold.
+			var clearable = ! multiple && 'true' !== select.getAttribute( 'aria-required' ) && ! select.required && !! empty;
 			var clear = null;
 
 			if ( clearable ) {
@@ -935,14 +947,6 @@
 				clear.className = 'field-kit__combobox-clear';
 				clear.innerHTML = '<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>';
 			}
-
-			// A closed dropdown with nothing chosen must still say what it is
-			// for. The select's own empty option carries that text — it is
-			// what a native select shows — so the placeholder comes from
-			// there rather than from a second piece of configuration.
-			var empty = Array.prototype.slice.call( select.options ).filter( function ( option ) {
-				return '' === option.value;
-			} )[ 0 ];
 
 			input.placeholder = select.dataset.placeholder || ( empty ? empty.text : '' );
 
@@ -4083,6 +4087,47 @@
 	 * Bootstrap
 	 * ================================================================= */
 
+
+	/* ====================================================================
+	 * Accordion sections
+	 * ================================================================= */
+
+	var Accordion = {
+
+		/**
+		 * Bind every accordion trigger within a root.
+		 *
+		 * Core's privacy guide binds its own triggers in privacy-tools.js,
+		 * which only that screen loads; the markup is core's, the script
+		 * has to be ours. Same behaviour: the button says whether its panel
+		 * is expanded, and the panel is hidden when it is not.
+		 *
+		 * @param {Element} root Container.
+		 */
+		init: function ( root ) {
+			root.querySelectorAll( '.field-kit__accordion .privacy-settings-accordion-trigger' ).forEach( function ( button ) {
+				if ( button.dataset.fkBound ) {
+					return;
+				}
+
+				button.dataset.fkBound = '1';
+
+				button.addEventListener( 'click', function () {
+					var open = 'true' === button.getAttribute( 'aria-expanded' );
+					var panel = document.getElementById( button.getAttribute( 'aria-controls' ) || '' );
+
+					button.setAttribute( 'aria-expanded', open ? 'false' : 'true' );
+
+					if ( panel ) {
+						panel.hidden = open;
+					}
+				} );
+			} );
+		}
+	};
+
+	window.ArrayPressFieldKitModules.Accordion = Accordion;
+
 	/**
 	 * Bind every module within a root.
 	 *
@@ -4095,7 +4140,7 @@
 	function init( root ) {
 		root = root || document;
 
-		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money', 'PasswordReveal', 'Counter', 'Region' ].forEach( function ( name ) {
+		[ 'Conditions', 'Range', 'Toggle', 'Clipboard', 'CodeGenerator', 'Oembed', 'Combobox', 'Reorder', 'Gallery', 'Repeater', 'Media', 'Tags', 'CodeEditor', 'ColorPicker', 'TagModal', 'PanelTabs', 'EmailPanel', 'ActionButton', 'Tooltip', 'IconPreview', 'Providers', 'Money', 'PasswordReveal', 'Counter', 'Region', 'Accordion' ].forEach( function ( name ) {
 			var module = window.ArrayPressFieldKitModules[ name ];
 
 			if ( module && typeof module.init === 'function' ) {

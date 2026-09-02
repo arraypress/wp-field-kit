@@ -231,12 +231,12 @@ class RepeaterType extends AbstractNestedType {
 			'<li class="field-kit__repeater-row field-kit__repeater-row--collapsible%1$s" data-index="%2$d">' .
 			'<span class="field-kit__repeater-position screen-reader-text">%3$s</span>' .
 			'<div class="field-kit__repeater-header">' .
+			'<span class="field-kit__repeater-title" id="%5$s" data-fallback="%10$s">%7$s</span>' .
+			'<span class="field-kit__repeater-actions">%8$s</span>' .
 			'<button type="button" class="field-kit__repeater-toggle" aria-expanded="%4$s" aria-describedby="%5$s">' .
 			'<span class="screen-reader-text">%6$s</span>' .
 			'<span class="toggle-indicator" aria-hidden="true"></span>' .
 			'</button>' .
-			'<span class="field-kit__repeater-title" id="%5$s" data-fallback="%10$s">%7$s</span>' .
-			'<span class="field-kit__repeater-actions">%8$s</span>' .
 			'</div>' .
 			'<div class="field-kit__repeater-fields">%9$s</div></li>',
 			$closed ? ' is-closed' : '',

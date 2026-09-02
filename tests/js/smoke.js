@@ -1308,6 +1308,61 @@ const regionChecks = ( async function () {
 	}
 } )();
 
+/*
+ * An accordion trigger opens its panel, and says so.
+ *
+ * The markup is core's but the privacy screen's script is not loaded
+ * anywhere else, so the toggle is ours: the button's expanded state and the
+ * panel's hidden attribute have to move together or a screen reader hears
+ * one thing and sees another.
+ */
+( function () {
+	const button = recorder();
+	const panel = recorder();
+	const clicks = [];
+	const realGetElementById = context.document.getElementById;
+
+	button.dataset = {};
+	button.setAttribute( 'aria-expanded', 'false' );
+	button.setAttribute( 'aria-controls', 'fk-accordion-1' );
+	button.addEventListener = ( type, handler ) => clicks.push( handler );
+	panel.hidden = true;
+
+	const root = Object.assign( makeElement(), {
+		querySelectorAll: ( selector ) => ( selector.includes( 'accordion-trigger' ) ? [ button ] : [] ),
+	} );
+
+	context.document.getElementById = ( id ) => ( 'fk-accordion-1' === id ? panel : null );
+
+	try {
+		modules.Accordion.init( root );
+		modules.Accordion.init( root );
+
+		if ( 1 !== clicks.length ) {
+			console.error( `  Accordion: expected one click handler on the trigger, got ${ clicks.length }` );
+			failures ++;
+
+			return;
+		}
+
+		clicks[ 0 ]();
+
+		if ( panel.hidden || 'true' !== button.getAttribute( 'aria-expanded' ) ) {
+			console.error( '  Accordion: a press did not open the panel and say so' );
+			failures ++;
+		}
+
+		clicks[ 0 ]();
+
+		if ( ! panel.hidden || 'false' !== button.getAttribute( 'aria-expanded' ) ) {
+			console.error( '  Accordion: a second press did not close the panel again' );
+			failures ++;
+		}
+	} finally {
+		context.document.getElementById = realGetElementById;
+	}
+} )();
+
 /**
  * The report, once the asynchronous checks have settled.
  */
@@ -1317,7 +1372,7 @@ function finish() {
 		process.exit( 1 );
 	}
 
-	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country` );
+	console.log( `  ${ expected.length } modules loaded and initialised cleanly, colour picker signals correctly, an added repeater row is live and renumbered, chips reorder, a root binds once, a password reveals, a count counts, a region follows its country, an accordion opens and closes` );
 }
 
 regionChecks.then( finish, ( error ) => {

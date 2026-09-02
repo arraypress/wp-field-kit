@@ -145,12 +145,12 @@ final class SectionsTest extends TestCase {
 	/**
 	 * Two accordion markers make disclosure regions, not tabs.
 	 *
-	 * details/summary is used because the browser already implements the
-	 * disclosure behaviour, including find-in-page opening the right one.
+	 * The markup is core's own accordion -- the privacy guide's -- so the
+	 * sections look like the rest of the admin and edit.css styles them.
 	 *
 	 * @return void
 	 */
-	public function test_accordions_use_details(): void {
+	public function test_accordions_use_cores_accordion(): void {
 		$markup = $this->render( [
 			'one_section' => [ 'type' => 'accordion', 'label' => 'First' ],
 			'alpha'       => [ 'type' => 'text', 'label' => 'Alpha' ],
@@ -158,8 +158,10 @@ final class SectionsTest extends TestCase {
 			'beta'        => [ 'type' => 'text', 'label' => 'Beta' ],
 		] );
 
-		$this->assertSame( 2, substr_count( $markup, '<details' ) );
-		$this->assertStringContainsString( '<summary', $markup );
+		$this->assertSame( 2, substr_count( $markup, 'privacy-settings-accordion-trigger' ) );
+		$this->assertSame( 2, substr_count( $markup, 'privacy-settings-accordion-panel' ) );
+		$this->assertStringContainsString( '<div class="privacy-settings-accordion field-kit__accordion">', $markup );
+		$this->assertStringNotContainsString( '<details', $markup );
 		$this->assertStringNotContainsString( 'field-kit__panel-tabs', $markup );
 	}
 
@@ -176,7 +178,10 @@ final class SectionsTest extends TestCase {
 			'beta'        => [ 'type' => 'text' ],
 		] );
 
-		$this->assertSame( 1, substr_count( $markup, '<details class="field-kit__accordion" open>' ) );
+		$this->assertSame( 1, substr_count( $markup, 'aria-expanded="true"' ) );
+		$this->assertSame( 1, substr_count( $markup, 'aria-expanded="false"' ) );
+		$this->assertSame( 1, substr_count( $markup, ' hidden>' ) );
+		$this->assertMatchesRegularExpression( '/aria-expanded="true"[^>]*aria-controls="([^"]+)"[^>]*>.*?<div id="\\1" class="[^"]+">/s', $markup );
 	}
 
 	/**
@@ -192,8 +197,8 @@ final class SectionsTest extends TestCase {
 			'beta'        => [ 'type' => 'text' ],
 		] );
 
-		$this->assertSame( 1, substr_count( $markup, ' open>' ) );
-		$this->assertStringContainsString( '>Second</summary>', $markup );
+		$this->assertSame( 1, substr_count( $markup, 'aria-expanded="true"' ) );
+		$this->assertMatchesRegularExpression( '/aria-expanded="true"[^>]*><span class="title">Second<\/span>/', $markup );
 	}
 
 	/**
@@ -246,18 +251,21 @@ final class SectionsTest extends TestCase {
 
 
 	/**
-	 * A collapsible section is painted like the tab panel it replaces.
+	 * The accordion's look is core's, not this sheet's.
 	 *
-	 * Left transparent the body took the page's own grey while a tab panel
-	 * sat on white, so the two ways of dividing a form looked like two
-	 * unrelated widgets on the same screen.
+	 * edit.css paints the heading, trigger, chevron and panel on every admin
+	 * screen; a second set of rules here would drift from it the next time
+	 * core changed. The sheet spaces the panel and nothing more, and the
+	 * old <details> styling is gone rather than left as dead weight.
 	 */
-	public function test_an_accordion_body_is_painted(): void {
+	public function test_the_accordion_is_styled_by_core(): void {
 		$css = (string) file_get_contents( dirname( __DIR__ ) . '/assets/css/field-kit.css' );
 
 		$this->assertMatchesRegularExpression(
-			'/\.field-kit__accordion-body\s*\{[^}]*background:\s*#fff/',
+			'/\.field-kit__accordion \.privacy-settings-accordion-panel\s*\{[^}]*padding/',
 			$css
 		);
+		$this->assertStringNotContainsString( 'field-kit__accordion-body', $css );
+		$this->assertStringNotContainsString( 'field-kit__accordion-summary', $css );
 	}
 }
