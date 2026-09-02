@@ -3249,40 +3249,45 @@ span.field-kit__provider-logo {
 /* An amount and its symbol as one control. The symbol sits inside the border
    as an affix, and the input reserves room for it -- the alternative is two
    elements on a line, which is what amount_type does and what wrapped the
-   symbol onto a line of its own inside a narrow panel. */
+   symbol onto a line of its own inside a narrow panel.
+
+   A flex box, not a block: the input is then the box's whole height, and
+   the symbol centred on the box is centred on the input. As a block the
+   box was taller than the input by the line's descender, and the symbol
+   sat a few pixels high of the digits beside it. */
 .field-kit__money {
-	display: block;
+	display: flex;
+	align-items: stretch;
 	position: relative;
 	max-width: 100%;
 }
 
-/* The symbol is part of the value, not a control attached to the front of
-   it. Boxed with its own background and divider it read as a button you
-   could press to change the currency -- which is the one thing it does not
-   do, since the currency is a setting. Muted text in the input's own
-   leading padding instead. */
+/* The symbol is a zone at the start of the input: centred in its own
+   width, and parted from the digits by a hairline. Inside the border --
+   the inset of one pixel keeps it off the input's own edge and corners --
+   with no background of its own, so it reads as part of the box rather
+   than a button in front of it. */
 .field-kit__money-symbol,
 .field-kit__adornment {
 	position: absolute;
-	top: 0;
-	bottom: 0;
+	top: 1px;
+	bottom: 1px;
 	display: flex;
 	align-items: center;
-	width: 2rem;
-	color: #646970;
-	font-size: 13px;
+	justify-content: center;
+	width: 2.25rem;
+	color: #50575e;
+	font-size: inherit;
 	line-height: 1;
 	pointer-events: none;
 }
 
-/* Leading: set against the start of the value, with a hair of space before
-   the first digit. The money symbol is always this; a prefix on any other
-   input is the same thing. */
+/* Leading. The money symbol is always this; a prefix on any other input
+   is the same thing. */
 .field-kit__money-symbol,
 .field-kit__adornment--prefix {
-	inset-inline-start: 0;
-	justify-content: flex-end;
-	padding-inline-end: .1rem;
+	inset-inline-start: 1px;
+	border-inline-end: 1px solid #dcdcde;
 }
 
 .wp-core-ui .field-kit__money input.field-kit__money-value,
@@ -3290,7 +3295,7 @@ span.field-kit__provider-logo {
 	width: 100%;
 	max-width: 100%;
 	margin: 0;
-	padding-inline-start: 2.2rem;
+	padding-inline-start: 2.75rem;
 	text-align: start;
 	font-variant-numeric: tabular-nums;
 }
@@ -3300,12 +3305,12 @@ span.field-kit__provider-logo {
 .field-kit__money--wide .field-kit__money-symbol,
 .field-kit__adorned--wide-prefix > .field-kit__adornment--prefix,
 .field-kit__adorned--wide-suffix > .field-kit__adornment--suffix {
-	width: 3.1rem;
+	width: 3.25rem;
 }
 
 .wp-core-ui .field-kit__money--wide input.field-kit__money-value,
 .field-kit__money--wide input.field-kit__money-value {
-	padding-inline-start: 3.3rem;
+	padding-inline-start: 3.75rem;
 }
 
 /* -----------------------------------------------------------------------
@@ -3319,10 +3324,13 @@ span.field-kit__provider-logo {
  * -------------------------------------------------------------------- */
 
 /* Shrink-wrapped round the input, so a trailing affix sits at the input's
-   end rather than the row's. The input keeps whatever width class it has. */
+   end rather than the row's. The input keeps whatever width class it has.
+   Flex for the reason the money box is: the affix is centred on a box that
+   is exactly the input's height. */
 .field-kit__adorned {
 	position: relative;
-	display: inline-block;
+	display: inline-flex;
+	align-items: stretch;
 	max-width: 100%;
 	vertical-align: middle;
 }
@@ -3342,14 +3350,13 @@ span.field-kit__provider-logo {
 	width: 100%;
 }
 
-/* Trailing: set against the end of the value. Narrower than the leading
-   one, because core gives a small number 65px and "100" beside a "%" has to
-   fit in it. */
+/* Trailing: the same zone at the end, parted from the digits on its
+   near side. Narrower than the leading one, because core gives a small
+   number 65px and "100" beside a "%" has to fit in it. */
 .field-kit__adornment--suffix {
-	inset-inline-end: 0;
-	justify-content: flex-start;
-	width: 1.6rem;
-	padding-inline-start: .1rem;
+	inset-inline-end: 1px;
+	border-inline-start: 1px solid #dcdcde;
+	width: 1.75rem;
 }
 
 .wp-core-ui .field-kit__adorned > input.field-kit__input,
@@ -3360,24 +3367,24 @@ span.field-kit__provider-logo {
 
 .wp-core-ui .field-kit__adorned--prefix > input.field-kit__input,
 .field-kit__adorned--prefix > input.field-kit__input {
-	padding-inline-start: 2.2rem;
+	padding-inline-start: 2.75rem;
 }
 
 .wp-core-ui .field-kit__adorned--suffix > input.field-kit__input,
 .field-kit__adorned--suffix > input.field-kit__input {
-	padding-inline-end: 1.7rem;
+	padding-inline-end: 2.25rem;
 }
 
 /* A longer affix takes the room the money field gives a currency code, and
    the input reserves the same. */
 .wp-core-ui .field-kit__adorned--wide-prefix > input.field-kit__input,
 .field-kit__adorned--wide-prefix > input.field-kit__input {
-	padding-inline-start: 3.3rem;
+	padding-inline-start: 3.75rem;
 }
 
 .wp-core-ui .field-kit__adorned--wide-suffix > input.field-kit__input,
 .field-kit__adorned--wide-suffix > input.field-kit__input {
-	padding-inline-end: 3.3rem;
+	padding-inline-end: 3.75rem;
 }
 
 /* A number's spinner lives exactly where a suffix does, and Firefox draws
