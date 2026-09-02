@@ -61,56 +61,16 @@ echo $set->render();
 $set->save( $_POST['my_plugin'] ?? [] );
 ```
 
-## Validation
-
-Sanitising coerces; it does not refuse. A field that must hold something, or
-something of a particular shape, says so. A value that fails is left where it
-was — the stored one stays, every other field is saved — and the reason is
-kept for the next render:
-
-```php
-$set = new FieldSet(
-	[
-		'contact' => [ 'type' => 'email', 'label' => __( 'Contact', 'my-plugin' ), 'required' => true ],
-		'handle'  => [ 'type' => 'text', 'label' => __( 'Handle', 'my-plugin' ), 'validate' => 'slug' ],
-		'api_key' => [
-			'type'     => 'text',
-			'label'    => __( 'API key', 'my-plugin' ),
-			'validate' => static fn( $value, $field ) => str_starts_with( $value, 'sk_' ) ? true : __( 'An API key starts with sk_.', 'my-plugin' ),
-		],
-		'notify'  => [ 'type' => 'tags', 'label' => __( 'Notify', 'my-plugin' ), 'validate' => 'email' ],
-	],
-	new OptionContext( 'my_plugin' ),
-	'my_plugin'
-);
-
-$set->save( $_POST['my_plugin'] ?? [] );
-
-// Rendered after a save in the same request, each failing field is marked
-// and shows its message. errors() has the messages for a notice of your own.
-echo $set->render();
-```
-
-The rules are `email`, `url`, `numeric`, `integer`, `slug` and `alphanumeric`.
-A callable is given the sanitised value and the field, and returns `true`, a
-message, or a `WP_Error`. On `tags` and `list` the rule is applied to each
-item. To check a submission without storing any of it, `validate()` takes the
-same input as `save()` and returns the messages keyed by field.
-
-`required` and `validate` are checked on the set's own fields. A field inside
-a group or a repeater row is marked required in the markup, which the browser
-enforces, but is not checked on the server.
-
 ## Field types
 
 Text and numeric
-: `text` `email` `url` `tel` `password` `hidden` `number` `range` `textarea` `code` `wysiwyg` `code_generator`
+: `text` `email` `url` `tel` `password` `hidden` `number` `percentage` `range` `textarea` `code` `wysiwyg` `code_generator`
 
 Date, time and colour
 : `date` `time` `datetime` `color` `gradient` `date_range` `time_range`
 
 Choice
-: `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `currency`
+: `select` `enhanced_select` `select_multiple` `checkbox` `toggle` `radio` `checkbox_group` `button_group` `card_choice` `country` `region` `currency`
 
 Relational — one search endpoint behind all of them
 : `post` `page` `user` `taxonomy` `ajax` `tags`
@@ -127,86 +87,55 @@ Layout and display
 Purpose-built
 : `license` `email_editor` `action_button`
 
-## Options from a preset
 
-The lists every settings screen ends up needing — the site's roles, its
-timezones, its page templates — are presets, and a select asks for one by
-name rather than building it again:
+## Beyond the quick start
 
-```php
-use ArrayPress\FieldKit\FieldSet;
-use ArrayPress\FieldKit\Context\OptionContext;
-
-$set = new FieldSet(
-	[
-		'notify_role' => [ 'type' => 'select', 'label' => __( 'Notify', 'my-plugin' ), 'options' => 'roles' ],
-		'timezone'    => [ 'type' => 'select', 'label' => __( 'Timezone', 'my-plugin' ), 'options' => 'timezones' ],
-		'country'     => [ 'type' => 'country', 'label' => __( 'Country', 'my-plugin' ), 'continents' => true ],
-		'currency'    => [ 'type' => 'currency', 'label' => __( 'Currency', 'my-plugin' ) ],
-	],
-	new OptionContext( 'my_plugin' ),
-	'my_plugin'
-);
-```
-
-The built-ins are `roles`, `post_types`, `taxonomies`, `pages`, `timezones`,
-`image_sizes`, `page_templates`, `cron_schedules`, `countries` and
-`currencies`. The last two draw on `arraypress/wp-countries` and
-`arraypress/wp-money`; the `country` and `currency` types use them by default.
-
-A preset is resolved when the field renders, not when it is declared, and its
-options pass through the `field_kit_preset_options` filter. Register your own
-with `Presets::register( 'products', fn() => $options )` and any field can say
-`'options' => 'products'`.
-
-## A unit in the box, a reveal, a count
-
-Any single-line input takes a `prefix` or a `suffix`, drawn inside the box
-and announced with the value. A `percentage` is a number from 0 to 100 with
-the sign already in it. A password shows what is typed on request, and
-anything with a `maxlength` counts as you go.
+Sanitising coerces; it does not refuse. `required` and `validate` do the
+refusing on the server: a value that fails is left where it was, every other
+field is saved, and the message is kept for the next render. Options can name
+a preset instead of listing choices. Any single-line input takes a `prefix`
+or a `suffix`, a password can be revealed, and a `maxlength` shows a count. A
+`region` follows the country beside it.
 
 ```php
 $set = new FieldSet(
 	[
+		'contact'  => [ 'type' => 'email', 'label' => __( 'Contact', 'my-plugin' ), 'required' => true ],
+		'notify'   => [ 'type' => 'tags', 'label' => __( 'Notify', 'my-plugin' ), 'validate' => 'email' ],
+		'api_key'  => [
+			'type'     => 'password',
+			'label'    => __( 'API key', 'my-plugin' ),
+			'reveal'   => true,
+			'validate' => static fn( $value ) => str_starts_with( $value, 'sk_' ) ? true : __( 'An API key starts with sk_.', 'my-plugin' ),
+		],
+		'role'     => [ 'type' => 'select', 'label' => __( 'Notify role', 'my-plugin' ), 'options' => 'roles' ],
 		'price'    => [ 'type' => 'number', 'label' => __( 'Price', 'my-plugin' ), 'prefix' => '$', 'step' => 0.01 ],
 		'discount' => [ 'type' => 'percentage', 'label' => __( 'Discount', 'my-plugin' ) ],
-		'expires'  => [ 'type' => 'number', 'label' => __( 'Expires after', 'my-plugin' ), 'suffix' => 'days' ],
-		'api_key'  => [ 'type' => 'password', 'label' => __( 'API key', 'my-plugin' ), 'reveal' => true ],
 		'tagline'  => [ 'type' => 'text', 'label' => __( 'Tagline', 'my-plugin' ), 'maxlength' => 80 ],
+		'country'  => [ 'type' => 'country', 'label' => __( 'Country', 'my-plugin' ), 'continents' => true ],
+		'region'   => [ 'type' => 'region', 'label' => __( 'State or province', 'my-plugin' ), 'country_key' => 'country' ],
+		'currency' => [ 'type' => 'currency', 'label' => __( 'Currency', 'my-plugin' ) ],
 	],
 	new OptionContext( 'my_plugin' ),
 	'my_plugin'
 );
+
+$set->save( $_POST['my_plugin'] ?? [] );
+
+// Rendered after a save in the same request, each failing field is marked
+// and shows its message; errors() has them for a notice of your own.
+echo $set->render();
 ```
 
-## A country and its regions
-
-A `region` is a state, a province or a county. Given a fixed `country` it is
-a select over that country's subdivisions, storing the code the way `country`
-stores its own. Given `country_key` — the key of the country field beside it
-— it follows whatever is chosen there: a select where the country has
-subdivisions on file, a text input where it does not, swapped by the script
-on load and on every change.
-
-```php
-use ArrayPress\FieldKit\FieldSet;
-use ArrayPress\FieldKit\Context\OptionContext;
-
-$set = new FieldSet(
-	[
-		'country' => [ 'type' => 'country', 'label' => __( 'Country', 'my-plugin' ) ],
-		'region'  => [ 'type' => 'region', 'label' => __( 'State or province', 'my-plugin' ), 'country_key' => 'country' ],
-	],
-	new OptionContext( 'my_plugin' ),
-	'my_plugin'
-);
-```
-
-Without the script the text input is what submits, so a typed code still
-saves. Inside a repeater the lookup is scoped to the row, so each row's
-region follows that row's country. The subdivisions are WooCommerce's, by
-way of `arraypress/wp-countries`.
+Rules are `email`, `url`, `numeric`, `integer`, `slug` and `alphanumeric`; a
+callable returns `true`, a message or a `WP_Error`; on `tags` and `list` the
+rule applies to each item; `validate()` checks without storing. Presets are
+`roles`, `post_types`, `taxonomies`, `pages`, `timezones`, `image_sizes`,
+`page_templates`, `cron_schedules`, `countries` and `currencies`, resolved on
+render and filterable, with `Presets::register()` for your own. Countries and
+regions come from `arraypress/wp-countries`, currencies from
+`arraypress/wp-money`; a region is a select where the country has
+subdivisions on file and a text input where it does not.
 
 ## Requirements
 
