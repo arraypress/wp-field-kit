@@ -84,7 +84,7 @@ final class CounterTest extends TestCase {
 	 * a count of the saved secret's length would be a small leak.
 	 */
 	public function test_a_password_counts_nothing_it_has_not_shown(): void {
-		$html = $this->render( 'password', [ 'maxlength' => 64 ], 'hunter2' );
+		$html = $this->render( 'password', [ 'maxlength' => 64, 'reveal' => true ], 'hunter2' );
 
 		$this->assertStringContainsString( '>0 / 64<', $html );
 

@@ -53,7 +53,7 @@ final class PasswordRevealTest extends TestCase {
 	public function test_an_affix_sits_inside_the_reveal(): void {
 		$this->assertMatchesRegularExpression(
 			'/<span class="field-kit__password"><span class="field-kit__adorned[^"]*">.*<\/span><button/s',
-			$this->render( [ 'prefix' => 'sk_' ] )
+			$this->render( [ 'reveal' => true, 'prefix' => 'sk_' ] )
 		);
 	}
 

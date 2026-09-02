@@ -54,4 +54,29 @@ abstract class AbstractCodeType extends SelectType {
 
 		return is_string( $value ) ? strtoupper( trim( $value ) ) : $value;
 	}
+
+	/**
+	 * Searchable, unless told not to be.
+	 *
+	 * Two hundred and fifty countries or a hundred and seventy currencies
+	 * in a plain select is a scroll nobody finishes. The combobox the kit
+	 * already draws for an enhanced select types to filter, which is how a
+	 * list this long is meant to be picked from.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return bool
+	 */
+	protected function uses_enhanced_ui( Field $field ): bool {
+		return (bool) $field->get( 'enhanced', true );
+	}
+
+	/**
+	 * The configuration keys this type reads.
+	 *
+	 * @return string[]
+	 */
+	public function config_keys(): array {
+		return array_merge( parent::config_keys(), [ 'enhanced' ] );
+	}
 }
