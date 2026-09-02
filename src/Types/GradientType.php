@@ -48,10 +48,56 @@ final class GradientType extends AbstractType {
 	/**
 	 * Config defaults.
 	 *
+	 * The options default to a callable that reads the site's presets, the
+	 * way nav_menu's read its menus, rather than to nothing with the presets
+	 * read as a fallback. The difference is what `Field::options()` answers:
+	 * with nothing configured it answered an empty list, and the kit's own
+	 * missing-options check reported every gradient field as having nothing
+	 * to choose from while it drew a dozen swatches.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public function defaults(): array {
-		return [ 'columns' => 4 ];
+		return [
+			'columns' => 4,
+			'options' => [ self::class, 'presets' ],
+		];
+	}
+
+	/**
+	 * The gradient presets the site offers, as CSS => name.
+	 *
+	 * Core's dozen plus the theme's, from the same global settings the block
+	 * editor reads. Public and static because it is the options default, and
+	 * a default is resolved by the field rather than by this type.
+	 *
+	 * @param Field $field The field asking. Unused: the presets are the
+	 *                     site's, not the field's.
+	 *
+	 * @return array<string, string>
+	 */
+	public static function presets( Field $field ): array {
+		unset( $field );
+
+		if ( ! function_exists( 'wp_get_global_settings' ) ) {
+			return [];
+		}
+
+		$found = [];
+
+		// Grouped by origin — default, theme, custom — and a later origin
+		// overriding an earlier one is the point of the grouping.
+		foreach ( (array) wp_get_global_settings( [ 'color', 'gradients' ] ) as $set ) {
+			foreach ( (array) $set as $preset ) {
+				if ( empty( $preset['gradient'] ) ) {
+					continue;
+				}
+
+				$found[ (string) $preset['gradient'] ] = (string) ( $preset['name'] ?? $preset['slug'] ?? '' );
+			}
+		}
+
+		return $found;
 	}
 
 	/**
@@ -158,38 +204,14 @@ final class GradientType extends AbstractType {
 	 * The site's own by default — core's dozen plus the theme's — because a
 	 * plugin that offers its own palette beside the theme's is a plugin that
 	 * looks like a plugin. A caller with a reason can pass `options` and get
-	 * exactly those instead.
+	 * exactly those instead; either way it is the field that resolves them.
 	 *
 	 * @param Field $field The field.
 	 *
 	 * @return array<string, string>
 	 */
 	private function gradients( Field $field ): array {
-		$options = $field->options();
-
-		if ( [] !== $options ) {
-			return $options;
-		}
-
-		if ( ! function_exists( 'wp_get_global_settings' ) ) {
-			return [];
-		}
-
-		$found = [];
-
-		// Grouped by origin — default, theme, custom — and a later origin
-		// overriding an earlier one is the point of the grouping.
-		foreach ( (array) wp_get_global_settings( [ 'color', 'gradients' ] ) as $set ) {
-			foreach ( (array) $set as $preset ) {
-				if ( empty( $preset['gradient'] ) ) {
-					continue;
-				}
-
-				$found[ (string) $preset['gradient'] ] = (string) ( $preset['name'] ?? $preset['slug'] ?? '' );
-			}
-		}
-
-		return $found;
+		return $field->options();
 	}
 
 	/**
