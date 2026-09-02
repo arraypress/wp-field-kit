@@ -94,7 +94,7 @@ Sanitising coerces; it does not refuse. `required` and `validate` do the
 refusing on the server: a value that fails is left where it was, every other
 field is saved, and the message is kept for the next render. Options can name
 a preset instead of listing choices. Any single-line input takes a `prefix`
-or a `suffix`, a password can be revealed, and a `maxlength` shows a count. A
+or a `suffix`, a password can offer a reveal, and a `maxlength` shows a count. A
 `region` follows the country beside it.
 
 ```php

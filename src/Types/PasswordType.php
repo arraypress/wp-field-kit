@@ -51,7 +51,10 @@ final class PasswordType extends AbstractInputType {
 	protected function control( Field $field, Attributes $attributes ): string {
 		$input = parent::control( $field, $attributes );
 
-		if ( ! (bool) $field->get( 'reveal', true ) ) {
+		// Off unless asked for. Core offers the button where somebody is
+		// setting a password they will have to type again; an API key pasted
+		// once and never shown back is not that.
+		if ( ! (bool) $field->get( 'reveal', false ) ) {
 			return $input;
 		}
 

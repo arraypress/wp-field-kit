@@ -23,7 +23,7 @@ use PHPUnit\Framework\TestCase;
 final class PasswordRevealTest extends TestCase {
 
 	public function test_the_toggle_is_cores_own(): void {
-		$html = $this->render( [] );
+		$html = $this->render( [ 'reveal' => true ] );
 
 		$this->assertStringContainsString( '<span class="field-kit__password"><input', $html );
 		$this->assertStringContainsString(
@@ -32,8 +32,8 @@ final class PasswordRevealTest extends TestCase {
 		);
 	}
 
-	public function test_it_is_on_unless_turned_off(): void {
-		$html = $this->render( [ 'reveal' => false ] );
+	public function test_it_is_off_unless_asked_for(): void {
+		$html = $this->render( [] );
 
 		$this->assertStringNotContainsString( 'field-kit__password', $html );
 		$this->assertStringNotContainsString( '<button', $html );
@@ -41,7 +41,7 @@ final class PasswordRevealTest extends TestCase {
 	}
 
 	public function test_the_stored_value_is_still_never_sent_to_the_page(): void {
-		$html = $this->render( [], 'hunter2' );
+		$html = $this->render( [ 'reveal' => true ], 'hunter2' );
 
 		$this->assertStringContainsString( 'value=""', $html );
 		$this->assertStringNotContainsString( 'hunter2', $html );

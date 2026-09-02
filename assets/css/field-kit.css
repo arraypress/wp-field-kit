@@ -3254,12 +3254,17 @@ span.field-kit__provider-logo {
    A flex box, not a block: the input is then the box's whole height, and
    the symbol centred on the box is centred on the input. As a block the
    box was taller than the input by the line's descender, and the symbol
-   sat a few pixels high of the digits beside it. */
+   sat a few pixels high of the digits beside it -- and it ran the width
+   of whatever held it, so a price on a settings screen was the width of
+   the desk and one in a narrow cell a sliver. It is core's regular-text
+   width now, wherever it is, and a panel that wants it wider says so. */
 .field-kit__money {
-	display: flex;
+	display: inline-flex;
 	align-items: stretch;
 	position: relative;
+	width: 25em;
 	max-width: 100%;
+	vertical-align: middle;
 }
 
 /* The symbol is a zone at the start of the input: centred in its own
