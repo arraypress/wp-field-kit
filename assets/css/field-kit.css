@@ -703,15 +703,76 @@ input[type="checkbox"].field-kit__toggle:focus-visible {
 	color: #fff;
 }
 
+/* The cross is a small white disc in the corner, which is what a cross
+   for removing a picture looks like everywhere else in the admin. */
+.wp-core-ui .field-kit__gallery-remove {
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, .12);
+}
+
+/* The move buttons the script adds for the keyboard. Nobody with a mouse
+   needs them -- the tile drags -- so they sit along the bottom edge and
+   show up with the cross: on hover, on focus, and always where there is
+   no hover to wait for. Left as flow content they came out as a bar of
+   chevrons under every picture. */
+.wp-core-ui .field-kit__gallery-item .field-kit__gallery-move {
+	position: absolute;
+	bottom: .2rem;
+	z-index: 1;
+	background: rgba(255, 255, 255, .92);
+	color: #1d2327;
+	opacity: 0;
+	transition: opacity .1s ease-in-out;
+}
+
+.wp-core-ui .field-kit__gallery-item .field-kit__gallery-move[data-direction="up"] {
+	inset-inline-start: .2rem;
+}
+
+.wp-core-ui .field-kit__gallery-item .field-kit__gallery-move[data-direction="down"] {
+	inset-inline-end: .2rem;
+}
+
+.field-kit__gallery-item:hover .field-kit__gallery-move,
+.field-kit__gallery-item:focus-within .field-kit__gallery-move,
+.wp-core-ui .field-kit__gallery-move:focus-visible {
+	opacity: 1;
+}
+
+.wp-core-ui .field-kit__gallery-move:hover,
+.wp-core-ui .field-kit__gallery-move:focus {
+	background: #fff;
+	color: var(--wp-admin-theme-color, #2271b1);
+}
+
+.wp-core-ui .field-kit__gallery-move:disabled {
+	color: #c3c4c7;
+	cursor: default;
+}
+
+/* In a row -- a file with a name and a player rather than a picture -- the
+   controls sit in the line beside the name, always visible. */
+.wp-core-ui .field-kit__gallery-item--file .field-kit__gallery-move,
+.wp-core-ui .field-kit__gallery-item--file .field-kit__gallery-remove {
+	position: static;
+	opacity: 1;
+	box-shadow: none;
+	background: none;
+}
+
 /* Nothing may be revealed by hover alone where hovering is not possible. */
 @media (hover: none) {
-	.wp-core-ui .field-kit__gallery-remove {
+	.wp-core-ui .field-kit__gallery-remove,
+	.wp-core-ui .field-kit__gallery-item .field-kit__gallery-move {
 		opacity: 1;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.wp-core-ui .field-kit__gallery-remove {
+	.wp-core-ui .field-kit__gallery-remove,
+	.wp-core-ui .field-kit__gallery-item .field-kit__gallery-move {
 		transition: none;
 	}
 }
@@ -1826,6 +1887,7 @@ li.field-kit__repeater-row {
    it, so a bare class here loses and every chevron carries a line under it.
    Matching the prefix is what makes these win. */
 .wp-core-ui .field-kit__gallery-remove,
+.wp-core-ui .field-kit__gallery-move,
 .wp-core-ui .field-kit__repeater-remove,
 .wp-core-ui .field-kit__sortable-move {
 	display: inline-flex;
@@ -1865,6 +1927,7 @@ li.field-kit__repeater-row {
    line-height of surrounding text. */
 .field-kit__sortable-move .dashicons,
 .field-kit__gallery-remove .dashicons,
+.field-kit__gallery-move .dashicons,
 .field-kit__repeater-remove .dashicons {
 	width: 1rem;
 	height: 1rem;
