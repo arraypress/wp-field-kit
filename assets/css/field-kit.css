@@ -2677,10 +2677,13 @@ select.field-kit__select[multiple] {
 }
 
 /* The term screens put the form in a cell core sizes to 95% of the page,
-   and a full-width strip ran past the inputs beside it. On the add form
-   the submit button follows straight after, so the strip keeps a gap. */
+   and a full-width strip or accordion ran past the inputs beside it. On
+   the add form the submit button follows straight after, so both keep a
+   gap. */
 body.edit-tags-php .field-kit__panel-tabs,
-body.term-php .field-kit__panel-tabs {
+body.edit-tags-php .field-kit__accordion,
+body.term-php .field-kit__panel-tabs,
+body.term-php .field-kit__accordion {
 	max-width: 95%;
 	margin-bottom: 1.5rem;
 }
