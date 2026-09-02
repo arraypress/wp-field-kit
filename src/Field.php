@@ -84,6 +84,10 @@ final class Field {
 		'meta_key',
 		'sanitize_callback',
 
+		// Read by every type's validate(), through AbstractType, and by the
+		// per-item types for themselves.
+		'validate',
+
 		// Consumed by a consuming library rather than by the kit: a table
 		// repeater's column width, a metabox panel's placement.
 		'column_width',

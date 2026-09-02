@@ -64,6 +64,26 @@ input.field-kit__combobox-input,
 	color: #d63638;
 }
 
+/* A field's own message, under the control. The same #d63638 as the
+   required marker above and as core's .form-invalid, rather than a boxed
+   .notice: a notice is sized for the top of a page, and the full-bleed rule
+   further down gives every one of them a page-width margin, which inside a
+   field looked like an admin notice had fallen into the form. */
+.field-kit__error {
+	margin: .35rem 0 0;
+	color: #d63638;
+}
+
+/* And the control the message is about, so the eye lands on it before
+   reading. Core's own .form-invalid treatment, restated because core scopes
+   it to a wrapper class the kit does not emit. */
+.field-kit__field input[aria-invalid="true"],
+.field-kit__field select[aria-invalid="true"],
+.field-kit__field textarea[aria-invalid="true"] {
+	border-color: #d63638;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
 /* Only the margin. The element is an <hr>, so core's own rule — a #dcdcde
    hairline over a #f6f7f7 one, which is what gives every rule in the admin
    its slight bevel — already applies, and restating half of it here is what

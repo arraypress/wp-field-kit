@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace ArrayPress\FieldKit\Types;
 
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Support\Rules;
 
 /**
  * An ordered list of short strings, each on its own row.
@@ -114,6 +115,35 @@ final class ListType extends RepeaterType {
 		}
 
 		return $entries;
+	}
+
+	/**
+	 * Check each entry, not the list.
+	 *
+	 * The same reasoning as tags: a rule on a list is about what an entry
+	 * is. The value is normally the flat array sanitize() stores, but a
+	 * consumer's own `sanitize_callback` may hand back the row shape the
+	 * repeater draws, so an entry that is a row is read as its one column.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$rule = $this->rule( $field );
+
+		if ( null === $rule || ! is_array( $value ) ) {
+			return parent::validate( $value, $field );
+		}
+
+		$items = [];
+
+		foreach ( $value as $entry ) {
+			$items[] = is_array( $entry ) ? ( $entry[ self::COLUMN ] ?? '' ) : $entry;
+		}
+
+		return Rules::check_each( $rule, $items, $field );
 	}
 
 	/**

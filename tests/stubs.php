@@ -225,9 +225,55 @@ if ( ! function_exists( 'get_term' ) ) {
 	}
 }
 
+/*
+ * The smallest WP_Error a validation callback can return: a message, and the
+ * function that tells it apart from a string. Nothing here reads codes or
+ * data, so the stub carries neither.
+ */
+if ( ! class_exists( 'WP_Error' ) ) {
+	class WP_Error {
+		public string $message;
+
+		public function __construct( $code = '', $message = '', $data = '' ) {
+			$this->message = (string) $message;
+		}
+
+		public function get_error_message( $code = '' ) {
+			return $this->message;
+		}
+	}
+}
+
 if ( ! function_exists( 'is_wp_error' ) ) {
 	function is_wp_error( $thing ) {
-		return false;
+		return $thing instanceof WP_Error;
+	}
+}
+
+/*
+ * Validation rules. is_email() and sanitize_title() are approximated only as
+ * far as the rule tests depend on: an address without a domain is refused,
+ * and a title with capitals or spaces comes back changed.
+ */
+if ( ! function_exists( 'is_email' ) ) {
+	function is_email( $email, $deprecated = false ) {
+		return filter_var( (string) $email, FILTER_VALIDATE_EMAIL ) ? (string) $email : false;
+	}
+}
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+	function sanitize_title( $title, $fallback_title = '', $context = 'save' ) {
+		$title = strtolower( strip_tags( (string) $title ) );
+		$title = preg_replace( '/[^a-z0-9 _-]/', '', $title ) ?? '';
+		$title = preg_replace( '/[\s-]+/', '-', $title ) ?? '';
+
+		return trim( $title, '-' );
+	}
+}
+
+if ( ! function_exists( '_n' ) ) {
+	function _n( $single, $plural, $number, $domain = 'default' ) {
+		return 1 === (int) $number ? $single : $plural;
 	}
 }
 

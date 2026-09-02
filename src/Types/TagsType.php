@@ -11,6 +11,7 @@ namespace ArrayPress\FieldKit\Types;
 
 use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Field;
+use ArrayPress\FieldKit\Support\Rules;
 
 /**
  * A free-form list of short strings.
@@ -96,6 +97,29 @@ final class TagsType extends AbstractInputType {
 		$parts     = array_map( static fn( $p ) => sanitize_text_field( trim( (string) $p ) ), $parts );
 
 		return array_values( array_unique( array_filter( $parts, static fn( $p ) => '' !== $p ) ) );
+	}
+
+	/**
+	 * Check each tag, not the list.
+	 *
+	 * A rule on a tags field is about what a tag is — `email` on a field of
+	 * people to notify — and a list of strings is never an email address
+	 * however good its members. One message names how many failed and the
+	 * first few that did.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$rule = $this->rule( $field );
+
+		if ( null === $rule || ! is_array( $value ) ) {
+			return parent::validate( $value, $field );
+		}
+
+		return Rules::check_each( $rule, $value, $field );
 	}
 
 	/**

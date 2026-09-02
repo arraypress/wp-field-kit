@@ -21,6 +21,7 @@ use ArrayPress\FieldKit\Actions\CallbackAction;
 use ArrayPress\FieldKit\Search\CallbackSource;
 use ArrayPress\FieldKit\Search\Sources;
 use ArrayPress\FieldKit\Support\Badge;
+use ArrayPress\FieldKit\Support\Rules;
 use ArrayPress\FieldKit\Support\Sections;
 
 /**
@@ -66,6 +67,17 @@ final class FieldSet {
 	 * @var string
 	 */
 	private string $input_prefix;
+
+	/**
+	 * The messages from the last save(), keyed by field.
+	 *
+	 * Kept on the set rather than returned, because save() already returns
+	 * what it stored and its callers rely on that shape. The next render()
+	 * in the same request reads these for itself.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $errors = [];
 
 	/**
 	 * Construct.
@@ -334,12 +346,22 @@ final class FieldSet {
 	/**
 	 * Render every field.
 	 *
+	 * With no messages passed, the ones from a save() earlier in the same
+	 * request are used. A consumer that saves and then redraws the screen
+	 * gets each failing field marked and explained without carrying the
+	 * messages from one call to the other — a step every one of them would
+	 * otherwise have to remember.
+	 *
 	 * @param int|string            $object_id Object the values belong to.
 	 * @param array<string, string> $errors    Validation messages keyed by field.
 	 *
 	 * @return string
 	 */
 	public function render( int|string $object_id = 0, array $errors = [] ): string {
+		if ( [] === $errors ) {
+			$errors = $this->errors;
+		}
+
 		$fields = $this->fields( $object_id );
 		$layout = Sections::split( $fields );
 
@@ -372,6 +394,10 @@ final class FieldSet {
 	 * Consumers that lay fields out themselves — a term screen's table rows,
 	 * a metabox's own grid — need the control without the set's own loop.
 	 *
+	 * As with render(), a message from a save() in the same request is used
+	 * when none is passed, so a consumer with its own layout is not the one
+	 * that has to remember.
+	 *
 	 * @param Field  $field      The field.
 	 * @param string $error      Optional validation message.
 	 * @param bool   $with_label Whether to emit the label.
@@ -379,11 +405,61 @@ final class FieldSet {
 	 * @return string
 	 */
 	public function render_field( Field $field, string $error = '', bool $with_label = true ): string {
+		if ( '' === $error ) {
+			$error = $this->errors[ $field->key() ] ?? '';
+		}
+
 		return $this->renderer->render( $field, $error, $with_label );
 	}
 
 	/**
-	 * Sanitize and store a submission.
+	 * Check a submission without storing any of it.
+	 *
+	 * The same walk as save() — unslashed once, conditions applied, each
+	 * value sanitized by its type or by the field's own `sanitize_callback`,
+	 * the same fields skipped — so what this reports is exactly what save()
+	 * would refuse. A consumer that would rather reject a whole submission
+	 * than store the parts of it that passed asks this first.
+	 *
+	 * @param array<string, mixed> $input     Raw submitted values, still slashed.
+	 * @param int|string           $object_id Object the values belong to.
+	 *
+	 * @return array<string, string> A message per failing field, keyed by
+	 *                               field. Empty when everything passed.
+	 * @since 1.2.0
+	 */
+	public function validate( array $input, int|string $object_id = 0 ): array {
+		$errors = [];
+
+		foreach ( $this->sanitized( $input, $object_id ) as [ $field, $met, $value ] ) {
+			if ( ! $met ) {
+				continue;
+			}
+
+			$message = $this->check( $field, $value );
+
+			if ( '' !== $message ) {
+				$errors[ $field->key() ] = $message;
+			}
+		}
+
+		return $errors;
+	}
+
+	/**
+	 * The messages from the last save().
+	 *
+	 * Empty when every field passed, and when nothing has been saved yet.
+	 *
+	 * @return array<string, string> Keyed by field.
+	 * @since 1.2.0
+	 */
+	public function errors(): array {
+		return $this->errors;
+	}
+
+	/**
+	 * Sanitize, check and store a submission.
 	 *
 	 * The raw input is unslashed once here, at the boundary, rather than in
 	 * each sanitizer. Storage APIs disagree about whether they want slashed
@@ -394,50 +470,35 @@ final class FieldSet {
 	 * hidden field silently keeping a stale value is how conditional settings
 	 * come back to life.
 	 *
+	 * A field whose value fails validation is neither written nor cleared.
+	 * What it held before the save is what it holds after, the message is
+	 * kept for errors() and for the next render(), and every other field is
+	 * stored as normal — a page of twenty settings is not thrown away over
+	 * one bad email address.
+	 *
 	 * @param array<string, mixed> $input     Raw submitted values, still slashed.
 	 * @param int|string           $object_id Object the values belong to.
 	 *
 	 * @return array<string, mixed> The values actually stored.
 	 */
 	public function save( array $input, int|string $object_id = 0 ): array {
-		$input  = wp_unslash( $input );
-		$stored = [];
+		$stored       = [];
+		$this->errors = [];
 
-		foreach ( $this->fields( $object_id ) as $field ) {
-			if ( ! $field->type()->stores_value() ) {
-				continue;
-			}
-
-			// A locked or disabled control sends nothing, so the rules below would
-			// read it as cleared and delete the stored value. An install that lost
-			// a licence would have its premium settings wiped by the next unrelated
-			// save, and get them back as blanks when the licence returned.
-			if ( (bool) $field->get( 'disabled' ) || Badge::locks( $field ) ) {
-				continue;
-			}
-
-			$conditions = Conditions::from( $field->get( 'show_when', $field->get( 'depends', [] ) ) );
-
-			if ( ! $conditions->is_empty() && ! $conditions->are_met( $input ) ) {
+		foreach ( $this->sanitized( $input, $object_id ) as [ $field, $met, $value ] ) {
+			if ( ! $met ) {
 				$this->context->delete( $object_id, $field );
 
 				continue;
 			}
 
-			$raw = $input[ $field->key() ] ?? null;
+			$message = $this->check( $field, $value );
 
-			// A consumer's own cleaning, which replaces the type's rather
-			// than running after it: someone who supplies one has an opinion
-			// about the whole value, and running the type's first would mean
-			// they never see what was actually submitted. The key is listed
-			// on Field as common, so every type has to honour it — only
-			// `custom` did, which made it true of one type and documented for
-			// all of them.
-			$override = $field->get( 'sanitize_callback' );
+			if ( '' !== $message ) {
+				$this->errors[ $field->key() ] = $message;
 
-			$value = is_callable( $override )
-				? $override( $raw, $field )
-				: $field->type()->sanitize( $raw, $field );
+				continue;
+			}
 
 			if ( $this->is_empty( $value ) ) {
 				$this->context->delete( $object_id, $field );
@@ -459,6 +520,113 @@ final class FieldSet {
 		}
 
 		return $stored;
+	}
+
+	/**
+	 * Walk a submission the way save() does, producing each field's value.
+	 *
+	 * One walk shared by save() and validate(), because the two have to
+	 * agree about which fields count and what their values are. A check
+	 * that runs on slightly different input from the store it guards is a
+	 * check that passes values the store then refuses, or the reverse — and
+	 * two copies of a pipeline are never slightly different on purpose.
+	 *
+	 * A field a save would not touch — a type that stores nothing, a locked
+	 * or disabled control — is left out entirely. One whose conditions are
+	 * not met is included and marked so, since save() has to clear it.
+	 *
+	 * @param array<string, mixed> $input     Raw submitted values, still slashed.
+	 * @param int|string           $object_id Object the values belong to.
+	 *
+	 * @return array<int, array{0: Field, 1: bool, 2: mixed}> Per field: the
+	 *                                                        field, whether its
+	 *                                                        conditions are met,
+	 *                                                        and its sanitized
+	 *                                                        value — null when
+	 *                                                        they are not.
+	 */
+	private function sanitized( array $input, int|string $object_id ): array {
+		$input   = wp_unslash( $input );
+		$entries = [];
+
+		foreach ( $this->fields( $object_id ) as $field ) {
+			if ( ! $field->type()->stores_value() ) {
+				continue;
+			}
+
+			// A locked or disabled control sends nothing, so the rules below would
+			// read it as cleared and delete the stored value. An install that lost
+			// a licence would have its premium settings wiped by the next unrelated
+			// save, and get them back as blanks when the licence returned.
+			if ( (bool) $field->get( 'disabled' ) || Badge::locks( $field ) ) {
+				continue;
+			}
+
+			$conditions = Conditions::from( $field->get( 'show_when', $field->get( 'depends', [] ) ) );
+
+			if ( ! $conditions->is_empty() && ! $conditions->are_met( $input ) ) {
+				$entries[] = [ $field, false, null ];
+
+				continue;
+			}
+
+			$raw = $input[ $field->key() ] ?? null;
+
+			// A consumer's own cleaning, which replaces the type's rather
+			// than running after it: someone who supplies one has an opinion
+			// about the whole value, and running the type's first would mean
+			// they never see what was actually submitted. The key is listed
+			// on Field as common, so every type has to honour it — only
+			// `custom` did, which made it true of one type and documented for
+			// all of them.
+			$override = $field->get( 'sanitize_callback' );
+
+			$entries[] = [
+				$field,
+				true,
+				is_callable( $override )
+					? $override( $raw, $field )
+					: $field->type()->sanitize( $raw, $field ),
+			];
+		}
+
+		return $entries;
+	}
+
+	/**
+	 * The message for one sanitized value, or nothing.
+	 *
+	 * `required` is checked here rather than by the type, because it is the
+	 * one rule every field shares and the one whose answer depends on what
+	 * this set considers empty: zero is a value, an empty list is not, and
+	 * that line is drawn once, in is_empty(), rather than by each of fifty
+	 * types. The field's own `validate` rule runs only on a value that is
+	 * there — an optional field left blank is not wrong.
+	 *
+	 * Only the set's own fields are checked. A required field inside a group
+	 * or a repeater row is marked required in the markup, which the browser
+	 * enforces, but its parent's value is stored whole and is not walked
+	 * here.
+	 *
+	 * @param Field $field The field.
+	 * @param mixed $value Its sanitized value.
+	 *
+	 * @return string
+	 */
+	private function check( Field $field, mixed $value ): string {
+		if ( ! $this->is_empty( $value ) ) {
+			return $field->type()->validate( $value, $field );
+		}
+
+		if ( ! $field->is_required() ) {
+			return '';
+		}
+
+		return sprintf(
+			/* translators: %s: field label */
+			__( '%s is required.', 'arraypress' ),
+			Rules::name( $field )
+		);
 	}
 
 	/**

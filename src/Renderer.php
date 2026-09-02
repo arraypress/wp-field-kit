@@ -207,9 +207,16 @@ final class Renderer {
 		if ( '' !== $error ) {
 			// role="alert" so the message is announced when it appears rather
 			// than only being found by someone already navigating the field.
-			// core's inline notice markup rather than a bespoke error style.
+			//
+			// Not core's .notice, which this used to be. A notice is a boxed
+			// block sized for the top of a page, and the kit's own full-bleed
+			// screens give every .notice a page-width margin — inside a field
+			// it looked as though an admin notice had fallen into the form. A
+			// line of text under the control, in the colour core uses for its
+			// own invalid state, is what a field-level message looks like on
+			// every other admin screen.
 			$markup .= sprintf(
-				'<div class="notice notice-error inline" id="%s" role="alert"><p>%s</p></div>',
+				'<p class="field-kit__error" id="%s" role="alert">%s</p>',
 				esc_attr( $field->input_id() . '__error' ),
 				esc_html( $error )
 			);

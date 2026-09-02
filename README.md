@@ -27,6 +27,7 @@ wherever the screen happens to be.
 * Take an amount with its currency symbol inside the control
 * Fold a repeater's rows away, each titled by one of its own fields
 * Reorder a repeater by dragging its handle, or from the keyboard
+* Refuse a value that fails a rule — required, email, url, your own callable — and say why
 * Encrypt a value at rest, for an API key
 * Get told, under `WP_DEBUG`, when a config key does nothing
 
@@ -56,6 +57,46 @@ echo $set->render();
 // Each value is coerced by its own type; a key you did not declare is dropped.
 $set->save( $_POST['my_plugin'] ?? [] );
 ```
+
+## Validation
+
+Sanitising coerces; it does not refuse. A field that must hold something, or
+something of a particular shape, says so. A value that fails is left where it
+was — the stored one stays, every other field is saved — and the reason is
+kept for the next render:
+
+```php
+$set = new FieldSet(
+	[
+		'contact' => [ 'type' => 'email', 'label' => __( 'Contact', 'my-plugin' ), 'required' => true ],
+		'handle'  => [ 'type' => 'text', 'label' => __( 'Handle', 'my-plugin' ), 'validate' => 'slug' ],
+		'api_key' => [
+			'type'     => 'text',
+			'label'    => __( 'API key', 'my-plugin' ),
+			'validate' => static fn( $value, $field ) => str_starts_with( $value, 'sk_' ) ? true : __( 'An API key starts with sk_.', 'my-plugin' ),
+		],
+		'notify'  => [ 'type' => 'tags', 'label' => __( 'Notify', 'my-plugin' ), 'validate' => 'email' ],
+	],
+	new OptionContext( 'my_plugin' ),
+	'my_plugin'
+);
+
+$set->save( $_POST['my_plugin'] ?? [] );
+
+// Rendered after a save in the same request, each failing field is marked
+// and shows its message. errors() has the messages for a notice of your own.
+echo $set->render();
+```
+
+The rules are `email`, `url`, `numeric`, `integer`, `slug` and `alphanumeric`.
+A callable is given the sanitised value and the field, and returns `true`, a
+message, or a `WP_Error`. On `tags` and `list` the rule is applied to each
+item. To check a submission without storing any of it, `validate()` takes the
+same input as `save()` and returns the messages keyed by field.
+
+`required` and `validate` are checked on the set's own fields. A field inside
+a group or a repeater row is marked required in the markup, which the browser
+enforces, but is not checked on the server.
 
 ## Field types
 

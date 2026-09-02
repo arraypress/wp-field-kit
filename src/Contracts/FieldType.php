@@ -62,6 +62,23 @@ interface FieldType {
 	public function sanitize( mixed $value, Field $field ): mixed;
 
 	/**
+	 * Whether a sanitized value is acceptable, and why not when it is not.
+	 *
+	 * Asked after sanitize(), of what sanitize() returned. Sanitizing coerces
+	 * and never refuses, which is right for a value nobody typed and wrong
+	 * for one somebody did — a silent correction is how a setting comes to
+	 * hold a value nobody chose. This is where a field says no.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The normalized field.
+	 *
+	 * @return string An empty string when the value is acceptable, otherwise
+	 *                a message for the person who entered it.
+	 * @since 1.2.0
+	 */
+	public function validate( mixed $value, Field $field ): string;
+
+	/**
 	 * Whether a `placeholder` is meaningful for this type.
 	 *
 	 * @return bool

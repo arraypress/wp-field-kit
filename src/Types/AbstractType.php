@@ -16,6 +16,7 @@ use ArrayPress\FieldKit\Attributes;
 use ArrayPress\FieldKit\Contracts\FieldType;
 use ArrayPress\FieldKit\Field;
 use ArrayPress\FieldKit\Registry;
+use ArrayPress\FieldKit\Support\Rules;
 
 /**
  * Defaults every type inherits.
@@ -108,6 +109,60 @@ abstract class AbstractType implements FieldType {
 	 */
 	protected function scalar( mixed $value ): string {
 		return is_scalar( $value ) ? (string) $value : '';
+	}
+
+	/**
+	 * Whether a sanitized value is acceptable.
+	 *
+	 * The field's `validate` configuration, applied to the whole value. A
+	 * blank passes without being looked at: an optional field left empty is
+	 * not wrong, and whether it may be empty is what `required` decides. A
+	 * rule that had to guard against blank first would be a rule every
+	 * consumer forgets to guard once.
+	 *
+	 * A type that holds several values overrides this to check each — a
+	 * tags field given `email` means each tag, not the list.
+	 *
+	 * @param mixed $value The sanitized value.
+	 * @param Field $field The field.
+	 *
+	 * @return string An empty string when the value is acceptable, otherwise the message.
+	 * @since 1.2.0
+	 */
+	public function validate( mixed $value, Field $field ): string {
+		$rule = $this->rule( $field );
+
+		if ( null === $rule || null === $value || '' === $value || [] === $value ) {
+			return '';
+		}
+
+		return Rules::check( $rule, $value, $field );
+	}
+
+	/**
+	 * The field's `validate` rule, in a form Rules can be asked about.
+	 *
+	 * Null when there is none. Something that is neither a name nor a
+	 * callable — a list of two rules, say, which is a reasonable thing to
+	 * try — is passed on as the unknown rule it is, so it is reported under
+	 * WP_DEBUG rather than thrown on or silently dropped.
+	 *
+	 * @param Field $field The field.
+	 *
+	 * @return string|callable|null
+	 */
+	protected function rule( Field $field ): string|callable|null {
+		$rule = $field->get( 'validate' );
+
+		if ( null === $rule || '' === $rule ) {
+			return null;
+		}
+
+		if ( is_string( $rule ) || is_callable( $rule ) ) {
+			return $rule;
+		}
+
+		return is_scalar( $rule ) ? (string) $rule : gettype( $rule );
 	}
 
 	/**
